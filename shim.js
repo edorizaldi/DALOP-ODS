@@ -77,8 +77,7 @@
     const r = await fetch(api, { method: 'PUT', headers: hd, body: JSON.stringify({ message, content, sha, branch: GH.branch }) });
     if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch (e) { /* abaikan */ } throw Object.assign(new Error('GitHub ' + r.status + (m ? ': ' + m : '')), { code: 'gh-' + r.status }); }
   }
-  // file data ditulis terenkripsi bila dashboard memakai password akses
-  const asJs = (key, val) => (dataKey ? window.SSAuthCore.encFile(dataKey, key, val) : Promise.resolve(window.SSAuthCore.plainFile(key, val)));
+  const asJs = (key, val) => `window.__D=window.__D||{};window.__D[${JSON.stringify(key)}]=${JSON.stringify(val)};\n`;
   const parseRows = (text, name) => {
     if (/\.json$/i.test(name || '')) { const v = JSON.parse(text); return Array.isArray(v) ? v : (v.rows || v.data || []); }
     return window.d3 ? window.d3.csvParse(text) : [];
@@ -108,18 +107,18 @@
           const id = m[1]; const src = v && v.source; const bid = src && String(src.url || '').replace('/_blob/', '');
           const blob = blobs.get(bid); if (!blob) throw new Error('file unggahan tidak ditemukan');
           const rows = parseRows(await blob.text(), src.name);
-          await ghPut(`${id}.js`, await asJs(id, rows), `Update data ${id} dari dashboard`);
+          await ghPut(`${id}.js`, asJs(id, rows), `Update data ${id} dari dashboard`);
           D[id] = rows; window.__SSInvalidate();
         },
         async set(v) {
           if (path !== 'harian/latest') throw new Error('jalur tidak didukung: ' + path);
-          await ghPut('harian_latest.js', await asJs('harian_latest', v), 'Update laporan harian dari dashboard');
+          await ghPut('harian_latest.js', `window.__HARIAN=${JSON.stringify(v)};\n`, 'Update laporan harian dari dashboard');
           window.__HARIAN = v; harianSubs.forEach((f) => f({ exists: true, data: () => v }));
         },
         onSnapshot(cb) {
           if (path !== 'harian/latest') return () => {};
           harianSubs.push(cb);
-          const v = window.__HARIAN; scriptsDone.then(() => setTimeout(() => cb(v ? { exists: true, data: () => v } : { exists: false, data: () => null }), 0));
+          const v = window.__HARIAN; setTimeout(() => cb(v ? { exists: true, data: () => v } : { exists: false, data: () => null }), 0);
           return () => {};
         },
       };
@@ -136,104 +135,11 @@
   // tanpa token: unggahan laporan harian tetap terbaca, tetapi tidak bisa menyimpan
   const dbReadOnly = { doc(path) { const d = db.doc(path); return { onSnapshot: d.onSnapshot, async set() { throw Object.assign(new Error('belum login admin'), { code: 'no-token' }); }, async update() { throw Object.assign(new Error('belum login admin'), { code: 'no-token' }); } }; } };
 
-
-  // ---------------- halaman login (password akses) ----------------
-  // Seluruh script dashboard di <body> bertipe text/x-ss dan baru dijalankan setelah data terbuka.
-  let dataKey = null;
-  let doneRes; const scriptsDone = new Promise((r) => { doneRes = r; });
-  const ACC = Array.isArray(window.SS_ACCESS_KEYS) ? window.SS_ACCESS_KEYS : [];
-  const DK = 'ss-dk';
-  const dkGet = () => { try { return sessionStorage.getItem(DK) || localStorage.getItem(DK) || ''; } catch (e) { return ''; } };
-  const dkSet = (v, remember) => { try { sessionStorage.setItem(DK, v); if (remember) localStorage.setItem(DK, v); } catch (e) { /* abaikan */ } };
-  const dkDel = () => { try { sessionStorage.removeItem(DK); localStorage.removeItem(DK); } catch (e) { /* abaikan */ } };
-  document.documentElement.classList.add('ss-locked');
-  async function openData(raw) {
-    const A = window.SSAuthCore, E = window.__E || {};
-    for (const id of Object.keys(E)) {
-      const v = JSON.parse(await A.decText(raw, E[id]));
-      if (id === 'harian_latest') window.__HARIAN = v; else D[id] = v;
-    }
-  }
-  async function runDeferred() {
-    const list = [...document.querySelectorAll('script[type="text/x-ss"]')];
-    for (const old of list) {
-      const s = document.createElement('script');
-      for (const a of old.attributes) if (a.name !== 'type') s.setAttribute(a.name, a.value);
-      if (old.src) { await new Promise((res) => { s.onload = res; s.onerror = res; old.replaceWith(s); }); }
-      else { s.text = old.text; old.replaceWith(s); }
-    }
-  }
-  let started = false;
-  async function start() {
-    if (started) return; started = true;
-    document.documentElement.classList.remove('ss-locked');
-    const g = document.getElementById('ss-gate'); if (g) g.remove();
-    await runDeferred(); doneRes();
-  }
-  function gateUI(note) {
-    const css = document.createElement('style');
-    css.textContent = `html.ss-locked #dash-root{display:none}
-#ss-gate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:16px;background:radial-gradient(120% 90% at 10% 0%,#1d4f86 0%,#0F2A4A 55%,#0a1d33 100%);font-family:var(--font-anthropic-sans,system-ui)}
-#ss-gate form{background:#fff;border-radius:18px;box-shadow:0 24px 60px #0006;width:min(400px,100%);padding:28px 26px 24px;display:grid;gap:14px;color:#1b1f17}
-#ss-gate .g-logos{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:40px}
-#ss-gate .g-logos img{max-height:40px;width:auto}
-#ss-gate h1{margin:4px 0 0;font-size:20px;line-height:1.25;color:#0F2A4A}
-#ss-gate p{margin:0;font-size:13.5px;line-height:1.5;color:#667060}
-#ss-gate label{display:grid;gap:5px;font-size:12.5px;font-weight:600;color:#4a5245}
-#ss-gate input[type=password]{font:inherit;font-size:15px;padding:10px 12px;border:1px solid #cfd4cb;border-radius:9px}
-#ss-gate input[type=password]:focus{outline:2px solid #C8E86B;border-color:#8fb33a}
-#ss-gate .g-rem{display:flex;align-items:center;gap:8px;font-weight:500;color:#4a5245}
-#ss-gate .g-err{color:#B3261E;font-size:13px;min-height:1.2em}
-#ss-gate button{font:inherit;font-size:14.5px;font-weight:600;padding:11px;border-radius:9px;border:1px solid #b5d75a;background:#C8E86B;color:#1b2a0a;cursor:pointer}
-#ss-gate button:disabled{opacity:.6;cursor:wait}`;
-    document.head.appendChild(css);
-    const g = document.createElement('div'); g.id = 'ss-gate';
-    const ready = ACC.length > 0;
-    g.innerHTML = `<form autocomplete="on"><div class="g-logos"></div>
-<h1>Dashboard Keandalan Sumkal 2026</h1>
-<p>${ready ? 'Masukkan password untuk membuka dashboard.' : 'Password akses belum diatur. Pemilik repo dapat mengaturnya di <a href="admin-setup.html">admin-setup.html</a>.'}</p>
-${ready ? `<label>Password<input type="password" name="pw" autocomplete="current-password" required></label>
-<label class="g-rem"><input type="checkbox" name="rem"> Ingat di perangkat ini</label>
-<div class="g-err" role="alert">${note || ''}</div>
-<button type="submit">Masuk</button>` : ''}</form>`;
-    document.body.appendChild(g);
-    const logos = g.querySelector('.g-logos');
-    ['#logo-danantara img', '#logo-pln img'].forEach((q) => { const im = document.querySelector(q); if (im) { const c = im.cloneNode(); c.removeAttribute('id'); logos.append(c); } });
-    if (!ready) return;
-    const f = g.querySelector('form'); f.pw.focus();
-    f.onsubmit = async (e) => {
-      e.preventDefault();
-      const btn = f.querySelector('button'), err = f.querySelector('.g-err');
-      btn.disabled = true; err.textContent = 'Membuka…';
-      try {
-        const raw = await window.SSAuthCore.unlock(ACC, f.pw.value);
-        await openData(raw);
-        dataKey = raw; dkSet(window.SSAuthCore.toB64(raw), f.rem.checked);
-        await start();
-      } catch (x) { err.textContent = 'Password salah.'; btn.disabled = false; f.pw.select(); }
-    };
-  }
-  window.SSGate = { lock() { if (confirm('Kunci dashboard? Password perlu dimasukkan lagi untuk membuka.')) { dkDel(); location.reload(); } } };
-  async function boot() {
-    const encrypted = window.__E && Object.keys(window.__E).length > 0;
-    if (!encrypted && !ACC.length) { gateUI(); return; }
-    const saved = dkGet();
-    if (saved) {
-      try { const raw = window.SSAuthCore.fromB64(saved); await openData(raw); dataKey = raw; await start(); return; }
-      catch (e) { dkDel(); }
-    }
-    gateUI();
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
-
   // ---------------- login admin (nama + password) ----------------
   function adminUI() {
     const css = document.createElement('style');
     css.textContent = `#ss-admin{position:fixed;right:14px;bottom:14px;z-index:50;font:500 12px var(--font-anthropic-sans,system-ui);padding:7px 12px;border-radius:999px;border:1px solid var(--color-border-line,#ddd);background:#fff;color:var(--color-fg-muted,#667);box-shadow:0 2px 8px #0001;cursor:pointer}
 #ss-admin[data-on="1"]{background:#eef6ee;color:#1F5A28;border-color:#9cc79f}
-#ss-pills{position:fixed;right:14px;bottom:14px;z-index:50;display:flex;gap:6px}
-#ss-pills #ss-admin,#ss-pills #ss-lock{position:static}
-#ss-lock{font:500 12px var(--font-anthropic-sans,system-ui);padding:7px 12px;border-radius:999px;border:1px solid var(--color-border-line,#ddd);background:#fff;color:var(--color-fg-muted,#667);box-shadow:0 2px 8px #0001;cursor:pointer}
 .ss-lg-back{position:fixed;inset:0;background:#0f2a4a66;z-index:100;display:grid;place-items:center;padding:16px}
 .ss-lg{background:#fff;border-radius:14px;box-shadow:0 12px 40px #0003;width:min(380px,100%);padding:22px 22px 18px;display:grid;gap:12px;font-family:var(--font-anthropic-sans,system-ui);color:#1b1f17}
 .ss-lg h2{margin:0;font-size:18px}.ss-lg p{margin:0;font-size:13px;color:#667060;line-height:1.45}
@@ -253,13 +159,7 @@ ${ready ? `<label>Password<input type="password" name="pw" autocomplete="current
       if (token()) { if (confirm('Keluar dari mode admin?')) { memTok = ''; ss.del(tokenKey); ss.del(whoKey); paint(); location.reload(); } return; }
       openLogin();
     });
-    const pills = document.createElement('div'); pills.id = 'ss-pills';
-    if ((window.SS_ACCESS_KEYS || []).length) {
-      const lk = document.createElement('button'); lk.type = 'button'; lk.id = 'ss-lock'; lk.textContent = 'Kunci dashboard';
-      lk.onclick = () => { window.SSGate.lock(); };
-      pills.append(lk);
-    }
-    pills.append(b); document.body.appendChild(pills);
+    document.body.appendChild(b);
     function openLogin() {
       const keys = Array.isArray(window.SS_ADMIN_KEYS) ? window.SS_ADMIN_KEYS : [];
       const back = document.createElement('div'); back.className = 'ss-lg-back';

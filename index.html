@@ -16,7 +16,6 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
 <script src="admin-keys.js"></script>
-<script src="access.js"></script>
 <script src="shim-auth.js"></script>
 <script src="shim.js"></script>
 </head>
@@ -1119,7 +1118,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
   </div>
 </div>
 
-<script type="text/x-ss">
+<script>
 // Lapisan data: membaca dataset lewat dash, dan bisa langsung memakai data hasil unggahan di tab Update Data Bulanan.
 window.SSD = (() => {
   const OV = {}, CALC = {}, FN = [], cache = {};
@@ -1142,7 +1141,7 @@ window.SSD = (() => {
   };
 })();
 </script>
-<script type="text/x-ss">
+<script>
 (() => {
   const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'penyulang', 'update', 'harian'];
   window.SSC = ['var(--x-c0)', 'var(--x-c1)', 'var(--x-c2)', 'var(--x-c3)', 'var(--x-c4)', 'var(--x-c5)', 'var(--x-c6)', 'var(--x-c7)'];
@@ -1172,7 +1171,7 @@ window.SSD = (() => {
   SSD.onData(() => show(dash.params().tab));
 })();
 </script>
-<script type="text/x-ss">
+<script>
 SSD.calc('capaian', {
   title: 'Capaian per UID dan wilayah',
   description: 'Nilai kumulatif 2026 per UID/wilayah untuk SAIDI, SAIFI dan ENS per komponen, perbandingannya dengan bulan yang sama 2025, rasio realisasi kewenangan terhadap target, dan capaian = 2 − (realisasi kumulatif ÷ target bulan itu).',
@@ -1264,7 +1263,7 @@ SSD.calc('up3_yoy', {
 });
 </script>
 
-<script type="text/x-ss">
+<script>
 (() => {
   const BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   const BLNF = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -1859,7 +1858,7 @@ SSD.calc('up3_yoy', {
 })();
 </script>
 
-<script type="text/x-ss">
+<script>
 (() => {
   const $ = (id) => document.getElementById(id);
   const F = [
@@ -2082,9 +2081,9 @@ SSD.calc('up3_yoy', {
 })();
 </script>
 
-<script type="text/x-ss" src="peny-tab.js"></script>
+<script src="peny-tab.js"></script>
 
-<script type="text/x-ss">
+<script>
 (() => {
   const $ = (id) => document.getElementById(id);
   const BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -2127,7 +2126,7 @@ SSD.calc('up3_yoy', {
   });
 })();
 </script>
-<script type="text/x-ss">
+<script>
 (() => {
 
 let YEAR, N, INIT, RUNNING, TGL, CAP, RAW;
@@ -2286,8 +2285,8 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 })();
 </script>
 
-<script type="text/x-ss" src="html-to-image.js"></script>
-<script type="text/x-ss">
+<script src="html-to-image.js"></script>
+<script>
 (() => {
   const $ = (id) => document.getElementById(id);
   const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -2336,8 +2335,8 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 })();
 </script>
 
-<script type="text/x-ss" src="apkt-parser.js"></script>
-<script type="text/x-ss">
+<script src="apkt-parser.js"></script>
+<script>
 (() => {
   const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   const UNITS = ['ACEH', 'SUMUT', 'SUMBAR', 'RKR', 'S2JB', 'BABEL', 'LAMPUNG', 'KALBAR', 'KSKT', 'KALTIMRA', 'SUMKAL'];
@@ -2453,7 +2452,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 })();
 </script>
 
-<script type="text/x-ss">
+<script>
 (() => {
   const BLN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
@@ -2478,16 +2477,16 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
   window.SSDbInfo = { harian: (iso, periode, sumber) => { INFO.harian = { tab: 'harian', diperbarui: iso, periode, sumber, live: true }; paint(); } };
 })();
 </script>
-<script type="text/x-ss" src="rekap-tab.js"></script>
-<script type="text/x-ss" src="tren-bulanan.js"></script>
-<script type="text/x-ss" src="png-export.js"></script>
-<script type="text/x-ss" src="gj-tab.js"></script>
-<script type="text/x-ss">document.getElementById('g-mx-dl').addEventListener('click', () => { const c = window.SSGRc || { per: '' }; window.SSExport({ card: 'g-matriks-card', btn: 'g-mx-dl', msg: 'g-mx-msg', preview: 'g-mx-pv', filename: `Matriks_Unit_x_Bulan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
-<script type="text/x-ss">document.getElementById('g-rc-dl').addEventListener('click', () => { const c = window.SSGRc || { scope: '', per: '' }; window.SSExport({ hideCols: ['Perubahan', 'Porsi'], card: 'g-rincian-card', btn: 'g-rc-dl', msg: 'g-rc-msg', preview: 'g-rc-pv', caption: `Jumlah No. Laporan unik per bulan · ${c.scope} · ${c.per}. % Distribusi = laporan bidang Distribusi ÷ total laporan.`, filename: `Rincian_Bulanan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
-<script type="text/x-ss" src="kc-tab.js"></script>
-<script type="text/x-ss" src="dp-tab.js"></script>
-<script type="text/x-ss" src="upd-core.js"></script>
-<script type="text/x-ss" src="upd-bulanan.js"></script>
+<script src="rekap-tab.js"></script>
+<script src="tren-bulanan.js"></script>
+<script src="png-export.js"></script>
+<script src="gj-tab.js"></script>
+<script>document.getElementById('g-mx-dl').addEventListener('click', () => { const c = window.SSGRc || { per: '' }; window.SSExport({ card: 'g-matriks-card', btn: 'g-mx-dl', msg: 'g-mx-msg', preview: 'g-mx-pv', filename: `Matriks_Unit_x_Bulan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
+<script>document.getElementById('g-rc-dl').addEventListener('click', () => { const c = window.SSGRc || { scope: '', per: '' }; window.SSExport({ hideCols: ['Perubahan', 'Porsi'], card: 'g-rincian-card', btn: 'g-rc-dl', msg: 'g-rc-msg', preview: 'g-rc-pv', caption: `Jumlah No. Laporan unik per bulan · ${c.scope} · ${c.per}. % Distribusi = laporan bidang Distribusi ÷ total laporan.`, filename: `Rincian_Bulanan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
+<script src="kc-tab.js"></script>
+<script src="dp-tab.js"></script>
+<script src="upd-core.js"></script>
+<script src="upd-bulanan.js"></script>
 
 </div>
 </body>

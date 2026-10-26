@@ -26,21 +26,20 @@ button:disabled { opacity:.6; cursor:wait; }
 .msg { font-size:13px; min-height:1.2em; }
 .msg.bad { color:var(--bad); } .msg.ok { color:var(--ok); }
 ul { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
-#list li, .list li { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; }
-#list li button, .list li button { padding:5px 10px; font-size:12.5px; }
+#list li { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; }
+#list li button { padding:5px 10px; font-size:12.5px; }
 ol { margin:0; padding-left:20px; font-size:14px; line-height:1.6; color:var(--muted); }
 code { font-size:12.5px; background:#f3f5f1; padding:1px 5px; border-radius:4px; color:var(--fg); }
 a { color:#2563A6; }
 </style>
 <script src="config.js"></script>
 <script src="admin-keys.js"></script>
-<script src="access.js"></script>
 </head>
 <body>
 <main>
   <div>
     <h1>Atur admin dashboard</h1>
-    <p>Halaman ini untuk pemilik repo. Di sini Anda mengatur password untuk membuka dashboard, serta akun admin (nama dan password) yang boleh menyimpan unggahan data.</p>
+    <p>Halaman ini untuk pemilik repo. Di sini Anda membuat atau menghapus akun admin (nama dan password) yang boleh menyimpan unggahan data di dashboard.</p>
   </div>
 
   <section class="card" aria-labelledby="t-token">
@@ -54,33 +53,8 @@ a { color:#2563A6; }
     <p>Token hanya dipakai di halaman ini untuk dienkripsi dengan password admin, lalu disimpan ke <code>admin-keys.js</code> di repo. Token aslinya tidak pernah disimpan dalam bentuk terbaca.</p>
   </section>
 
-  <section class="card" aria-labelledby="t-acc">
-    <h2 id="t-acc">2. Password akses dashboard</h2>
-    <div id="acc-new" hidden>
-      <p>Belum aktif. Saat diaktifkan, semua file data di repo dienkripsi sehingga dashboard hanya bisa dibuka dengan password ini. Proses ini perlu token di langkah 1 dan memakan waktu sekitar 1 menit.</p>
-      <div class="grid2" style="margin-top:12px">
-        <label>Password akses<input id="a1" type="password" autocomplete="new-password"></label>
-        <label>Ulangi password<input id="a2" type="password" autocomplete="new-password"></label>
-      </div>
-      <div style="margin-top:12px"><button class="pri" id="acc-on">Aktifkan password akses</button></div>
-    </div>
-    <div id="acc-have" hidden>
-      <p>Aktif. Tambah password baru (mis. untuk kelompok pengguna lain) atau ganti password dengan memakai salah satu password akses yang sekarang.</p>
-      <ul id="acc-list" class="list" style="margin-top:10px"></ul>
-      <label style="margin-top:10px">Password akses yang sekarang<input id="a0" type="password" autocomplete="current-password"></label>
-      <label>Label password<input id="al" autocomplete="off" placeholder="mis. Pengguna UID"></label>
-      <div class="grid2">
-        <label>Password baru<input id="a3" type="password" autocomplete="new-password"></label>
-        <label>Ulangi password baru<input id="a4" type="password" autocomplete="new-password"></label>
-      </div>
-      <p>Label yang sudah ada akan diganti passwordnya.</p>
-      <div><button class="pri" id="acc-add">Simpan password akses</button></div>
-    </div>
-    <div class="msg" id="msg-acc" role="status"></div>
-  </section>
-
   <section class="card" aria-labelledby="t-add">
-    <h2 id="t-add">3. Tambah atau ganti password admin</h2>
+    <h2 id="t-add">2. Tambah atau ganti password admin</h2>
     <label>Nama admin<input id="nama" autocomplete="off" placeholder="mis. Admin Sumkal"></label>
     <div class="grid2">
       <label>Password<input id="pw1" type="password" autocomplete="new-password"></label>
@@ -172,104 +146,6 @@ a { color:#2563A6; }
       keys = list; render(); msg('msg-list', `Admin "${nama}" dihapus.`, 'ok');
     } catch (e) { msg('msg-list', e.message || String(e), 'bad'); btn.disabled = false; }
   }
-
-  // ===== password akses dashboard =====
-  const A = window.SSAuthCore;
-  let acc = Array.isArray(window.SS_ACCESS_KEYS) ? window.SS_ACCESS_KEYS.slice() : [];
-  const accApi = `https://api.github.com/repos/${repoPath}/contents/access.js`;
-  const fileApi = (p) => `https://api.github.com/repos/${repoPath}/contents/${p}`;
-  function accRender() {
-    $('acc-new').hidden = acc.length > 0; $('acc-have').hidden = acc.length === 0;
-    const ul = $('acc-list'); ul.replaceChildren();
-    acc.forEach((k, i) => {
-      const li = document.createElement('li'); const s = document.createElement('span'); s.textContent = k.nama;
-      const b = document.createElement('button'); b.textContent = 'Hapus'; b.disabled = acc.length < 2; b.title = acc.length < 2 ? 'Minimal harus ada satu password akses' : '';
-      b.onclick = () => accRemove(i, b); li.append(s, b); ul.append(li);
-    });
-  }
-  async function accLatest(tok) {
-    const r = await fetch(accApi + '?ref=' + branch + '&t=' + Date.now(), { headers: hd(tok), cache: 'no-store' });
-    if (r.status === 404) return { sha: undefined, list: [] };
-    if (!r.ok) throw new Error('Gagal membaca access.js (GitHub ' + r.status + ').');
-    const j = await r.json(); const m = unb64(j.content || '').match(/SS_ACCESS_KEYS\s*=\s*(\[[\s\S]*\])\s*;/);
-    return { sha: j.sha, list: m ? JSON.parse(m[1]) : [] };
-  }
-  async function accSave(tok, list, sha, message) {
-    const body = '// Password akses dashboard. Dibuat otomatis oleh admin-setup.html — jangan diedit manual.\n// Tiap entri membungkus kunci data dengan satu password akses.\nwindow.SS_ACCESS_KEYS = ' + JSON.stringify(list, null, 1) + ';\n';
-    await putFile(tok, 'access.js', body, sha, message);
-  }
-  async function putFile(tok, path, text, sha, message) {
-    const r = await fetch(fileApi(path), { method: 'PUT', headers: hd(tok), body: JSON.stringify({ message, content: b64(text), sha, branch }) });
-    if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch (e) { /* abaikan */ } throw new Error(`Gagal menyimpan ${path} (GitHub ${r.status}${m ? ': ' + m : ''}).`); }
-  }
-  async function readRaw(tok, path) {
-    const meta = await fetch(fileApi(path) + '?ref=' + branch + '&t=' + Date.now(), { headers: hd(tok), cache: 'no-store' });
-    if (meta.status === 404) return null;
-    if (!meta.ok) throw new Error(`Gagal membaca ${path} (GitHub ${meta.status}).`);
-    const sha = (await meta.json()).sha;
-    const raw = await fetch(fileApi(path) + '?ref=' + branch + '&t=' + Date.now(), { headers: { ...hd(tok), Accept: 'application/vnd.github.raw+json' }, cache: 'no-store' });
-    if (!raw.ok) throw new Error(`Gagal membaca ${path} (GitHub ${raw.status}).`);
-    return { sha, text: await raw.text() };
-  }
-  const plainValue = (id, text) => {
-    if (text.includes('window.__E')) throw new Error(`${id}.js sudah terenkripsi.`);
-    const i = id === 'harian_latest' ? text.indexOf('window.__HARIAN=') + 16 : text.indexOf('"]=') + 3;
-    if (i < 3) throw new Error(`Format ${id}.js tidak dikenali.`);
-    return JSON.parse(text.slice(i).trim().replace(/;\s*$/, ''));
-  };
-  $('acc-on').onclick = async () => {
-    const tok = $('tok').value.trim(), p1 = $('a1').value, p2 = $('a2').value;
-    if (!tok) return msg('msg-acc', 'Isi token GitHub di langkah 1.', 'bad');
-    if (p1.length < 10) return msg('msg-acc', 'Password minimal 10 karakter.', 'bad');
-    if (p1 !== p2) return msg('msg-acc', 'Kedua password tidak sama.', 'bad');
-    const btn = $('acc-on'); btn.disabled = true;
-    try {
-      msg('msg-acc', 'Memeriksa token…'); await checkToken(tok);
-      const cur = await accLatest(tok); if (cur.list.length) { acc = cur.list; accRender(); throw new Error('Password akses ternyata sudah aktif. Muat ulang halaman ini.'); }
-      const key = A.newDataKey(); const ids = [...A.FILES, 'harian_latest'];
-      // baca dulu semua file agar tidak setengah jalan bila ada yang gagal dibaca
-      const files = [];
-      for (const [n, id] of ids.entries()) { msg('msg-acc', `Membaca data ${n + 1} dari ${ids.length}…`); const f = await readRaw(tok, id + '.js'); if (f) files.push({ id, sha: f.sha, val: plainValue(id, f.text) }); }
-      for (const [n, f] of files.entries()) { msg('msg-acc', `Mengenkripsi dan menyimpan data ${n + 1} dari ${files.length}…`); await putFile(tok, f.id + '.js', await A.encFile(key, f.id, f.val), f.sha, `Enkripsi data ${f.id}`); }
-      msg('msg-acc', 'Menyimpan password akses…');
-      const entry = await A.wrapKey('Password utama', p1, key);
-      await accSave(tok, [entry], cur.sha, 'Aktifkan password akses dashboard');
-      acc = [entry]; accRender(); $('a1').value = ''; $('a2').value = '';
-      msg('msg-acc', 'Password akses aktif dan semua data sudah terenkripsi. Dashboard meminta password setelah GitHub Pages diperbarui (1–2 menit).', 'ok');
-    } catch (e) { msg('msg-acc', e.message || String(e), 'bad'); }
-    finally { btn.disabled = false; }
-  };
-  $('acc-add').onclick = async () => {
-    const tok = $('tok').value.trim(), p0 = $('a0').value, lbl = $('al').value.trim(), p3 = $('a3').value, p4 = $('a4').value;
-    if (!tok) return msg('msg-acc', 'Isi token GitHub di langkah 1.', 'bad');
-    if (!lbl) return msg('msg-acc', 'Isi label password.', 'bad');
-    if (p3.length < 10) return msg('msg-acc', 'Password baru minimal 10 karakter.', 'bad');
-    if (p3 !== p4) return msg('msg-acc', 'Kedua password baru tidak sama.', 'bad');
-    const btn = $('acc-add'); btn.disabled = true;
-    try {
-      msg('msg-acc', 'Memeriksa token…'); await checkToken(tok);
-      const cur = await accLatest(tok);
-      let key; try { key = await A.unlock(cur.list, p0); } catch (e) { throw new Error('Password akses yang sekarang salah.'); }
-      msg('msg-acc', 'Menyimpan…');
-      const list = cur.list.filter((k) => k.nama.toLowerCase() !== lbl.toLowerCase()); list.push(await A.wrapKey(lbl, p3, key));
-      await accSave(tok, list, cur.sha, `Atur password akses: ${lbl}`);
-      acc = list; accRender(); ['a0', 'a3', 'a4'].forEach((x) => { $(x).value = ''; });
-      msg('msg-acc', `Password akses "${lbl}" tersimpan.`, 'ok');
-    } catch (e) { msg('msg-acc', e.message || String(e), 'bad'); }
-    finally { btn.disabled = false; }
-  };
-  async function accRemove(i, btn) {
-    const tok = $('tok').value.trim(); if (!tok) return msg('msg-acc', 'Isi token GitHub di langkah 1 untuk menghapus password.', 'bad');
-    const nama = acc[i].nama; if (!confirm(`Hapus password akses "${nama}"?`)) return;
-    btn.disabled = true;
-    try {
-      await checkToken(tok); const cur = await accLatest(tok);
-      const list = cur.list.filter((k) => k.nama !== nama); if (!list.length) throw new Error('Minimal harus ada satu password akses.');
-      await accSave(tok, list, cur.sha, `Hapus password akses: ${nama}`);
-      acc = list; accRender(); msg('msg-acc', `Password akses "${nama}" dihapus.`, 'ok');
-    } catch (e) { msg('msg-acc', e.message || String(e), 'bad'); btn.disabled = false; }
-  }
-  accRender();
   render();
 })();
 </script>

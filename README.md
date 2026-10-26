@@ -20,15 +20,6 @@ Versi web dari artifact "SAIDI SAIFI Sumkal 2026" untuk GitHub Pages. Pembaca cu
 
 Jika nama repo berbeda, ubah `repo` di `config.js`.
 
-## Password akses dashboard
-Dashboard hanya terbuka setelah password akses dimasukkan. Semua file data di repo dienkripsi (AES-GCM 256) dengan satu kunci acak, dan kunci itu hanya bisa dibuka dengan password akses. Jadi walaupun repo public, isi data tidak bisa dibaca tanpa password.
-
-1. Buat token GitHub (lihat langkah di bawah), lalu buka `admin-setup.html`.
-2. Di bagian **Password akses dashboard**, isi password lalu klik **Aktifkan password akses**. Semua file data akan dienkripsi.
-3. Untuk menambah atau mengganti password akses (mis. password terpisah untuk kelompok pengguna lain), isi salah satu password akses yang sekarang, label, dan password baru.
-
-Pembaca yang mencentang **Ingat di perangkat ini** tidak perlu mengetik password lagi di perangkat tersebut sampai menekan **Kunci dashboard**.
-
 ## Update data dari dashboard (admin)
 Pembaca biasa hanya bisa melihat dan mengunduh PNG. Untuk menyimpan unggahan (tab Update Data Bulanan dan tombol Update laporan harian), admin login dengan nama dan password.
 
