@@ -1,5 +1,5 @@
 // Pengganti layanan dashboard Claude untuk versi web mandiri (GitHub Pages).
-// - Data dibaca dari data/<id>.js (dimuat sebelum halaman, lihat index.html).
+// - Data dibaca dari <id>.js (dimuat sebelum halaman, lihat index.html).
 // - Pilihan filter disimpan per pembaca di browser.
 // - Unggahan dari tab Update Data Bulanan / Laporan Harian disimpan ke repo GitHub
 //   memakai token admin (fine-grained, izin Contents: Read and write untuk repo ini saja).
@@ -96,12 +96,12 @@
           const id = m[1]; const src = v && v.source; const bid = src && String(src.url || '').replace('/_blob/', '');
           const blob = blobs.get(bid); if (!blob) throw new Error('file unggahan tidak ditemukan');
           const rows = parseRows(await blob.text(), src.name);
-          await ghPut(`data/${id}.js`, asJs(id, rows), `Update data ${id} dari dashboard`);
+          await ghPut(`${id}.js`, asJs(id, rows), `Update data ${id} dari dashboard`);
           D[id] = rows; window.__SSInvalidate();
         },
         async set(v) {
           if (path !== 'harian/latest') throw new Error('jalur tidak didukung: ' + path);
-          await ghPut('data/harian_latest.js', `window.__HARIAN=${JSON.stringify(v)};\n`, 'Update laporan harian dari dashboard');
+          await ghPut('harian_latest.js', `window.__HARIAN=${JSON.stringify(v)};\n`, 'Update laporan harian dari dashboard');
           window.__HARIAN = v; harianSubs.forEach((f) => f({ exists: true, data: () => v }));
         },
         onSnapshot(cb) {
