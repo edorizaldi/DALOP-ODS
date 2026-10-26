@@ -115,7 +115,7 @@ a { color:#2563A6; }
   async function save(tok, list, sha, message) {
     const body = '// Daftar admin dashboard. Dibuat otomatis oleh admin-setup.html — jangan diedit manual.\n// Isi "data" adalah token GitHub yang terenkripsi dengan password masing-masing admin.\nwindow.SS_ADMIN_KEYS = ' + JSON.stringify(list, null, 1) + ';\n';
     const r = await fetch(api, { method: 'PUT', headers: hd(tok), body: JSON.stringify({ message, content: b64(body), sha, branch }) });
-    if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch (e) { /* abaikan */ } throw new Error('Gagal menyimpan ke GitHub (' + r.status + (m ? ': ' + m : '') + ').'); }
+    if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch (e) { /* abaikan */ } if (r.status === 403) throw new Error('Token belum boleh menulis ke repo ini. Edit token di github.com/settings/personal-access-tokens: Repository access → Only select repositories → pilih ' + repoPath + ', lalu Permissions → Contents → Read and write. Simpan, lalu coba lagi.'); throw new Error('Gagal menyimpan ke GitHub (' + r.status + (m ? ': ' + m : '') + ').'); }
   }
   $('add').onclick = async () => {
     const tok = $('tok').value.trim(), nama = $('nama').value.trim(), p1 = $('pw1').value, p2 = $('pw2').value;

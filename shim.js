@@ -75,7 +75,7 @@
     if (cur.ok) sha = (await cur.json()).sha; else if (cur.status !== 404) throw Object.assign(new Error('GitHub ' + cur.status), { code: 'gh-' + cur.status });
     const content = await b64(new Blob([text], { type: 'text/plain' }));
     const r = await fetch(api, { method: 'PUT', headers: hd, body: JSON.stringify({ message, content, sha, branch: GH.branch }) });
-    if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch (e) { /* abaikan */ } throw Object.assign(new Error('GitHub ' + r.status + (m ? ': ' + m : '')), { code: 'gh-' + r.status }); }
+    if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch (e) { /* abaikan */ } if (r.status === 403) m = 'token admin belum punya izin Contents: Read and write untuk repo ini'; throw Object.assign(new Error('GitHub ' + r.status + (m ? ': ' + m : '')), { code: 'gh-' + r.status }); }
   }
   const asJs = (key, val) => `window.__D=window.__D||{};window.__D[${JSON.stringify(key)}]=${JSON.stringify(val)};\n`;
   const parseRows = (text, name) => {
