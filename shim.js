@@ -160,8 +160,16 @@
       openLogin();
     });
     document.body.appendChild(b);
-    function openLogin() {
-      const keys = Array.isArray(window.SS_ADMIN_KEYS) ? window.SS_ADMIN_KEYS : [];
+    // ambil daftar admin terbaru (lewati cache browser/CDN) agar admin baru langsung bisa login
+    async function freshKeys() {
+      try {
+        const r = await fetch('admin-keys.js?t=' + Date.now(), { cache: 'no-store' });
+        if (r.ok) { const m = (await r.text()).match(/SS_ADMIN_KEYS\s*=\s*(\[[\s\S]*\])\s*;/); if (m) window.SS_ADMIN_KEYS = JSON.parse(m[1]); }
+      } catch (e) { /* pakai daftar yang sudah dimuat */ }
+      return Array.isArray(window.SS_ADMIN_KEYS) ? window.SS_ADMIN_KEYS : [];
+    }
+    async function openLogin() {
+      const keys = await freshKeys();
       const back = document.createElement('div'); back.className = 'ss-lg-back';
       const f = document.createElement('form'); f.className = 'ss-lg'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-modal', 'true'); f.setAttribute('aria-label', 'Login admin');
       const close = () => { back.remove(); document.removeEventListener('keydown', esc); b.focus(); };
