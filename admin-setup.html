@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atur Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --fg:#1b1f17; --muted:#667060; --line:#dfe3da; --bg:#eef3f7; --card:#fff; --acc:#C8E86B; --accb:#b5d75a; --navy:#0F2A4A; --bad:#B3261E; --ok:#2F7A3A; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font-family:Inter,system-ui,sans-serif; }
+main { max-width:640px; margin:0 auto; padding:28px 16px 48px; display:grid; gap:16px; }
+h1 { margin:0; font-size:22px; color:var(--navy); }
+h2 { margin:0 0 4px; font-size:16px; }
+p { margin:0; font-size:14px; line-height:1.55; color:var(--muted); }
+.card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; display:grid; gap:12px; }
+label { display:grid; gap:5px; font-size:12.5px; font-weight:600; color:#4a5245; }
+input { font:inherit; font-size:14px; padding:9px 11px; border:1px solid #cfd4cb; border-radius:8px; width:100%; }
+input:focus { outline:2px solid var(--acc); border-color:#8fb33a; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:520px) { .grid2 { grid-template-columns:1fr; } }
+button { font:inherit; font-size:13.5px; font-weight:600; padding:9px 16px; border-radius:8px; border:1px solid #cfd4cb; background:#fff; cursor:pointer; }
+button.pri { background:var(--acc); border-color:var(--accb); color:#1b2a0a; }
+button:disabled { opacity:.6; cursor:wait; }
+.msg { font-size:13px; min-height:1.2em; }
+.msg.bad { color:var(--bad); } .msg.ok { color:var(--ok); }
+ul { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+#list li { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; }
+#list li button { padding:5px 10px; font-size:12.5px; }
+ol { margin:0; padding-left:20px; font-size:14px; line-height:1.6; color:var(--muted); }
+code { font-size:12.5px; background:#f3f5f1; padding:1px 5px; border-radius:4px; color:var(--fg); }
+a { color:#2563A6; }
+</style>
+<script src="config.js"></script>
+<script src="admin-keys.js"></script>
+</head>
+<body>
+<main>
+  <div>
+    <h1>Atur admin dashboard</h1>
+    <p>Halaman ini untuk pemilik repo. Di sini Anda membuat atau menghapus akun admin (nama dan password) yang boleh menyimpan unggahan data di dashboard.</p>
+  </div>
+
+  <section class="card" aria-labelledby="t-token">
+    <h2 id="t-token">1. Token GitHub</h2>
+    <ol>
+      <li>Buka GitHub → <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</b>.</li>
+      <li><b>Repository access</b>: <i>Only select repositories</i> → pilih repo dashboard ini.</li>
+      <li><b>Permissions → Contents</b>: <i>Read and write</i>. Atur masa berlaku token.</li>
+    </ol>
+    <label>Token GitHub<input id="tok" type="password" autocomplete="off" placeholder="github_pat_…"></label>
+    <p>Token hanya dipakai di halaman ini untuk dienkripsi dengan password admin, lalu disimpan ke <code>admin-keys.js</code> di repo. Token aslinya tidak pernah disimpan dalam bentuk terbaca.</p>
+  </section>
+
+  <section class="card" aria-labelledby="t-add">
+    <h2 id="t-add">2. Tambah atau ganti password admin</h2>
+    <label>Nama admin<input id="nama" autocomplete="off" placeholder="mis. Admin Sumkal"></label>
+    <div class="grid2">
+      <label>Password<input id="pw1" type="password" autocomplete="new-password"></label>
+      <label>Ulangi password<input id="pw2" type="password" autocomplete="new-password"></label>
+    </div>
+    <p>Minimal 10 karakter. Gunakan password yang tidak dipakai di tempat lain. Nama yang sudah ada akan diganti passwordnya.</p>
+    <div><button class="pri" id="add">Simpan admin</button></div>
+    <div class="msg" id="msg-add" role="status"></div>
+  </section>
+
+  <section class="card" aria-labelledby="t-list">
+    <h2 id="t-list">Admin terdaftar</h2>
+    <ul id="list"></ul>
+    <div class="msg" id="msg-list" role="status"></div>
+    <p>Menghapus admin juga memerlukan token di langkah 1. Perubahan aktif di dashboard setelah GitHub Pages diperbarui (1–2 menit).</p>
+  </section>
+
+  <p><a href="./">← Kembali ke dashboard</a></p>
+</main>
+<script src="shim-auth.js"></script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const CFG = window.SS_CONFIG || {};
+  const repoPath = `${CFG.owner}/${CFG.repo}`, branch = CFG.branch || 'main';
+  let keys = Array.isArray(window.SS_ADMIN_KEYS) ? window.SS_ADMIN_KEYS.slice() : [];
+  const msg = (id, t, cls) => { const m = $(id); m.textContent = t; m.className = 'msg' + (cls ? ' ' + cls : ''); };
+  const hd = (tok) => ({ Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' });
+  const api = `https://api.github.com/repos/${repoPath}/contents/admin-keys.js`;
+  const b64 = (str) => { const u8 = new TextEncoder().encode(str); let s = ''; u8.forEach((c) => { s += String.fromCharCode(c); }); return btoa(s); };
+  const unb64 = (b) => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, '')), (c) => c.charCodeAt(0)));
+
+  function render() {
+    const ul = $('list'); ul.replaceChildren();
+    if (!keys.length) { const li = document.createElement('li'); li.textContent = 'Belum ada admin.'; ul.append(li); return; }
+    keys.forEach((k, i) => {
+      const li = document.createElement('li'); const s = document.createElement('span'); s.textContent = k.nama;
+      const b = document.createElement('button'); b.textContent = 'Hapus'; b.onclick = () => remove(i, b);
+      li.append(s, b); ul.append(li);
+    });
+  }
+  async function checkToken(tok) {
+    const r = await fetch(`https://api.github.com/repos/${repoPath}`, { headers: hd(tok), cache: 'no-store' });
+    if (r.status === 401) throw new Error('Token tidak valid atau sudah kedaluwarsa.');
+    if (!r.ok) throw new Error(`Token tidak bisa membuka repo ${repoPath} (GitHub ${r.status}).`);
+    const j = await r.json();
+    if (j.permissions && j.permissions.push === false) throw new Error('Token belum punya izin Contents: Read and write untuk repo ini.');
+  }
+  // baca daftar terbaru dari repo agar tidak menimpa perubahan lain
+  async function latest(tok) {
+    const r = await fetch(api + '?ref=' + branch + '&t=' + Date.now(), { headers: hd(tok), cache: 'no-store' });
+    if (r.status === 404) return { sha: undefined, list: [] };
+    if (!r.ok) throw new Error('Gagal membaca admin-keys.js (GitHub ' + r.status + ').');
+    const j = await r.json(); const text = unb64(j.content || '');
+    const m = text.match(/SS_ADMIN_KEYS\s*=\s*(\[[\s\S]*\])\s*;/);
+    return { sha: j.sha, list: m ? JSON.parse(m[1]) : [] };
+  }
+  async function save(tok, list, sha, message) {
+    const body = '// Daftar admin dashboard. Dibuat otomatis oleh admin-setup.html — jangan diedit manual.\n// Isi "data" adalah token GitHub yang terenkripsi dengan password masing-masing admin.\nwindow.SS_ADMIN_KEYS = ' + JSON.stringify(list, null, 1) + ';\n';
+    const r = await fetch(api, { method: 'PUT', headers: hd(tok), body: JSON.stringify({ message, content: b64(body), sha, branch }) });
+    if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch (e) { /* abaikan */ } throw new Error('Gagal menyimpan ke GitHub (' + r.status + (m ? ': ' + m : '') + ').'); }
+  }
+  $('add').onclick = async () => {
+    const tok = $('tok').value.trim(), nama = $('nama').value.trim(), p1 = $('pw1').value, p2 = $('pw2').value;
+    if (!tok) return msg('msg-add', 'Isi token GitHub di langkah 1.', 'bad');
+    if (!nama) return msg('msg-add', 'Isi nama admin.', 'bad');
+    if (p1.length < 10) return msg('msg-add', 'Password minimal 10 karakter.', 'bad');
+    if (p1 !== p2) return msg('msg-add', 'Kedua password tidak sama.', 'bad');
+    const btn = $('add'); btn.disabled = true;
+    try {
+      msg('msg-add', 'Memeriksa token…'); await checkToken(tok);
+      msg('msg-add', 'Mengenkripsi token…'); const entry = await window.SSAuthCore.sealToken(nama, p1, tok);
+      const cur = await latest(tok);
+      const list = cur.list.filter((k) => k.nama.toLowerCase() !== nama.toLowerCase()); list.push(entry);
+      msg('msg-add', 'Menyimpan ke repo…'); await save(tok, list, cur.sha, `Atur admin dashboard: ${nama}`);
+      keys = list; render(); $('pw1').value = ''; $('pw2').value = '';
+      msg('msg-add', `Admin "${nama}" tersimpan. Login di dashboard bisa dipakai setelah GitHub Pages diperbarui (1–2 menit).`, 'ok');
+    } catch (e) { msg('msg-add', e.message || String(e), 'bad'); }
+    finally { btn.disabled = false; }
+  };
+  async function remove(i, btn) {
+    const tok = $('tok').value.trim(); if (!tok) return msg('msg-list', 'Isi token GitHub di langkah 1 untuk menghapus admin.', 'bad');
+    const nama = keys[i].nama; if (!confirm(`Hapus admin "${nama}"?`)) return;
+    btn.disabled = true;
+    try {
+      await checkToken(tok); const cur = await latest(tok);
+      const list = cur.list.filter((k) => k.nama !== nama);
+      await save(tok, list, cur.sha, `Hapus admin dashboard: ${nama}`);
+      keys = list; render(); msg('msg-list', `Admin "${nama}" dihapus.`, 'ok');
+    } catch (e) { msg('msg-list', e.message || String(e), 'bad'); btn.disabled = false; }
+  }
+  render();
+})();
+</script>
+</body>
+</html>

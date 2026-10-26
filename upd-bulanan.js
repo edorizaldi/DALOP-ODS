@@ -40,7 +40,7 @@
   }
   const doneText = (r, what) => r.saved
     ? `${what} sudah diperbarui dan disimpan. Semua tab terkait langsung memakai data baru, dan siapa pun yang membuka dashboard melihat data yang sama.`
-    : `${what} sudah dipakai di tampilan ini, tetapi belum tersimpan untuk pembaca lain (${r.reason === 'none' ? 'belum login admin' : 'penyimpanan menolak: ' + r.reason}). Untuk menyimpannya, klik "Login admin untuk update data" (kanan bawah), lalu unggah ulang file yang sama.`;
+    : `${what} sudah dipakai di tampilan ini, tetapi belum tersimpan untuk pembaca lain (${r.reason === 'none' ? 'belum login admin' : 'penyimpanan menolak: ' + r.reason}). Untuk menyimpannya, klik "Login admin" (kanan bawah), lalu unggah ulang file yang sama.`;
 
   // ---------- panel buka/tutup ----------
   const openers = document.querySelectorAll('[data-up-open]');

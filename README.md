@@ -21,11 +21,18 @@ Versi web dari artifact "SAIDI SAIFI Sumkal 2026" untuk GitHub Pages. Pembaca cu
 Jika nama repo berbeda, ubah `repo` di `config.js`.
 
 ## Update data dari dashboard (admin)
-Pembaca biasa hanya bisa melihat dan mengunduh PNG. Untuk menyimpan unggahan (tab Update Data Bulanan dan tombol Update laporan harian), admin perlu token GitHub:
-1. Buka GitHub → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
-2. Pada **Repository access**, pilih **Only select repositories** → `saidi-saifi-sumkal`.
-3. Pada **Permissions → Repository permissions → Contents**, pilih **Read and write**. Atur masa berlaku sesuai kebutuhan.
-4. Di dashboard, klik **Login admin untuk update data** (kanan bawah), lalu tempel token tersebut. Token hanya disimpan di browser itu.
-5. Unggah file seperti biasa. Dashboard menyimpan dataset baru ke folder `data/` di repo. Pembaca lain melihat data baru setelah GitHub Pages selesai memperbarui situs (sekitar 1–2 menit, bisa sampai 10 menit karena cache browser).
+Pembaca biasa hanya bisa melihat dan mengunduh PNG. Untuk menyimpan unggahan (tab Update Data Bulanan dan tombol Update laporan harian), admin login dengan nama dan password.
 
-Jangan bagikan token. Untuk mencabut akses, hapus token di pengaturan GitHub.
+### Membuat akun admin (sekali, oleh pemilik repo)
+1. Buat token GitHub: **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**. Pada **Repository access** pilih repo ini saja, lalu pada **Permissions → Contents** pilih **Read and write**.
+2. Buka `admin-setup.html` di situs dashboard (mis. `https://edorizaldi.github.io/DALOP-ODS/admin-setup.html`).
+3. Tempel token, isi nama admin dan password (minimal 10 karakter), lalu klik **Simpan admin**. Ulangi untuk admin lain bila perlu, dengan token yang sama.
+
+Token disimpan di `admin-keys.js` dalam bentuk terenkripsi (PBKDF2-SHA256 + AES-GCM) dan hanya bisa dibuka dengan password admin. Karena file ini ada di repo public, gunakan password yang panjang dan unik.
+
+### Login dan unggah
+1. Di dashboard, klik **Login admin** (kanan bawah), pilih nama, lalu isi password.
+2. Unggah file seperti biasa. Dashboard menyimpan dataset baru ke repo. Pembaca lain melihat data baru setelah GitHub Pages diperbarui (sekitar 1–2 menit, bisa sampai 10 menit karena cache browser).
+3. Login berlaku sampai tab browser ditutup atau klik **Keluar**.
+
+Untuk mencabut semua akses admin, hapus token di pengaturan GitHub. Untuk mencabut satu admin, hapus namanya di `admin-setup.html`.

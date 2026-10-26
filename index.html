@@ -15,6 +15,8 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
+<script src="admin-keys.js"></script>
+<script src="shim-auth.js"></script>
 <script src="shim.js"></script>
 </head>
 <body>
@@ -2434,7 +2436,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
     }
     msg.textContent = saved
       ? `Infografis diperbarui ke realisasi s.d. ${da} ${BLN[mo - 1]} ${y} dan disimpan di dashboard. Semua yang membuka dashboard melihat data ini; tombol Download juga memakai data baru.`
-      : `Infografis di layar ini sudah memakai data baru (realisasi s.d. ${da} ${BLN[mo - 1]} ${y}) dan tombol Download memakai data ini. Data belum tersimpan untuk pembaca lain: klik "Login admin untuk update data" (kanan bawah), lalu unggah ulang file yang sama.`;
+      : `Infografis di layar ini sudah memakai data baru (realisasi s.d. ${da} ${BLN[mo - 1]} ${y}) dan tombol Download memakai data ini. Data belum tersimpan untuk pembaca lain: klik "Login admin" (kanan bawah), lalu unggah ulang file yang sama.`;
     $('h-src-note').textContent = `Data dari unggahan ${new Date().toISOString().slice(0, 10)} (${pending.file}).`;
     if (window.SSDbInfo) window.SSDbInfo.harian(new Date().toISOString(), `Realisasi s.d. ${da} ${BLN[mo - 1]} ${y}`, pending.file + (saved ? ' (diunggah di dashboard)' : ' (hanya di layar ini, belum tersimpan)'));
     btnA.disabled = false;

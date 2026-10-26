@@ -3,6 +3,8 @@
 // - Pilihan filter disimpan per pembaca di browser.
 // - Unggahan dari tab Update Data Bulanan / Laporan Harian disimpan ke repo GitHub
 //   memakai token admin (fine-grained, izin Contents: Read and write untuk repo ini saja).
+// - Admin login dengan nama + password. Token GitHub disimpan terenkripsi di admin-keys.js
+//   (PBKDF2-SHA256 + AES-GCM); password hanya dipakai di browser untuk membuka token itu.
 (() => {
   'use strict';
   const D = window.__D || (window.__D = {});
@@ -52,8 +54,17 @@
   window.__SSInvalidate = () => { Object.values(calcs).forEach((c) => { c.v = null; }); };
 
   // ---------------- GitHub ----------------
-  const tokenKey = 'ss-gh-token';
-  const token = () => store.get(tokenKey, '');
+  // token hasil login hanya disimpan untuk sesi tab ini (hilang saat tab ditutup)
+  const tokenKey = 'ss-gh-token-s', whoKey = 'ss-admin-name-s';
+  const ss = {
+    get(k) { try { return sessionStorage.getItem(k) || ''; } catch (e) { return ''; } },
+    set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) { /* abaikan */ } },
+    del(k) { try { sessionStorage.removeItem(k); } catch (e) { /* abaikan */ } },
+  };
+  let memTok = ss.get(tokenKey);
+  const token = () => memTok;
+  try { localStorage.removeItem('ss-gh-token'); } catch (e) { /* token lama tidak dipakai lagi */ }
+  const openToken = (entry, pw) => window.SSAuthCore.openToken(entry, pw);
   const b64 = (blob) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
   async function ghPut(path, text, message) {
     if (!GH.owner || !GH.repo) throw Object.assign(new Error('repo GitHub belum diatur'), { code: 'no-repo' });
@@ -124,18 +135,63 @@
   // tanpa token: unggahan laporan harian tetap terbaca, tetapi tidak bisa menyimpan
   const dbReadOnly = { doc(path) { const d = db.doc(path); return { onSnapshot: d.onSnapshot, async set() { throw Object.assign(new Error('belum login admin'), { code: 'no-token' }); }, async update() { throw Object.assign(new Error('belum login admin'), { code: 'no-token' }); } }; } };
 
-  // ---------------- tombol admin ----------------
+  // ---------------- login admin (nama + password) ----------------
   function adminUI() {
+    const css = document.createElement('style');
+    css.textContent = `#ss-admin{position:fixed;right:14px;bottom:14px;z-index:50;font:500 12px var(--font-anthropic-sans,system-ui);padding:7px 12px;border-radius:999px;border:1px solid var(--color-border-line,#ddd);background:#fff;color:var(--color-fg-muted,#667);box-shadow:0 2px 8px #0001;cursor:pointer}
+#ss-admin[data-on="1"]{background:#eef6ee;color:#1F5A28;border-color:#9cc79f}
+.ss-lg-back{position:fixed;inset:0;background:#0f2a4a66;z-index:100;display:grid;place-items:center;padding:16px}
+.ss-lg{background:#fff;border-radius:14px;box-shadow:0 12px 40px #0003;width:min(380px,100%);padding:22px 22px 18px;display:grid;gap:12px;font-family:var(--font-anthropic-sans,system-ui);color:#1b1f17}
+.ss-lg h2{margin:0;font-size:18px}.ss-lg p{margin:0;font-size:13px;color:#667060;line-height:1.45}
+.ss-lg label{display:grid;gap:4px;font-size:12px;font-weight:600;color:#4a5245}
+.ss-lg input,.ss-lg select{font:inherit;font-size:14px;padding:9px 11px;border:1px solid #cfd4cb;border-radius:8px}
+.ss-lg input:focus,.ss-lg select:focus{outline:2px solid #C8E86B;border-color:#8fb33a}
+.ss-lg .ss-lg-err{color:#B3261E;font-size:12.5px;min-height:1em}
+.ss-lg .ss-lg-row{display:flex;gap:8px;justify-content:flex-end}
+.ss-lg button{font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px solid #cfd4cb;background:#fff;cursor:pointer}
+.ss-lg button.pri{background:#C8E86B;border-color:#b5d75a;color:#1b2a0a}.ss-lg button:disabled{opacity:.6;cursor:wait}`;
+    document.head.appendChild(css);
     const b = document.createElement('button');
     b.type = 'button'; b.id = 'ss-admin';
-    const paint = () => { b.textContent = token() ? 'Admin: tersambung ke GitHub (keluar)' : 'Login admin untuk update data'; b.dataset.on = token() ? '1' : '0'; };
+    const paint = () => { const on = !!token(); b.textContent = on ? `Admin: ${ss.get(whoKey) || 'masuk'} · Keluar` : 'Login admin'; b.dataset.on = on ? '1' : '0'; };
     paint();
     b.addEventListener('click', () => {
-      if (token()) { if (confirm('Keluar dari mode admin di browser ini?')) { store.del(tokenKey); paint(); location.reload(); } return; }
-      const t = prompt(`Tempel token GitHub (fine-grained, izin "Contents: Read and write" untuk repo ${GH.owner || '?'}/${GH.repo || '?'}). Token hanya disimpan di browser ini.`);
-      if (t && t.trim()) { store.set(tokenKey, t.trim()); paint(); location.reload(); }
+      if (token()) { if (confirm('Keluar dari mode admin?')) { memTok = ''; ss.del(tokenKey); ss.del(whoKey); paint(); location.reload(); } return; }
+      openLogin();
     });
     document.body.appendChild(b);
+    function openLogin() {
+      const keys = Array.isArray(window.SS_ADMIN_KEYS) ? window.SS_ADMIN_KEYS : [];
+      const back = document.createElement('div'); back.className = 'ss-lg-back';
+      const f = document.createElement('form'); f.className = 'ss-lg'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-modal', 'true'); f.setAttribute('aria-label', 'Login admin');
+      const close = () => { back.remove(); document.removeEventListener('keydown', esc); b.focus(); };
+      const esc = (e) => { if (e.key === 'Escape') close(); };
+      if (!keys.length) {
+        f.innerHTML = '<h2>Login admin</h2><p>Belum ada akun admin. Pemilik repo perlu membuatnya dulu lewat halaman <a href="admin-setup.html">admin-setup.html</a>.</p><div class="ss-lg-row"><button type="button" class="pri">Tutup</button></div>';
+        f.querySelector('button').onclick = close;
+      } else {
+        f.innerHTML = `<h2>Login admin</h2><p>Login untuk menyimpan unggahan data ke dashboard. Pembaca biasa tidak perlu login.</p>
+<label>Nama<select name="nama">${keys.map((k, i) => `<option value="${i}">${String(k.nama).replace(/[<&"]/g, '')}</option>`).join('')}</select></label>
+<label>Password<input name="pw" type="password" autocomplete="current-password" required></label>
+<div class="ss-lg-err" role="alert"></div>
+<div class="ss-lg-row"><button type="button" data-x>Batal</button><button type="submit" class="pri">Masuk</button></div>`;
+        f.querySelector('[data-x]').onclick = close;
+        f.onsubmit = async (e) => {
+          e.preventDefault();
+          const btn = f.querySelector('button[type=submit]'), err = f.querySelector('.ss-lg-err');
+          const k = keys[Number(f.nama.value)]; btn.disabled = true; err.textContent = 'Memeriksa…';
+          try {
+            const tok = await openToken(k, f.pw.value);
+            memTok = tok; ss.set(tokenKey, tok); ss.set(whoKey, k.nama);
+            close(); paint(); location.reload();
+          } catch (x) { err.textContent = 'Nama atau password salah.'; btn.disabled = false; f.pw.select(); }
+        };
+      }
+      back.appendChild(f); back.addEventListener('click', (e) => { if (e.target === back) close(); });
+      document.addEventListener('keydown', esc);
+      document.body.appendChild(back);
+      const first = f.querySelector('input,button'); if (first) first.focus();
+    }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', adminUI); else adminUI();
   window.SS_GH = GH;
