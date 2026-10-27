@@ -1023,14 +1023,6 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <p class="ss-note" id="ks-up-msg" role="status"></p>
     </div>
 <div class="wrap">
-<header>
-  <div>
-    <h1 id="ks-h1">Sistem Kelistrikan SUMKAL · Oktober 2026</h1>
-    <p class="sub">Jumlah sistem grid dan isolated, jam nyala, serta status daya per sistem. Sumber: Database Sistem SUMKAL, sheet NERDA HARIAN dan Monit Defisit.</p>
-  </div>
-  <div class="agg" id="ks-agg"></div>
-</header>
-
 <div class="tabs" role="tablist" aria-label="Halaman">
   <button type="button" role="tab" id="ks-t-dash" aria-selected="true" aria-controls="ks-tab-dash">Dashboard</button>
   <button type="button" role="tab" id="ks-t-upd" aria-selected="false" aria-controls="ks-tab-upd">Update data</button>
@@ -1038,23 +1030,32 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 
 <div id="ks-tab-dash" role="tabpanel" aria-labelledby="ks-t-dash">
 
-<div class="filters" aria-label="Filter">
-  <div class="fg"><span>Lapisan</span><div class="seg" role="group" aria-label="Lapisan" id="ks-m-l"></div></div>
-  <div class="fg"><span>Tanggal</span><div class="datebar">
-    <button type="button" class="dnav" id="ks-d-prev" aria-label="Hari sebelumnya">‹</button>
-    <input type="date" id="ks-d-sel" aria-label="Pilih tanggal">
-    <button type="button" class="dnav" id="ks-d-next" aria-label="Hari berikutnya">›</button>
-  </div></div>
-  <div class="dinfo" id="ks-d-info"></div>
+<div class="ss-hero ks-hero" id="ks-ringkasan">
+  <div class="ss-hero-main">
+    <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>Kondisi sistem kelistrikan · <span id="ks-eb-m">Oktober 2026</span></span>
+    <h1 class="ss-title" id="ks-h1">Kondisi Sistem SUMKAL</h1>
+    <p class="ss-take" id="ks-take">—</p>
+    <div class="agg" id="ks-agg"></div>
+    <div class="ss-filters" aria-label="Filter">
+      <div class="ss-frow"><span class="ss-flabel">Lapisan</span><div class="ss-chips ss-strong" role="group" aria-label="Lapisan" id="ks-m-l"></div></div>
+      <div class="ss-frow"><span class="ss-flabel">Tanggal</span><div class="datebar">
+        <button type="button" class="dnav" id="ks-d-prev" aria-label="Hari sebelumnya">‹</button>
+        <input type="date" id="ks-d-sel" aria-label="Pilih tanggal">
+        <button type="button" class="dnav" id="ks-d-next" aria-label="Hari berikutnya">›</button>
+      </div></div>
+      <div class="dinfo" id="ks-d-info"></div>
+    </div>
+  </div>
+  <figure class="ss-map ks-mapfig">
+    <div class="ss-gauge ks-gauge" id="ks-gauge"><div class="ss-gauge-mid"><div class="ss-gauge-val" id="ks-gauge-v">—</div><div class="ss-gauge-cap" id="ks-gauge-c"></div></div></div>
+    <div class="mapbox">
+      <svg id="ks-map" role="img" aria-label="Peta unit induk Sumatra dan Kalimantan" width="100%" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="mlegend" id="ks-mlegend"></div>
+    <figcaption class="ks-msub" id="ks-msub"></figcaption>
+  </figure>
 </div>
-
-<h2>Peta Sumatra dan Kalimantan</h2>
-<div class="dhead"><p id="ks-msub"></p></div>
-<div class="mapbox" style="margin-top:12px">
-  <svg id="ks-map" role="img" aria-label="Peta unit induk Sumatra dan Kalimantan" width="100%" preserveAspectRatio="xMidYMid meet"></svg>
-  <div class="mlegend" id="ks-mlegend"></div>
-  <div class="mpop" id="ks-mpop" hidden role="dialog" aria-label="Daftar sistem di wilayah"></div>
-</div>
+<div class="mpop ks-below" id="ks-mpop" hidden role="dialog" aria-label="Daftar sistem di wilayah"></div>
 
 <section id="ks-sec-mon">
 <h2>Monitoring sistem Siaga dan Defisit</h2>
@@ -1081,7 +1082,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <div class="tbl"><table id="ks-detail"></table></div>
 
 <h2>Daftar sistem isolated</h2>
-<div class="dhead"><p id="ks-lsub"></p><input type="search" id="ks-q" placeholder="Cari nama sistem" aria-label="Cari nama sistem"></div>
+<div class="dhead"><p id="ks-lsub"></p><input type="search" id="ks-q" placeholder="Cari nama sistem atau UID" aria-label="Cari nama sistem atau UID"></div>
 <div class="tbl tall"><table id="ks-list"></table></div>
 </section>
 </div>
