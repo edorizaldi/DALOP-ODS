@@ -12,7 +12,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 #ss-admin{position:fixed;right:14px;bottom:14px;z-index:50;font:500 12px var(--font-anthropic-sans);padding:7px 12px;border-radius:999px;border:1px solid var(--color-border-line);background:#fff;color:var(--color-fg-muted);box-shadow:0 2px 8px #0001;cursor:pointer}
 #ss-admin[data-on="1"]{background:#eef6ee;color:#1F5A28;border-color:#9cc79f}
 </style>
-<link rel="stylesheet" href="kondisi-tab.css">
+<link rel="stylesheet" href="kondisi-tab.css?v=20261028f">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
@@ -1023,14 +1023,6 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <p class="ss-note" id="ks-up-msg" role="status"></p>
     </div>
 <div class="wrap">
-<header>
-  <div>
-    <h1 id="ks-h1">Sistem Kelistrikan SUMKAL · Oktober 2026</h1>
-    <p class="sub">Jumlah sistem grid dan isolated, jam nyala, serta status daya per sistem. Sumber: Database Sistem SUMKAL, sheet NERDA HARIAN dan Monit Defisit.</p>
-  </div>
-  <div class="agg" id="ks-agg"></div>
-</header>
-
 <div class="tabs" role="tablist" aria-label="Halaman">
   <button type="button" role="tab" id="ks-t-dash" aria-selected="true" aria-controls="ks-tab-dash">Dashboard</button>
   <button type="button" role="tab" id="ks-t-upd" aria-selected="false" aria-controls="ks-tab-upd">Update data</button>
@@ -1038,30 +1030,39 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 
 <div id="ks-tab-dash" role="tabpanel" aria-labelledby="ks-t-dash">
 
-<div class="filters" aria-label="Filter">
-  <div class="fg"><span>Lapisan</span><div class="seg" role="group" aria-label="Lapisan" id="ks-m-l"></div></div>
-  <div class="fg"><span>Tanggal</span><div class="datebar">
-    <button type="button" class="dnav" id="ks-d-prev" aria-label="Hari sebelumnya">‹</button>
-    <input type="date" id="ks-d-sel" aria-label="Pilih tanggal">
-    <button type="button" class="dnav" id="ks-d-next" aria-label="Hari berikutnya">›</button>
-  </div></div>
-  <div class="dinfo" id="ks-d-info"></div>
+<div class="ss-hero ks-hero" id="ks-ringkasan">
+  <div class="ss-hero-main">
+    <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg><span>Kondisi sistem kelistrikan · <span id="ks-eb-m">Oktober 2026</span></span></span>
+    <h1 class="ss-title" id="ks-h1">Kondisi Sistem SUMKAL</h1>
+    <p class="ss-take" id="ks-take">—</p>
+    <div class="ks-qs" id="ks-qs"></div>
+    <div class="ks-filt" aria-label="Filter">
+      <div class="fg"><span>Lapisan</span><div class="ss-chips ss-strong" role="group" aria-label="Lapisan" id="ks-m-l"></div></div>
+      <div class="fg"><span>Tanggal</span><div class="datebar">
+        <button type="button" class="dnav" id="ks-d-prev" aria-label="Hari sebelumnya">‹</button>
+        <input type="date" id="ks-d-sel" aria-label="Pilih tanggal">
+        <button type="button" class="dnav" id="ks-d-next" aria-label="Hari berikutnya">›</button>
+      </div></div>
+      <div class="dinfo" id="ks-d-info"></div>
+    </div>
+  </div>
+  <figure class="ss-map ks-mapfig">
+    <div class="ss-gauge ks-gauge" id="ks-gauge"><div class="ss-gauge-mid"><div class="ss-gauge-val" id="ks-gauge-v">—</div><div class="ss-gauge-cap" id="ks-gauge-c"></div></div></div>
+    <div class="mapbox">
+      <svg id="ks-map" role="img" aria-label="Peta unit induk Sumatra dan Kalimantan" width="100%" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div class="mlegend" id="ks-mlegend"></div>
+    <div class="agg ks-aggrow" id="ks-agg"></div>
+  </figure>
 </div>
-
-<h2>Peta Sumatra dan Kalimantan</h2>
-<div class="dhead"><p id="ks-msub"></p></div>
-<div class="mapbox" style="margin-top:12px">
-  <svg id="ks-map" role="img" aria-label="Peta unit induk Sumatra dan Kalimantan" width="100%" preserveAspectRatio="xMidYMid meet"></svg>
-  <div class="mlegend" id="ks-mlegend"></div>
-  <div class="mpop" id="ks-mpop" hidden role="dialog" aria-label="Daftar sistem di wilayah"></div>
-</div>
+<div class="mpop ks-below" id="ks-mpop" hidden role="dialog" aria-label="Daftar sistem di wilayah"></div>
 
 <section id="ks-sec-mon">
-<h2>Monitoring sistem defisit</h2>
+<h2>Monitoring sistem Siaga dan Defisit</h2>
 <div class="dhead"><p id="ks-monsub"></p></div>
 <div class="mon-tools">
   <div class="fg"><span>Tampilkan</span><div class="seg" role="group" aria-label="Tampilan monitoring" id="ks-mon-v">
-    <button type="button" data-mv="0" aria-pressed="true">Laporan terakhir per sistem</button><button type="button" data-mv="1" aria-pressed="false">Semua laporan</button></div></div>
+    <button type="button" data-mv="0" aria-pressed="true">Laporan kondisi hari ini</button><button type="button" data-mv="1" aria-pressed="false">Semua laporan</button></div></div>
   <input type="search" id="ks-mon-q" placeholder="Cari sistem, UID atau penyebab" aria-label="Cari di monitoring defisit">
 </div>
 <div class="tbl tall"><table id="ks-mon" class="mon"></table></div>
@@ -1081,7 +1082,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <div class="tbl"><table id="ks-detail"></table></div>
 
 <h2>Daftar sistem isolated</h2>
-<div class="dhead"><p id="ks-lsub"></p><input type="search" id="ks-q" placeholder="Cari nama sistem" aria-label="Cari nama sistem"></div>
+<div class="dhead"><p id="ks-lsub"></p><input type="search" id="ks-q" placeholder="Cari nama sistem atau UID" aria-label="Cari nama sistem atau UID"></div>
 <div class="tbl tall"><table id="ks-list"></table></div>
 </section>
 </div>
@@ -2618,7 +2619,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="upd-bulanan.js"></script>
 <script src="kondisi_data.js"></script>
 <script src="kondisi_update.js"></script>
-<script src="kondisi-tab.js"></script>
+<script src="kondisi-tab.js?v=20261028f"></script>
 
 </div>
 </body>

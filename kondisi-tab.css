@@ -192,6 +192,9 @@
 #kondisi table.mon th{text-align:left}
 #kondisi table.mon td.pen{white-space:pre-line;min-width:300px;max-width:440px}
 #kondisi table.mon td.nw{white-space:nowrap}
+#kondisi table.mon tr.sia td{background:color-mix(in srgb,var(--warn) 8%,transparent)}
+#kondisi table.mon .msrc{display:block;margin-top:4px;font-size:11.5px;color:var(--muted);white-space:normal}
+#kondisi .wrn{color:var(--warn);font-weight:700}
 #kondisi table.mon tr.now td{background:color-mix(in srgb,var(--bad) 7%,transparent)}
 #kondisi .late{display:block;font-size:11.5px;font-weight:700;color:var(--bad)}
 #kondisi .mpop .hint{font-size:11.5px;color:var(--muted);padding:8px 14px}
@@ -228,3 +231,56 @@
 #kondisi,#kondisi section,#kondisi [role=tabpanel],#kondisi .tbl{min-width:0;max-width:100%}
 #kondisi header.ks-head{border-bottom-color:var(--x-line)}
 #kondisi .gc,#kondisi .card,#kondisi .tbl,#kondisi .mapbox{border-radius:var(--x-r,14px);box-shadow:var(--x-shadow)}
+/* kotak ringkasan + peta (pola ss-hero seperti tab SAIDI SAIFI ENS) */
+#kondisi .ks-hero{margin-top:14px;align-items:start}
+#kondisi .ks-hero .ss-title{font-size:calc(var(--cds-font-size-title)*1.3)}
+#kondisi .ks-hero .agg{gap:6px 22px}
+#kondisi .ks-hero .agg b{font-size:22px}
+#kondisi .ks-hero .ss-frow .datebar{border-radius:999px;border-width:1px;border-color:var(--x-line)}
+#kondisi .ks-hero .dinfo{max-width:none;padding-left:calc(5.5rem + 12px)}
+#kondisi .ks-hero .ss-take .neg{color:var(--bad);font-weight:600}
+#kondisi .ks-mapfig{margin:0;display:grid;gap:6px;min-width:0;position:relative}
+#kondisi .ks-mapfig .mapbox{background:transparent;border:0;box-shadow:none;padding:0;border-radius:0}
+#kondisi .ks-mapfig .mlegend{padding:4px 0 0}
+#kondisi .ks-msub{font-size:var(--cds-font-size-caption);color:var(--muted);line-height:1.45}
+#kondisi .ks-gauge{position:absolute;right:0;top:0;width:auto;max-width:12rem;text-align:right;z-index:2;pointer-events:none;text-shadow:0 0 6px var(--x-card),0 0 2px var(--x-card)}
+#kondisi .ks-gauge .ss-gauge-mid{position:static}
+#kondisi .ks-gauge .ss-gauge-val{font-size:calc(var(--cds-font-size-title)*1.6)}
+#kondisi .ks-gauge .ss-gauge-val.neg{color:var(--bad)}
+#kondisi .ks-gauge .ss-gauge-cap{font-size:11px;line-height:1.3}
+#kondisi .tabs{margin-top:0}
+@media (max-width:52rem){#kondisi .ks-hero .dinfo{padding-left:0}#kondisi .ks-gauge{position:static;text-align:left;max-width:none}}
+#kondisi .mpop.ks-below{position:relative;top:auto;right:auto;left:auto;width:auto;max-height:460px;margin-top:12px;box-shadow:var(--x-shadow)}
+#kondisi .ks-hero{grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:var(--cds-gap-lg)}
+#kondisi .ks-mapfig .mlegend{justify-content:flex-start;gap:6px 16px}
+@media (max-width:52rem){#kondisi .ks-hero{grid-template-columns:1fr}}
+/* kolom kiri lebih ringkas agar seimbang dengan tinggi peta */
+#kondisi .ks-hero{align-items:center}
+#kondisi .ks-hero .ss-hero-main{gap:10px}
+#kondisi .ks-hero .ss-title{font-size:calc(var(--cds-font-size-title)*1.15);line-height:1.1}
+#kondisi .ks-hero .ss-take{font-size:13.5px;line-height:1.5}
+#kondisi .ks-hero .agg{display:grid;grid-template-columns:repeat(auto-fit,minmax(5.6rem,1fr));gap:6px 14px}
+#kondisi .ks-hero .agg div{min-width:0}
+#kondisi .ks-hero .agg b{font-size:19px}
+#kondisi .ks-hero .agg span{font-size:11.5px;line-height:1.25;display:block}
+#kondisi .ks-filt{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end}
+#kondisi .ks-filt .fg>span{font-size:11px}
+#kondisi .ks-filt .dinfo{flex-basis:100%;padding-left:0;max-width:none;font-size:12px}
+#kondisi .ks-filt .ss-chip{padding:5px 12px;font-size:13px}
+#kondisi .ks-filt .datebar input{padding:5px 6px;font-size:13px}
+#kondisi .ks-hero .dinfo{padding-left:0}
+/* angka ringkas di bawah peta, satu baris */
+#kondisi .ks-mapfig .ks-aggrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px 14px;border-top:1px solid var(--x-line);padding-top:10px;margin-top:4px}
+#kondisi .ks-mapfig .ks-aggrow b{font-size:20px}
+#kondisi .ks-mapfig .ks-aggrow span{font-size:11.5px;line-height:1.25;display:block}
+@media (max-width:40rem){#kondisi .ks-mapfig .ks-aggrow{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* ringkasan cepat DMP/BP */
+#kondisi .ks-qs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#kondisi .ks-q{border:1px solid var(--x-line);border-radius:10px;padding:8px 12px;display:grid;gap:2px;background:var(--x-card)}
+#kondisi .ks-q span{font-size:11.5px;color:var(--muted);line-height:1.3}
+#kondisi .ks-q b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
+#kondisi .ks-q b i{font-style:normal;font-family:var(--font-anthropic-sans);font-size:12px;color:var(--muted);margin-left:4px}
+#kondisi .ks-qn{grid-column:1/-1;margin:0;font-size:12px;color:var(--muted)}
+#kondisi .ks-qn b{color:var(--ink);font-weight:600}#kondisi .ks-qn b.neg{color:var(--bad)}
+#kondisi .ks-q b{font-size:clamp(18px,1.7vw,24px);display:flex;flex-wrap:wrap;align-items:baseline;gap:0 4px}
+#kondisi .ks-q b i{margin-left:0}
