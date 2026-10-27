@@ -203,4 +203,14 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', adminUI); else adminUI();
   window.SS_GH = GH;
+  // dipakai tab Kondisi Sistem: baca file terbaru dari repo (lewat API, tanpa cache Pages) lalu simpan
+  async function ghGet(path) {
+    if (!GH.owner || !GH.repo) throw Object.assign(new Error('repo GitHub belum diatur'), { code: 'no-repo' });
+    const api = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${path}?ref=${encodeURIComponent(GH.branch)}&t=${Date.now()}`;
+    const r = await fetch(api, { headers: { Authorization: 'Bearer ' + token(), Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' }, cache: 'no-store' });
+    if (r.status === 404) return null;
+    if (!r.ok) throw Object.assign(new Error('GitHub ' + r.status), { code: 'gh-' + r.status });
+    return r.text();
+  }
+  window.SSAdmin = { isAdmin: () => !!token(), name: () => ss.get(whoKey), get: ghGet, put: ghPut };
 })();

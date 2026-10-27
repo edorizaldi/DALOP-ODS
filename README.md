@@ -20,6 +20,15 @@ Versi web dari artifact "SAIDI SAIFI Sumkal 2026" untuk GitHub Pages. Pembaca cu
 
 Jika nama repo berbeda, ubah `repo` di `config.js`.
 
+## Tab Kondisi Sistem
+Peta Sumatera dan Kalimantan berisi status sistem grid dan isolated SUMKAL per tanggal (normal, siaga, defisit, atau abu-abu bila datanya kosong), penyebab defisit, tabel monitoring defisit, dan daftar sistem.
+
+- `kondisi_data.js`: data harian per sistem (sheet NERDA HARIAN), laporan defisit (sheet Monit Defisit) dan bentuk peta. Sumber: `Database_Sistem_SUMKAL.xlsx`, data 1–25 Oktober 2026.
+- `kondisi_update.js`: isian form **Update data** di tab ini. Hanya admin yang sudah login yang bisa menyimpan; setiap simpan menulis ulang file ini di repo.
+- `kondisi-tab.js` dan `kondisi-tab.css`: tampilan dan logika tab.
+
+Isian form menimpa data file untuk sistem dan tanggal yang sama.
+
 ## Update data dari dashboard (admin)
 Pembaca biasa hanya bisa melihat dan mengunduh PNG. Untuk menyimpan unggahan (tab Update Data Bulanan dan tombol Update laporan harian), admin login dengan nama dan password.
 
