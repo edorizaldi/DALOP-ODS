@@ -251,3 +251,6 @@
 #kondisi .tabs{margin-top:0}
 @media (max-width:52rem){#kondisi .ks-hero .dinfo{padding-left:0}#kondisi .ks-gauge{position:static;text-align:left;max-width:none}}
 #kondisi .mpop.ks-below{position:relative;top:auto;right:auto;left:auto;width:auto;max-height:460px;margin-top:12px;box-shadow:var(--x-shadow)}
+#kondisi .ks-hero{grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:var(--cds-gap-lg)}
+#kondisi .ks-mapfig .mlegend{justify-content:flex-start;gap:6px 16px}
+@media (max-width:52rem){#kondisi .ks-hero{grid-template-columns:1fr}}

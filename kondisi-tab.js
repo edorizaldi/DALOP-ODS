@@ -167,8 +167,7 @@ function renderMap(){
     h+=units.map(u=>`<path class="land${sel===u?' on':''}" data-u="${esc(u)}" d="${MAP[u].d}" style="fill:color-mix(in srgb,var(${SCOL(U[u].st)}) 72%,var(--land0))"/>`).join('')+prov;
     h+=units.map(u=>{const [x,y]=LPOS[u]||MAP[u].c;const s=S[u],q=U[u];
       return svgText(x,y,[['n',SHORT[u]+(q.stale?' *':''),0],['v',nf(s.t),20*k],['s',q.st?`${SLBL(q.st)} · ${s.lt} < 24 jam`:'Tidak ada data',32*k]]);}).join('');
-    document.getElementById('ks-mlegend').innerHTML=`${LEGSW}<span>Warna: status terburuk di antara sistem unit itu pada ${fd(SELD,1)}. Abu-abu: tidak ada data pada tanggal itu. Angka besar: jumlah sistem. Klik wilayah untuk melihat daftar sistemnya.</span><span><b>*</b> sebagian sistem di wilayah itu tidak punya data pada tanggal ini.</span>`;
-    document.getElementById('ks-msub').textContent=`Jumlah sistem isolated dan status per unit induk pada ${fd(SELD,1)}. Lokasi digambarkan per provinsi unit induk, bukan titik tiap sistem.`;
+    document.getElementById('ks-mlegend').innerHTML=LEGSW+(units.some(u=>U[u].stale)?'<span><b>*</b>&nbsp;sebagian sistem tanpa data</span>':'');
   }else{
     const G={};GLAYER.forEach(g=>G[g.n]=D.find(r=>r.s==='GRID'&&r.n===g.n));
     const owner={};GLAYER.forEach(g=>g.units.forEach(u=>owner[u]=g.n));
@@ -177,10 +176,11 @@ function renderMap(){
       if(g.pin)h+=`<circle class="pin" data-g="${g.n}" cx="${g.pin[0]}" cy="${g.pin[1]}" r="${7*k}" style="fill:var(${SCOL(r.st)})"/>`;
       g.subs.forEach(([t,[x,y]])=>h+=svgText(x,y,[['s',t,0]]));
       h+=svgText(g.at[0],g.at[1],[['n',g.t,0],['v',r.has?(r.cad>=0?'+':'')+nf(r.cad,1)+' MW':'–',20*k],['s',r.has?`${SLBL(r.st)} · DMP ${nf(r.dmp,0)} MW`:'Tidak ada data',32*k]]);});
-    document.getElementById('ks-mlegend').innerHTML=`${LEGSW}<span>Warna: status pada ${fd(SELD,1)}. Abu-abu: tidak ada data pada tanggal itu. Angka besar: cadangan daya. Batam–Bintan ditandai titik. Klik wilayah untuk rinciannya.</span>`;
-    document.getElementById('ks-msub').textContent=`Empat sistem grid dan subsistemnya, diwarnai menurut status pada ${fd(SELD,1)}. Rincian tiap sistem grid ada di kartu di bawah peta.`;
+    document.getElementById('ks-mlegend').innerHTML=LEGSW;
   }
   svg.innerHTML=h;
+  // potong ruang laut kosong di tepi supaya peta tampil lebih besar
+  try{const bb=svg.getBBox();if(bb.width>100){const pd=6;svg.setAttribute('viewBox',[bb.x-pd,bb.y-pd,bb.width+2*pd,bb.height+2*pd].map(v=>Math.round(v)).join(' '));}}catch(e){}
   renderPop();
 }
 function renderPop(){
@@ -225,6 +225,8 @@ mp.addEventListener('mousemove',e=>{const p=e.target.closest('[data-u],[data-g]'
   tip.innerHTML=h;tip.hidden=false;tip.style.left=Math.min(e.clientX+14,innerWidth-270)+'px';tip.style.top=(e.clientY+14)+'px';});
 mp.addEventListener('mouseleave',()=>tip.hidden=true);
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderMap,150);});
+// gambar ulang saat peta baru terlihat (tab dibuka) atau lebarnya berubah
+let lastW=-1;if(window.ResizeObserver)new ResizeObserver(()=>{const w=document.getElementById('ks-map').clientWidth;if(w&&w!==lastW){lastW=w;clearTimeout(rz);rz=setTimeout(renderMap,60);}}).observe(document.getElementById('ks-map'));
 // ---------- tabs ----------
 function showTab(t){const u=t==='upd';document.getElementById('ks-tab-dash').hidden=u;document.getElementById('ks-tab-upd').hidden=!u;
   document.getElementById('ks-t-dash').setAttribute('aria-selected',String(!u));document.getElementById('ks-t-upd').setAttribute('aria-selected',String(u));
