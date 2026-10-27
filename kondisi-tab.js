@@ -113,14 +113,14 @@ function label(){return 'Semua sistem isolated';}
 function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(v)));const n=v/p;const s=n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10;return s*p;}
 // ---------- detail ----------
 function renderDetail(){
-  document.getElementById('ks-dsub').textContent=`Jumlah sistem isolated per unit induk menurut jam nyala, beserta jumlah sistem defisit dan siaga pada ${fd(SELD,1)}.`;
+  document.getElementById('ks-dsub').textContent=`Jumlah sistem isolated per unit induk menurut jam nyala, beserta jumlah sistem defisit dan siaga, serta total DMP, BP dan cadangan (sistem yang punya data) pada ${fd(SELD,1)}.`;
   const rows=UNITS.map(u=>{const rs=ISO.filter(r=>r.u===u&&pass(r,'u'));const c=JAM.map(j=>rs.filter(r=>r.j===j).length);
-    return{u,c,t:sum(c),d:rs.filter(r=>r.st==='DEFISIT').length,si:rs.filter(r=>r.st==='SIAGA').length,ne:rs.filter(r=>!r.has).length}}).sort((a,b)=>b.t-a.t);
-  let h=`<thead><tr><th class="l">Unit induk</th>${JAM.map((j,i)=>`<th style="border-top:3px solid var(${JC[i]})">${j} jam</th>`).join('')}<th>Total</th><th>&lt; 24 jam</th><th>Defisit</th><th>Siaga</th><th>Tanpa data</th></tr></thead><tbody>`;
+    return{u,c,t:sum(c),d:rs.filter(r=>r.st==='DEFISIT').length,si:rs.filter(r=>r.st==='SIAGA').length,T:totals(rs),ne:rs.filter(r=>!r.has).length}}).sort((a,b)=>b.t-a.t);
+  let h=`<thead><tr><th class="l">Unit induk</th>${JAM.map((j,i)=>`<th style="border-top:3px solid var(${JC[i]})">${j} jam</th>`).join('')}<th>Total</th><th>&lt; 24 jam</th><th>Defisit</th><th>Siaga</th><th>DMP MW</th><th>BP MW</th><th>Cad MW</th><th>Tanpa data</th></tr></thead><tbody>`;
   rows.forEach(r=>{const lt=r.c[1]+r.c[2];
-    h+=`<tr class="${st.u===r.u?'on':''}"><td class="l">${esc(uN(r.u))}</td>${r.c.map(v=>`<td>${nf(v)}</td>`).join('')}<td><b>${nf(r.t)}</b></td><td>${nf(lt)} <span class="mut">(${pc(r.t?lt/r.t:0)})</span><span class="share"><b style="width:${r.t?lt/r.t*100:0}%"></b></span></td><td>${r.d?`<span class="neg">${r.d}</span>`:'0'}</td><td>${r.si?`<span class="wrn">${r.si}</span>`:'0'}</td><td class="${r.ne?'':'mut'}">${r.ne?r.ne+' sistem':'–'}</td></tr>`;});
+    h+=`<tr class="${st.u===r.u?'on':''}"><td class="l">${esc(uN(r.u))}</td>${r.c.map(v=>`<td>${nf(v)}</td>`).join('')}<td><b>${nf(r.t)}</b></td><td>${nf(lt)} <span class="mut">(${pc(r.t?lt/r.t:0)})</span><span class="share"><b style="width:${r.t?lt/r.t*100:0}%"></b></span></td><td>${r.d?`<span class="neg">${r.d}</span>`:'0'}</td><td>${r.si?`<span class="wrn">${r.si}</span>`:'0'}</td><td>${r.T.n?nf(r.T.dmp,2):'–'}</td><td>${r.T.n?nf(r.T.bp,2):'–'}</td><td>${r.T.n?(r.T.cad<0?`<span class="neg">${nf(r.T.cad,2)}</span>`:nf(r.T.cad,2)):'–'}</td><td class="${r.ne?'':'mut'}">${r.ne?r.ne+' sistem':'–'}</td></tr>`;});
   const ct=JAM.map((_,i)=>sum(rows.map(r=>r.c[i])));const T=sum(ct);
-  h+=`<tr class="g"><td class="l">Total</td>${ct.map(v=>`<td>${nf(v)}</td>`).join('')}<td>${nf(T)}</td><td>${nf(ct[1]+ct[2])} (${pc(T?(ct[1]+ct[2])/T:0)})</td><td>${sum(rows.map(r=>r.d))}</td><td>${nf(sum(rows.map(r=>r.si)))}</td><td>${nf(sum(rows.map(r=>r.ne)))}</td></tr></tbody>`;
+  h+=`<tr class="g"><td class="l">Total</td>${ct.map(v=>`<td>${nf(v)}</td>`).join('')}<td>${nf(T)}</td><td>${nf(ct[1]+ct[2])} (${pc(T?(ct[1]+ct[2])/T:0)})</td><td>${sum(rows.map(r=>r.d))}</td><td>${nf(sum(rows.map(r=>r.si)))}</td>${(()=>{const T=totals(ISO);return T.n?`<td>${nf(T.dmp,2)}</td><td>${nf(T.bp,2)}</td><td>${nf(T.cad,2)}</td>`:'<td>–</td><td>–</td><td>–</td>';})()}<td>${nf(sum(rows.map(r=>r.ne)))}</td></tr></tbody>`;
   document.getElementById('ks-detail').innerHTML=h;
 }
 // ---------- list ----------
@@ -158,6 +158,9 @@ function unitStatus(u){const rs=ISO.filter(r=>r.u===u);let w='';rs.forEach(r=>{i
   const n=STS.map(x=>rs.filter(r=>r.st===x).length);const ne=rs.filter(r=>!r.has).length;
   return{st:w,n,ne,stale:ne>0&&ne<rs.length};}
 const LEGSW=['NORMAL','SIAGA','DEFISIT',''].map(x=>`<span><i style="background:color-mix(in srgb,var(${SCOL(x)}) 72%,var(--land0))"></i>${x?SLBL(x):'Tidak ada data'}</span>`).join('');
+// total DMP/BP/cadangan sistem yang punya data pada tanggal terpilih
+function totals(rs){const h=rs.filter(r=>r.has);const d=h.reduce((x,r)=>x+(r.dmp||0),0),b=h.reduce((x,r)=>x+(r.bp||0),0);return{n:h.length,dmp:d,bp:b,cad:d-b};}
+const mw=v=>nf(v,Math.abs(v)>=1000?0:Math.abs(v)>=100?1:2);
 function svgText(x,y,lines){return `<g class="lbl" transform="translate(${x.toFixed(1)},${y.toFixed(1)})">`+lines.map(([cls,txt,dy])=>`<text class="${cls}" text-anchor="middle" y="${dy}">${esc(txt)}</text>`).join('')+`</g>`;}
 function renderMap(){
   const svg=document.getElementById('ks-map');const vb=MAP._vb;
@@ -199,13 +202,13 @@ function renderPop(){
   if(mv.l===0){
     const q=unitStatus(sel);
     const rs=ISO.filter(r=>r.u===sel).sort((a,b)=>rk(b.st)-rk(a.st)||b.cD-a.cD||a.n.localeCompare(b.n));
-    head={t:uN(sel),c:SCOL(q.st),m:`${rs.length} sistem isolated · ${fd(SELD,1)} · status wilayah ${SLBL(q.st).toLowerCase()}`};
+    head={t:uN(sel),c:SCOL(q.st),m:(()=>{const T=totals(rs);return `${rs.length} sistem isolated · status wilayah ${SLBL(q.st).toLowerCase()}`+(T.n?` · DMP ${mw(T.dmp)} MW · BP ${mw(T.bp)} MW · Cadangan ${mw(T.cad)} MW`:'');})()};
     cnt=STS.map((x,i)=>q.n[i]?`<span class="chip s-${x}">${q.n[i]} ${SLBL(x).toLowerCase()}</span>`:'').join('')+(q.ne?`<span class="chip s-NONE">${q.ne} kosong</span>`:'');
     items=rs.map(item).join('');
     if(q.ne)hint=`${q.ne} sistem tidak punya data pada ${fd(SELD,1)}.`;
   }else{
     const g=GLAYER.find(x=>x.n===sel),r=D.find(x=>x.s==='GRID'&&x.n===sel);
-    head={t:g.t,c:SCOL(r.st),m:`Sistem grid · ${fd(SELD,1)} · ${g.subs.length?'subsistem '+g.subs.map(x=>x[0]).join(', '):'tanpa subsistem'}`};
+    head={t:g.t,c:SCOL(r.st),m:`Sistem grid · ${g.subs.length?'subsistem '+g.subs.map(x=>x[0]).join(', '):'tanpa subsistem'}`};
     items=item({...r,disp:g.t});
     hint=`${r.cN} hari normal · ${r.cS} siaga · ${r.cD} defisit (1 Okt–${fd(SELD)}).`+(g.subs.length?' Data per subsistem tidak terisi di file.':'');
   }
@@ -227,9 +230,10 @@ mp.addEventListener('mousemove',e=>{const p=e.target.closest('[data-u],[data-g]'
   let h;
   if(p.dataset.u){const u=p.dataset.u,s=unitStats(u);
     const q=unitStatus(u);
-    h=`<b>${esc(uN(u))}</b><br>${s.t} sistem isolated<br>24 jam: ${s.c[0]} · 12 jam: ${s.c[1]} · 6 jam: ${s.c[2]}<br>&lt; 24 jam: ${s.lt}<br>Status: <b>${SLBL(q.st)}</b> (${q.n[0]} normal · ${q.n[1]} siaga · ${q.n[2]} defisit)<br>Tanggal: ${fd(SELD,1)}${q.ne?` · ${q.ne} sistem tanpa data`:''}`+ISO.filter(r=>r.u===u&&r.st==='DEFISIT').map(whyTip).join('')+(q.n[2]?'<span class="tw">Klik wilayah untuk rincian.</span>':'');}
+    const T=totals(ISO.filter(r=>r.u===u));
+    h=`<b>${esc(uN(u))}</b><br>${s.t} sistem isolated<br>Status: <b>${SLBL(q.st)}</b> (${q.n[0]} normal · ${q.n[1]} siaga · ${q.n[2]} defisit${q.ne?` · ${q.ne} tanpa data`:''})<br>${T.n?`Total DMP ${mw(T.dmp)} MW · BP ${mw(T.bp)} MW<br>Cadangan ${mw(T.cad)} MW`:'Tidak ada data DMP/BP'}`+ISO.filter(r=>r.u===u&&r.st==='DEFISIT').map(whyTip).join('')+(q.n[2]?'<span class="tw">Klik wilayah untuk rincian.</span>':'');}
   else{const r=D.find(x=>x.s==='GRID'&&x.n===p.dataset.g);const g=GLAYER.find(x=>x.n===p.dataset.g);
-    h=`<b>${esc(g.t)}</b>${g.subs.length?' ('+g.subs.map(x=>x[0]).join(', ')+')':''}<br>${r.has?`DMP ${nf(r.dmp,1)} · BP ${nf(r.bp,1)} · Cad ${nf(r.cad,1)} MW<br>`:''}Status: <b>${SLBL(r.st)}</b> pada ${fd(SELD,1)}<br>${r.cN} hari normal · ${r.cS} siaga · ${r.cD} defisit`+(r.st==='DEFISIT'?whyTip(r):'');}
+    h=`<b>${esc(g.t)}</b>${g.subs.length?' ('+g.subs.map(x=>x[0]).join(', ')+')':''}<br>${r.has?`DMP ${mw(r.dmp)} MW · BP ${mw(r.bp)} MW<br>Cadangan ${mw(r.cad)} MW<br>`:'Tidak ada data DMP/BP<br>'}Status: <b>${SLBL(r.st)}</b>`+(r.st==='DEFISIT'?whyTip(r):'');}
   tip.innerHTML=h;tip.hidden=false;tip.style.left=Math.min(e.clientX+14,innerWidth-270)+'px';tip.style.top=(e.clientY+14)+'px';});
 mp.addEventListener('mouseleave',()=>tip.hidden=true);
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderMap,150);});
