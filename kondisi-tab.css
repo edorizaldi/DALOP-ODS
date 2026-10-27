@@ -192,6 +192,8 @@
 #kondisi table.mon th{text-align:left}
 #kondisi table.mon td.pen{white-space:pre-line;min-width:300px;max-width:440px}
 #kondisi table.mon td.nw{white-space:nowrap}
+#kondisi table.mon tr.sia td{background:color-mix(in srgb,var(--warn) 8%,transparent)}
+#kondisi .wrn{color:var(--warn);font-weight:700}
 #kondisi table.mon tr.now td{background:color-mix(in srgb,var(--bad) 7%,transparent)}
 #kondisi .late{display:block;font-size:11.5px;font-weight:700;color:var(--bad)}
 #kondisi .mpop .hint{font-size:11.5px;color:var(--muted);padding:8px 14px}
