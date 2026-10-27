@@ -169,7 +169,7 @@ function renderMap(){
   svg.style.setProperty('--k',k.toFixed(2));svg.classList.toggle('narrow',w<640);
   renderTake();
   document.getElementById('ks-m-l').innerHTML=['Sistem isolated','Sistem grid'].map((l,i)=>`<button type="button" class="ss-chip" data-ml="${i}" aria-pressed="${mv.l===i}">${l}</button>`).join('');
-  document.getElementById('ks-sec-grid').hidden=mv.l!==1;document.getElementById('ks-sec-iso').hidden=mv.l!==0;
+  document.getElementById('ks-sec-grid').hidden=mv.l!==1;document.getElementById('ks-sec-iso').hidden=mv.l!==0;document.getElementById('ks-sec-iso-list').hidden=mv.l!==0;
   const units=Object.keys(MAP).filter(u=>!u.startsWith('_'));
   let h=`<text class="sea" x="${PJ(96.4,-4.6)[0]}" y="${PJ(96.4,-4.6)[1]}">SAMUDRA HINDIA</text><text class="sea" x="${PJ(107.6,-5.6)[0]}" y="${PJ(107.6,-5.6)[1]}">LAUT JAWA</text><text class="sea" x="${PJ(106.2,4.6)[0]}" y="${PJ(106.2,4.6)[1]}">LAUT NATUNA</text>`;
   const prov=Object.values(MAP._prov).map(d=>`<path class="prov" d="${d}"/>`).join('');
