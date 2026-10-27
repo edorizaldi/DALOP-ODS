@@ -29,6 +29,8 @@ Peta Sumatera dan Kalimantan berisi status sistem grid dan isolated SUMKAL per t
 
 Isian form menimpa data file untuk sistem dan tanggal yang sama.
 
+Untuk memperbarui laporan harian, klik **Update laporan harian** di tab Kondisi Sistem, lalu unggah file Excel seperti `Database_Sistem_SUMKAL.xlsx` (sheet **NERDA HARIAN** dan **Monit Defisit**). File dibaca di browser; periksa ringkasannya lalu klik **Terapkan ke dashboard**. Bila admin sudah login, `kondisi_data.js` dan tanggal update di `info_update.js` ikut tersimpan ke repo. Tanpa login, data baru hanya tampil di layar sendiri.
+
 ## Update data dari dashboard (admin)
 Pembaca biasa hanya bisa melihat dan mengunduh PNG. Untuk menyimpan unggahan (tab Update Data Bulanan dan tombol Update laporan harian), admin login dengan nama dan password.
 
