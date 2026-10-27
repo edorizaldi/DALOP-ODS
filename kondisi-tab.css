@@ -284,3 +284,38 @@
 #kondisi .ks-qn b{color:var(--ink);font-weight:600}#kondisi .ks-qn b.neg{color:var(--bad)}
 #kondisi .ks-q b{font-size:clamp(18px,1.7vw,24px);display:flex;flex-wrap:wrap;align-items:baseline;gap:0 4px}
 #kondisi .ks-q b i{margin-left:0}
+/* ---- tata letak editorial: kepala bagian dua kolom, garis pemisah, kartu bertag, daftar baris ---- */
+#kondisi .ks-sec{margin-top:44px;padding-top:22px;border-top:1px solid var(--x-line)}
+#kondisi .ks-sh{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:8px 40px;align-items:end;margin-bottom:18px}
+#kondisi .ks-sh h2{margin:4px 0 0;font-size:calc(var(--cds-font-size-title)*1.35);line-height:1.1;text-wrap:balance}
+#kondisi .ks-sh p{margin:0;color:var(--muted);font-size:13.5px;line-height:1.55;max-width:60ch}
+#kondisi .ks-kick{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+#kondisi .ks-tools{display:flex;justify-content:flex-end;margin-bottom:10px}
+#kondisi .ks-sec .mon-tools{margin-top:0}
+@media (max-width:52rem){#kondisi .ks-sh{grid-template-columns:1fr}}
+/* kartu sistem grid */
+#kondisi .grid .ks-card{gap:10px;padding:18px 18px 14px}
+#kondisi .ks-card-top{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted)}
+#kondisi .ks-card h3{margin:0;font-family:var(--font-anthropic-serif);font-weight:400;font-size:22px;line-height:1.15;display:block}
+#kondisi .ks-tags{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 6px}
+#kondisi .ks-tags li{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--x-line);border-radius:999px;padding:2px 8px;line-height:1.5}
+#kondisi .ks-link{all:unset;cursor:pointer;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);border-top:1px solid var(--x-line);padding-top:10px;margin-top:2px;display:flex;justify-content:space-between}
+#kondisi .ks-link:hover{color:var(--h24)}
+#kondisi .ks-link:focus-visible{outline:2px solid var(--h24);outline-offset:3px}
+/* daftar baris monitoring */
+#kondisi .ks-rows{border-top:2px solid var(--ink)}
+#kondisi .ks-row{display:grid;grid-template-columns:8.5rem minmax(0,1.1fr) minmax(0,1.6fr) 11rem;gap:10px 24px;padding:16px 4px;border-bottom:1px solid var(--x-line);align-items:start}
+#kondisi .ks-row:hover{background:color-mix(in srgb,var(--ink) 3%,transparent)}
+#kondisi .ks-row-st{display:grid;gap:6px;justify-items:start;font-size:11.5px;color:var(--muted)}
+#kondisi .ks-row-name h3{margin:0 0 6px;font-family:var(--font-anthropic-serif);font-weight:400;font-size:20px;line-height:1.2}
+#kondisi .ks-row.is-d .ks-row-name h3{color:var(--bad)}
+#kondisi .ks-row-why{font-size:13.5px;line-height:1.5}
+#kondisi .ks-row-why .t{white-space:pre-line}
+#kondisi .ks-row-why .msrc{display:block;margin-top:4px;font-size:11.5px;color:var(--muted)}
+#kondisi .ks-row-est{display:grid;gap:2px;font-size:13px}
+#kondisi .ks-row-est .lb{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#kondisi .ks-row-est b{font-weight:600}
+#kondisi .ks-row-est .late{color:var(--bad);font-size:11.5px;font-weight:700}
+#kondisi .ks-empty{color:var(--muted);padding:18px 4px;margin:0}
+@media (max-width:52rem){#kondisi .ks-row{grid-template-columns:1fr;gap:8px}#kondisi .ks-row-st{display:flex;gap:10px;align-items:center}}
+#kondisi .ks-rows{max-height:720px;overflow-y:auto;overscroll-behavior:contain}

@@ -96,13 +96,15 @@ function renderGrid(){
   const tot=D.find(r=>r.n==='TOTAL SISTEM GRID');
   document.getElementById('ks-gsub').innerHTML=!tot.has?`Tidak ada data sistem grid pada ${fd(SELD,1)}.`:`Kondisi per ${fd(SELD,1)}. Total grid SUMKAL: DMP ${nf(tot.dmp,1)} MW, BP ${nf(tot.bp,1)} MW, cadangan ${nf(tot.cad,1)} MW ${chip(tot.st)}. Total ini tidak memasukkan Batam–Bintan.`;
   document.getElementById('ks-grid').innerHTML=GRIDMAIN.map(n=>{
-    const r=D.find(x=>x.s==='GRID'&&x.n===n);const T=r.cN+r.cS+r.cD||1;
-    return `<div class="gc"><h3>${esc(n==='BATAM-BINTAN'?'Batam–Bintan':n.charAt(0)+n.slice(1).toLowerCase().replace(/ (\w)/g,(m,c)=>' '+c.toUpperCase()))}${chip(r.st)}</h3>
-    <div class="u">${esc(r.u)} · 24 jam</div>
+    const r=D.find(x=>x.s==='GRID'&&x.n===n);const T=r.cN+r.cS+r.cD||1;const g=GLAYER.find(x=>x.n===n);
+    const tags=[r.u,'24 jam'].concat(GSUB[n]?GSUB[n].map(x=>'Subsistem '+x):['Tanpa subsistem']);
+    return `<article class="gc ks-card"><div class="ks-card-top">${chip(r.st)}<span class="ks-card-date">${fd(SELD)}</span></div>
+    <h3>${esc(g?g.t:n)}</h3>
+    <ul class="ks-tags">${tags.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>
     <div class="k"><div><b>${nf(r.dmp,1)}</b><span>DMP MW</span></div><div><b>${nf(r.bp,1)}</b><span>BP MW</span></div><div><b class="${r.cad<0?'neg':''}">${nf(r.cad,1)}</b><span>Cad MW</span></div></div>
     <div class="days" aria-label="Hari status"><i class="d-n" style="width:${r.cN/T*100}%"></i><i class="d-s" style="width:${r.cS/T*100}%"></i><i class="d-d" style="width:${r.cD/T*100}%"></i></div>
     <div class="dl">${r.cN} hari normal · ${r.cS} siaga · ${r.cD} defisit (1 Okt–${fd(SELD)})</div>
-    ${GSUB[n]?`<div class="subs">Subsistem: ${GSUB[n].join(', ')}</div>`:`<div class="subs">Tanpa subsistem</div>`}</div>`;
+    <button type="button" class="ks-link" data-goto="${esc(n)}">Lihat di peta <span aria-hidden="true">→</span></button></article>`;
   }).join('');
 }
 // ---------- filters ----------
@@ -236,6 +238,8 @@ mp.addEventListener('mousemove',e=>{const p=e.target.closest('[data-u],[data-g]'
     h=`<b>${esc(g.t)}</b>${g.subs.length?' ('+g.subs.map(x=>x[0]).join(', ')+')':''}<br>${r.has?`DMP ${mw(r.dmp)} MW · BP ${mw(r.bp)} MW<br>Cadangan ${mw(r.cad)} MW<br>`:'Tidak ada data DMP/BP<br>'}Status: <b>${SLBL(r.st)}</b>`+(r.st==='DEFISIT'?whyTip(r):'');}
   tip.innerHTML=h;tip.hidden=false;tip.style.left=Math.min(e.clientX+14,innerWidth-270)+'px';tip.style.top=(e.clientY+14)+'px';});
 mp.addEventListener('mouseleave',()=>tip.hidden=true);
+document.getElementById('ks-grid').addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(!b)return;mv.l=1;saveM();sel=b.dataset.goto;renderMon();renderMap();
+  document.getElementById('ks-ringkasan').scrollIntoView({behavior:'smooth',block:'start'});});
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderMap,150);});
 // gambar ulang saat peta baru terlihat (tab dibuka) atau lebarnya berubah
 let lastW=-1;if(window.ResizeObserver)new ResizeObserver(()=>{const w=document.getElementById('ks-map').clientWidth;if(w&&w!==lastW){lastW=w;clearTimeout(rz);rz=setTimeout(renderMap,60);}}).observe(document.getElementById('ks-map'));
@@ -279,6 +283,14 @@ function renderMon(){
     return `<tr class="${st==='DEFISIT'?'now':st==='SIAGA'&&monV===0?'sia':''}"><td class="nw">${fdi(m.t)}</td><td class="nw">${esc(m.s)}</td><td class="nw">${esc(m.uid)}</td><td><b>${esc(m.sub)}</b></td><td class="pen">${m.nomon?'<span class="mut">Belum ada laporan di Monit Defisit</span>':esc(m.pen||'–')+(monV===0&&m.mt?`<span class="msrc">Monit Defisit ${fdi(m.mt)}</span>`:'')}</td><td class="nw">${m.est?fdi(m.est):m.nomon?'–':'<span class="mut">Belum ditentukan</span>'}${late?'<span class="late">Lewat estimasi</span>':''}</td><td class="nw">${st?chip(st):'–'}</td></tr>`;}).join('');
   if(!rows.length)h+=`<tr><td colspan="7" class="mut">${monV===0&&!q?'Tidak ada sistem siaga atau defisit pada tanggal ini.':'Tidak ada laporan yang cocok.'}</td></tr>`;
   tbl.innerHTML=h+'</tbody>';
+  // tampilan baris (gaya daftar editorial) untuk laporan kondisi hari ini
+  const rowsEl=document.getElementById('ks-mon-rows');rowsEl.hidden=monV!==0;document.getElementById('ks-mon-wrap').hidden=monV===0;
+  if(monV===0)rowsEl.innerHTML=rows.length?rows.map(m=>{const st=m.st;const late=st==='DEFISIT'&&m.est&&new Date(m.est+'T00:00:00')<today;
+    return `<article class="ks-row ${st==='DEFISIT'?'is-d':'is-s'}"><div class="ks-row-st">${chip(st)}<span>${fdi(m.t)}</span></div>
+      <div class="ks-row-name"><h3>${esc(m.sub)}</h3><ul class="ks-tags"><li>${esc(m.s)}</li><li>${esc(m.uid)}</li></ul></div>
+      <div class="ks-row-why">${m.nomon?'<span class="mut">Belum ada laporan di Monit Defisit</span>':`<span class="t">${esc(m.pen||'–')}</span>`+(m.mt?`<span class="msrc">Monit Defisit ${fdi(m.mt)}</span>`:'')}</div>
+      <div class="ks-row-est"><span class="lb">Estimasi kembali normal</span><b>${m.est?fdi(m.est):m.nomon?'–':'Belum ditentukan'}</b>${late?'<span class="late">Lewat estimasi</span>':''}</div></article>`;}).join('')
+    :`<p class="ks-empty">${q?'Tidak ada laporan yang cocok.':'Tidak ada sistem siaga atau defisit pada tanggal ini.'}</p>`;
 }
 document.getElementById('ks-mon-v').addEventListener('click',e=>{const b=e.target.closest('button[data-mv]');if(!b)return;monV=+b.dataset.mv;
   KS.querySelectorAll('#ks-mon-v button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderMon();});

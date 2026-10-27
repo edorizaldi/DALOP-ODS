@@ -12,7 +12,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 #ss-admin{position:fixed;right:14px;bottom:14px;z-index:50;font:500 12px var(--font-anthropic-sans);padding:7px 12px;border-radius:999px;border:1px solid var(--color-border-line);background:#fff;color:var(--color-fg-muted);box-shadow:0 2px 8px #0001;cursor:pointer}
 #ss-admin[data-on="1"]{background:#eef6ee;color:#1F5A28;border-color:#9cc79f}
 </style>
-<link rel="stylesheet" href="kondisi-tab.css?v=20261028f">
+<link rel="stylesheet" href="kondisi-tab.css?v=20261028g">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
@@ -1057,33 +1057,34 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 </div>
 <div class="mpop ks-below" id="ks-mpop" hidden role="dialog" aria-label="Daftar sistem di wilayah"></div>
 
-<section id="ks-sec-mon">
-<h2>Monitoring sistem Siaga dan Defisit</h2>
-<div class="dhead"><p id="ks-monsub"></p></div>
+<section id="ks-sec-mon" class="ks-sec">
+<div class="ks-sh"><div><span class="ks-kick">Monitoring</span><h2>Monitoring sistem Siaga dan Defisit</h2></div><p id="ks-monsub"></p></div>
 <div class="mon-tools">
   <div class="fg"><span>Tampilkan</span><div class="seg" role="group" aria-label="Tampilan monitoring" id="ks-mon-v">
     <button type="button" data-mv="0" aria-pressed="true">Laporan kondisi hari ini</button><button type="button" data-mv="1" aria-pressed="false">Semua laporan</button></div></div>
   <input type="search" id="ks-mon-q" placeholder="Cari sistem, UID atau penyebab" aria-label="Cari di monitoring defisit">
 </div>
-<div class="tbl tall"><table id="ks-mon" class="mon"></table></div>
+<div class="ks-rows" id="ks-mon-rows" hidden></div>
+<div class="tbl tall" id="ks-mon-wrap"><table id="ks-mon" class="mon"></table></div>
 </section>
 
-<section id="ks-sec-grid">
-<h2>Sistem grid</h2>
-<div class="dhead"><p id="ks-gsub"></p></div>
+<section id="ks-sec-grid" class="ks-sec">
+<div class="ks-sh"><div><span class="ks-kick">Sistem grid</span><h2>Empat sistem grid</h2></div><p id="ks-gsub"></p></div>
 <div class="grid" id="ks-grid"></div>
 
 </section>
 
 <section id="ks-sec-iso">
-
-<h2>Rincian per unit induk</h2>
-<div class="dhead"><p id="ks-dsub"></p></div>
+<div class="ks-sec">
+<div class="ks-sh"><div><span class="ks-kick">Unit induk</span><h2>Rincian per unit induk</h2></div><p id="ks-dsub"></p></div>
 <div class="tbl"><table id="ks-detail"></table></div>
 
-<h2>Daftar sistem isolated</h2>
-<div class="dhead"><p id="ks-lsub"></p><input type="search" id="ks-q" placeholder="Cari nama sistem atau UID" aria-label="Cari nama sistem atau UID"></div>
+</div>
+<div class="ks-sec">
+<div class="ks-sh"><div><span class="ks-kick">Sistem isolated</span><h2>Daftar sistem isolated</h2></div><p id="ks-lsub"></p></div>
+<div class="ks-tools"><input type="search" id="ks-q" placeholder="Cari nama sistem atau UID" aria-label="Cari nama sistem atau UID"></div>
 <div class="tbl tall"><table id="ks-list"></table></div>
+</div>
 </section>
 </div>
 
@@ -2619,7 +2620,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="upd-bulanan.js"></script>
 <script src="kondisi_data.js"></script>
 <script src="kondisi_update.js"></script>
-<script src="kondisi-tab.js?v=20261028f"></script>
+<script src="kondisi-tab.js?v=20261028g"></script>
 
 </div>
 </body>
