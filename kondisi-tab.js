@@ -334,9 +334,11 @@ function parseNerda(rows){
   if(!dcols.length)throw new Error('Sheet NERDA HARIAN: kolom tanggal tidak ditemukan di baris judul.');
   const [y,mo]=dcols[0].iso.split('-').map(Number);
   const nd=new Date(y,mo,0).getDate();const col={};dcols.forEach(d=>{const [yy,mm,dd]=d.iso.split('-').map(Number);if(yy===y&&mm===mo)col[dd]=d.c;});
-  const groups=new Map();
+  const groups=new Map();let prev=null;
   for(let i=hr+1;i<rows.length;i++){const r=rows[i]||[];const n=r[cN];if(n==null||String(n).trim()==='')continue;
-    const s=String(r[cS]||'').trim().toUpperCase(),u=String(r[cU]||'').trim(),nn=String(n).trim();if(!s)continue;
+    const nn=String(n).trim();let s=String(r[cS]||'').trim().toUpperCase(),u=String(r[cU]||'').trim();
+    // sel SISTEM/UNIT INDUK yang kosong di tengah blok satu sistem ikut baris di atasnya
+    if(prev&&prev.n===nn){if(!s)s=prev.s;if(!u)u=prev.u;}if(!s)continue;prev={s,u,n:nn};
     const k=s+'|'+u+'|'+nn;if(!groups.has(k))groups.set(k,{s,u,n:nn,jam:[],rows:{}});
     const g=groups.get(k);g.jam.push(String(r[cJ]||''));g.rows[NORM(r[cK])]=g.rows[NORM(r[cK])]||r;}
   const SC={NORMAL:0,SIAGA:1,DEFISIT:2};const day=[];
@@ -358,10 +360,14 @@ function parseMonit(rows,day){
   if(hr<0)throw new Error('Sheet Monit Defisit: baris judul (Sub Sistem, Penyebab Defisit) tidak ditemukan.');
   const H=rows[hr].map(NORM);const ci=k=>H.indexOf(k);
   const cT=ci('TANGGAL'),cS=ci('SISTEM'),cU=ci('UNITINDUK'),cN=ci('SUBSISTEM'),cP=ci('PENYEBABDEFISIT'),cE=ci('ESTIMASIKEMBALINORMAL');
-  const idx={};day.forEach(r=>{if(r.n!=='TOTAL SISTEM GRID')idx[NORM(r.n)]=r;});
+  const idx={},idx2={};const N2=x=>NORM(String(x).replace(/\(.*?\)/g,' ').replace(/^\s*(ULD|PLTD|PLTS)\s+/i,''));
+  day.forEach(r=>{if(r.n==='TOTAL SISTEM GRID')return;idx[NORM(r.n)]=r;(idx2[N2(r.n)]=idx2[N2(r.n)]||[]).push(r);});
+  // nama di Monit Defisit kadang ditulis tanpa awalan ULD/PLTD atau tanpa keterangan dalam kurung
+  const find=(sub,uid)=>{if(idx[NORM(sub)])return idx[NORM(sub)];const c=idx2[N2(sub)]||[];if(c.length===1)return c[0];
+    const nu=NORM(uid);const f=c.filter(r=>nu.includes(NORM(r.u))||NORM(r.u).includes(nu.replace(/^UID/,'')));return f.length===1?f[0]:null;};
   const mon=[],miss=new Set();
   for(let i=hr+1;i<rows.length;i++){const r=rows[i]||[];const sub=r[cN];if(sub==null||String(sub).trim()==='')continue;
-    const t=cellISO(r[cT]);if(!t)continue;const m=idx[NORM(sub)];if(!m)miss.add(String(sub).trim());
+    const t=cellISO(r[cT]);if(!t)continue;const m=find(sub,r[cU]);if(!m)miss.add(String(sub).trim());
     const e=cE>=0?r[cE]:null;const est=cellISO(e);
     mon.push({t,s:String(r[cS]||'').trim(),uid:String(r[cU]||'').trim(),sub:String(sub).trim(),key:m?m.s+'|'+m.u+'|'+m.n:null,pen:clean(r[cP]),est});}
   return{mon,miss:[...miss]};
