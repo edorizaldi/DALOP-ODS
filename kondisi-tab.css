@@ -1,0 +1,230 @@
+/* Tab Kondisi Sistem: memakai token warna dashboard (tema terang tetap) */
+#kondisi{--bg:var(--x-bg);--panel:var(--x-card);--ink:var(--color-fg);--muted:var(--color-fg-muted);--line:var(--x-line);--soft:color-mix(in srgb,var(--color-fg) 6%,var(--x-card));
+  --h24:#1D5F7A;--h12:#B7771A;--h6:#8A3B6B;--sel:var(--color-fg);
+  --ok:var(--color-ok);--warn:var(--color-warn);--bad:var(--color-bad);--sea:color-mix(in srgb,#4A9BE0 12%,var(--x-card));--halo:#FFFFFF;--land0:#F4F6F7;--mok:#3E9B5C;--mwarn:#E6BE2E;--mbad:#D24A3C;--mgray:#AEB7BE;
+  font-family:var(--font-anthropic-sans);font-size:14px;line-height:1.45;color:var(--ink);display:block}
+#kondisi *,#kondisi *::before,#kondisi *::after{box-sizing:border-box}
+#kondisi .wrap{max-width:1180px;margin:0 auto;padding-block:28px 48px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+#kondisi header{display:flex;flex-wrap:wrap;gap:18px 32px;align-items:flex-end;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:18px}
+#kondisi h1{font-stretch:75%;font-weight:800;font-size:clamp(28px,4.4vw,44px);line-height:1;margin:0;letter-spacing:-.01em;text-wrap:balance}
+#kondisi .sub{color:var(--muted);margin:8px 0 0;font-size:14px;max-width:70ch}
+#kondisi .agg{display:flex;flex-wrap:wrap;gap:6px 28px}
+#kondisi .agg div{min-width:90px}
+#kondisi .agg b{display:block;font-stretch:80%;font-weight:700;font-size:24px;font-variant-numeric:tabular-nums;line-height:1.1}
+#kondisi .agg b.hot{color:var(--h12)}
+#kondisi .agg span{color:var(--muted);font-size:12.5px}
+#kondisi h2{font-stretch:80%;font-weight:800;font-size:24px;margin:40px 0 4px;text-wrap:balance}
+#kondisi .dhead{display:flex;flex-wrap:wrap;gap:10px 24px;align-items:baseline;justify-content:space-between}
+#kondisi .dhead p{margin:0;color:var(--muted);font-size:13.5px;max-width:80ch}
+/* status chip */
+#kondisi .chip{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px;border:1.5px solid var(--c);color:var(--c)}
+#kondisi .s-NONE{--c:var(--muted)}
+#kondisi .s-NORMAL{--c:var(--ok)}
+#kondisi .s-SIAGA{--c:var(--warn)}
+#kondisi .s-DEFISIT{--c:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+/* grid cards */
+#kondisi .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:14px}
+#kondisi .gc{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+#kondisi .gc h3{margin:0;font-size:15px;font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:center}
+#kondisi .gc .u{color:var(--muted);font-size:12px;margin-top:-6px}
+#kondisi .gc .k{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;font-variant-numeric:tabular-nums}
+#kondisi .gc .k b{display:block;font-stretch:80%;font-size:20px;font-weight:800;line-height:1.1}
+#kondisi .gc .k span{color:var(--muted);font-size:11.5px}
+#kondisi .gc .k .neg{color:var(--bad)}
+#kondisi .days{display:flex;height:8px;border-radius:3px;overflow:hidden;background:var(--soft)}
+#kondisi .days i{display:block;height:100%}
+#kondisi .d-n{background:var(--ok)}
+#kondisi .d-s{background:var(--warn)}
+#kondisi .d-d{background:var(--bad)}
+#kondisi .gc .dl{font-size:11.5px;color:var(--muted)}
+#kondisi .gc .subs{font-size:12px;color:var(--muted);border-top:1px solid var(--soft);padding-top:6px}
+/* filters */
+#kondisi .filters{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end;margin:22px 0 0}
+#kondisi .fg{display:flex;flex-direction:column;gap:5px;min-width:0}
+#kondisi .fg>span{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#kondisi .seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:6px;overflow:hidden;flex-wrap:wrap}
+#kondisi .seg button{font:inherit;font-size:13.5px;font-weight:600;background:transparent;color:var(--ink);border:0;padding:8px 14px;cursor:pointer;border-right:1px solid var(--line)}
+#kondisi .seg button:last-child{border-right:0}
+#kondisi .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+#kondisi .reset{font:inherit;font-size:13.5px;font-weight:600;background:transparent;color:var(--muted);border:1.5px dashed var(--line);border-radius:6px;padding:7px 12px;cursor:pointer}
+#kondisi .reset:hover{color:var(--ink);border-color:var(--ink)}
+#kondisi button:focus-visible,#kondisi select:focus-visible,#kondisi input:focus-visible{outline:3px solid var(--h12);outline-offset:2px}
+#kondisi select,#kondisi input[type=search]{font:inherit;font-weight:600;font-size:14px;padding:7px 10px;border:1.5px solid var(--ink);border-radius:6px;background:var(--panel);color:var(--ink);max-width:100%}
+#kondisi .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted);justify-content:flex-end;margin:6px 0 10px}
+#kondisi .legend i{display:inline-block;width:14px;height:11px;vertical-align:-1px;margin-right:6px;border-radius:2px}
+#kondisi .k0{background:var(--h24)}
+#kondisi .k1{background:var(--h12)}
+#kondisi .k2{background:var(--h6)}
+/* chart */
+#kondisi .chart{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 18px 14px}
+#kondisi .cmp{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:12px 0 16px;border-bottom:1px solid var(--line);margin-bottom:8px}
+#kondisi .cmp>div{border-left:5px solid var(--c);padding:2px 0 2px 12px}
+#kondisi .cmp>div.off{opacity:.38}
+#kondisi .cmp h3{margin:0;font-size:14px;font-weight:700}
+#kondisi .cmp b{display:block;font-stretch:80%;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15}
+#kondisi .cmp span{color:var(--muted);font-size:12.5px}
+#kondisi .cmp .pb{height:6px;background:var(--soft);border-radius:3px;margin-top:6px;overflow:hidden}
+#kondisi .cmp .pb i{display:block;height:100%;background:var(--c)}
+#kondisi .cmpcap{font-size:12.5px;color:var(--muted);padding-top:10px}
+#kondisi .cmpcap b{color:var(--ink)}
+#kondisi .row{display:grid;grid-template-columns:170px 1fr 108px;gap:14px;align-items:center;padding:7px 8px;margin:0 -8px;border-radius:6px}
+#kondisi .row:hover{background:var(--soft)}
+#kondisi .row.on{background:var(--soft);box-shadow:inset 3px 0 0 var(--sel)}
+#kondisi .row .nm{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#kondisi .row .nm small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}
+#kondisi .bar{display:flex;height:24px}
+#kondisi .bar span{height:100%;min-width:0}
+#kondisi .bar span+span{box-shadow:inset 1px 0 0 var(--panel)}
+#kondisi .row .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-stretch:85%;font-size:16px}
+#kondisi .row .v small{display:block;font-weight:600;font-size:11.5px;font-stretch:100%;color:var(--h12)}
+#kondisi .axis{display:grid;grid-template-columns:170px 1fr 108px;gap:14px;font-size:11.5px;color:var(--muted);padding-top:4px;border-top:1px solid var(--line);margin-top:6px}
+#kondisi .axis .ticks{position:relative;height:14px}
+#kondisi .axis .ticks span{position:absolute;transform:translateX(-50%);font-variant-numeric:tabular-nums}
+#kondisi .axis .ticks span:first-child{transform:none}
+#kondisi .axis .ticks span:last-child{transform:translateX(-100%)}
+#kondisi .tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;padding:7px 10px;border-radius:5px;max-width:260px;z-index:10;line-height:1.35}
+/* tables */
+#kondisi .tbl{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-top:12px}
+#kondisi .tbl.tall{max-height:560px;overflow-y:auto}
+#kondisi table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums;min-width:720px}
+#kondisi th,#kondisi td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--soft);white-space:nowrap}
+#kondisi th{font-weight:600;color:var(--muted);font-size:12.5px;border-bottom:1.5px solid var(--line);vertical-align:bottom;background:var(--panel)}
+#kondisi .tall th{position:sticky;top:0;z-index:1}
+#kondisi th.l,#kondisi td.l{text-align:left}
+#kondisi tr.on td{background:var(--soft);font-weight:700}
+#kondisi tr.g td{font-weight:800;border-top:2px solid var(--ink);border-bottom:0}
+#kondisi td .neg{color:var(--bad)}
+#kondisi td.mut,#kondisi .mut{color:var(--muted)}
+#kondisi .share{display:inline-block;width:60px;height:6px;background:var(--soft);border-radius:3px;vertical-align:middle;margin-left:8px;overflow:hidden}
+#kondisi .share b{display:block;height:100%;background:var(--h12)}
+#kondisi .jam{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:0}
+#kondisi .dbar{display:inline-flex;width:70px;height:7px;border-radius:3px;overflow:hidden;background:var(--soft);vertical-align:middle;margin-left:8px}
+#kondisi .dbar i{display:block;height:100%}
+#kondisi .note{color:var(--muted);font-size:12.5px;margin-top:28px;max-width:78ch}
+#kondisi .note p{margin:0 0 8px}
+/* date filter */
+#kondisi .datebar{display:inline-flex;border:1.5px solid var(--ink);border-radius:6px;overflow:hidden;background:var(--panel)}
+#kondisi .datebar input{font:inherit;font-weight:700;font-size:14px;border:0;background:transparent;color:var(--ink);padding:7px 8px;min-width:0;font-variant-numeric:tabular-nums}
+#kondisi .dnav{font:inherit;font-size:18px;line-height:1;font-weight:700;background:transparent;color:var(--ink);border:0;padding:0 12px;cursor:pointer}
+#kondisi .dnav:first-child{border-right:1px solid var(--line)}
+#kondisi .dnav:last-child{border-left:1px solid var(--line)}
+#kondisi .dnav:disabled{opacity:.3;cursor:not-allowed}
+#kondisi .dinfo{font-size:12.5px;color:var(--muted);align-self:center;max-width:46ch}
+#kondisi .dinfo b{color:var(--ink)}
+#kondisi .linkbtn{font:inherit;font-size:12.5px;font-weight:700;background:none;border:0;padding:0;color:var(--h24);text-decoration:underline;cursor:pointer}
+/* tabs */
+#kondisi .tabs{display:flex;gap:4px;margin:18px 0 0;border-bottom:1.5px solid var(--line)}
+#kondisi .tabs button{font:inherit;font-weight:700;font-size:14.5px;background:transparent;border:0;color:var(--muted);padding:10px 14px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1.5px}
+#kondisi .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+#kondisi .tabs button:hover{color:var(--ink)}
+/* update form */
+#kondisi .upd{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;margin-top:22px;align-items:start}
+#kondisi .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px 20px;min-width:0}
+#kondisi .card h2{margin:0 0 4px;font-size:22px}
+#kondisi .card h3{margin:0 0 8px;font-size:16px;font-weight:800;font-stretch:85%}
+#kondisi .card>p{margin:0 0 14px;color:var(--muted);font-size:13.5px}
+#kondisi .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+#kondisi .fld{display:flex;flex-direction:column;gap:5px;min-width:0}
+#kondisi .fld.full{grid-column:1/-1}
+#kondisi .fld>label,#kondisi .fld>.lb{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#kondisi .fld input,#kondisi .fld select{font:inherit;font-weight:600;font-size:15px;padding:8px 10px;border:1.5px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);width:100%;font-variant-numeric:tabular-nums}
+#kondisi .fld input:focus,#kondisi .fld select:focus{border-color:var(--ink)}
+#kondisi .fld small{font-size:12px;color:var(--muted)}
+#kondisi .fld.bad input{border-color:var(--bad)}
+#kondisi .fld .err{color:var(--bad);font-size:12px}
+#kondisi .radios{display:flex;flex-wrap:wrap;gap:8px}
+#kondisi .radios label{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);border-radius:6px;padding:8px 14px;cursor:pointer;font-weight:700;font-size:14px}
+#kondisi .radios input{accent-color:var(--c);margin:0}
+#kondisi .radios label:has(input:checked){border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+#kondisi .cur{grid-column:1/-1;background:var(--soft);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+#kondisi .cur b{color:var(--ink)}
+#kondisi .actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:18px}
+#kondisi .btn{font:inherit;font-weight:700;font-size:14.5px;border-radius:6px;padding:9px 18px;cursor:pointer;border:1.5px solid var(--ink)}
+#kondisi .btn.pri{background:var(--ink);color:var(--bg)}
+#kondisi .btn.sec{background:transparent;color:var(--ink)}
+#kondisi .btn:disabled{opacity:.45;cursor:not-allowed}
+#kondisi .msg{font-size:13.5px;font-weight:600}
+#kondisi .msg.ok{color:var(--ok)}
+#kondisi .msg.no{color:var(--bad)}
+#kondisi .gate{background:color-mix(in srgb,var(--warn) 14%,transparent);border:1px solid var(--warn);border-radius:6px;padding:10px 12px;font-size:13.5px;margin-bottom:14px}
+#kondisi .log{list-style:none;margin:0;padding:0}
+#kondisi .log li{padding:9px 0;border-bottom:1px solid var(--soft);font-size:13px;display:grid;grid-template-columns:1fr auto;gap:2px 10px}
+#kondisi .log li:last-child{border-bottom:0}
+#kondisi .log .nm{font-weight:700;min-width:0;overflow-wrap:anywhere}
+#kondisi .log .d{grid-column:1/-1;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+#kondisi .empty{color:var(--muted);font-size:13px}
+#kondisi .upd-badge{display:inline-block;font-size:10.5px;font-weight:700;color:var(--h24);margin-left:6px;letter-spacing:.04em}
+@media (max-width:860px){#kondisi .upd{grid-template-columns:1fr}
+}
+@media (max-width:520px){#kondisi .fgrid{grid-template-columns:1fr}
+}
+/* map */
+#kondisi .mapctl{display:flex;flex-wrap:wrap;gap:12px 22px;margin:12px 0 10px}
+#kondisi .mapbox{background:var(--sea);border:1px solid var(--line);border-radius:8px;padding:8px;position:relative}
+#kondisi #ks-map{display:block;height:auto}
+#kondisi #ks-map .land{stroke:var(--panel);stroke-width:1.2;stroke-linejoin:round;cursor:pointer;transition:opacity .15s}
+#kondisi #ks-map .land:hover{opacity:.82}
+#kondisi #ks-map .land.on{stroke:var(--ink);stroke-width:2.4}
+#kondisi #ks-map .land.dim{opacity:.35}
+#kondisi #ks-map .pin{cursor:pointer}
+#kondisi .mpop{position:absolute;top:16px;right:16px;width:min(360px,calc(100% - 32px));max-height:calc(100% - 32px);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 28px rgba(10,20,28,.22);z-index:5;overflow:hidden}
+#kondisi .mpop header{all:unset;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:12px 14px 10px;border-bottom:1px solid var(--line);border-top:5px solid var(--c)}
+#kondisi .mpop h3{margin:0;font-size:16px;font-weight:800;font-stretch:85%}
+#kondisi .mpop .meta{font-size:12px;color:var(--muted);margin-top:2px}
+#kondisi .mpop .x{font:inherit;font-size:18px;line-height:1;background:transparent;border:0;color:var(--muted);cursor:pointer;padding:2px 4px}
+#kondisi .mpop .x:hover{color:var(--ink)}
+#kondisi .mpop .cnt{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px;border-bottom:1px solid var(--soft)}
+#kondisi .mpop ul{list-style:none;margin:0;padding:0;overflow-y:auto;min-height:0}
+#kondisi .mpop li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:8px 14px;border-bottom:1px solid var(--soft);font-size:13px}
+#kondisi .mpop li .nm{font-weight:600;min-width:0;overflow-wrap:anywhere}
+#kondisi .mpop li .d{grid-column:1/-1;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+#kondisi .mpop li .d .neg{color:var(--bad)}
+#kondisi .why{grid-column:1/-1;margin-top:4px;padding:7px 9px;border-left:3px solid var(--bad);background:color-mix(in srgb,var(--bad) 9%,transparent);border-radius:0 4px 4px 0;font-size:12.5px;line-height:1.4}
+#kondisi .why b{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--bad);margin-bottom:2px}
+#kondisi .why .t{white-space:pre-line}
+#kondisi .why .e{display:block;margin-top:4px;color:var(--muted);font-size:11.5px}
+#kondisi .why.none{border-left-color:var(--line);background:var(--soft)}
+#kondisi .tip .tw{display:block;margin-top:4px;padding-top:4px;border-top:1px solid color-mix(in srgb,var(--bg) 30%,transparent);white-space:pre-line}
+/* monitoring table */
+#kondisi .mon-tools{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;justify-content:space-between;margin-top:12px}
+#kondisi table.mon{min-width:980px}
+#kondisi table.mon td{white-space:normal;vertical-align:top;text-align:left}
+#kondisi table.mon th{text-align:left}
+#kondisi table.mon td.pen{white-space:pre-line;min-width:300px;max-width:440px}
+#kondisi table.mon td.nw{white-space:nowrap}
+#kondisi table.mon tr.now td{background:color-mix(in srgb,var(--bad) 7%,transparent)}
+#kondisi .late{display:block;font-size:11.5px;font-weight:700;color:var(--bad)}
+#kondisi .mpop .hint{font-size:11.5px;color:var(--muted);padding:8px 14px}
+#kondisi .mpop.left{right:auto;left:16px}
+@media (max-width:760px){#kondisi .mpop{position:static;width:auto;max-height:420px;margin-top:8px;box-shadow:none}
+}
+#kondisi #ks-map .prov{fill:none;stroke:var(--panel);stroke-width:.8;stroke-dasharray:3 3;pointer-events:none}
+#kondisi #ks-map .lbl{pointer-events:none;font-family:inherit}
+#kondisi #ks-map .lbl .n{font-size:calc(11.5px*var(--k,1));font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--halo);stroke-width:3.5px}
+#kondisi #ks-map .lbl .v{font-size:calc(20px*var(--k,1));font-weight:800;font-stretch:80%;fill:var(--ink);paint-order:stroke;stroke:var(--halo);stroke-width:4px;font-variant-numeric:tabular-nums}
+#kondisi #ks-map .lbl .s{font-size:calc(10.5px*var(--k,1));fill:var(--muted);paint-order:stroke;stroke:var(--halo);stroke-width:3px}
+#kondisi #ks-map .pin{stroke:var(--panel);stroke-width:2}
+#kondisi #ks-map .sea{font-size:calc(12px*var(--k,1));font-style:italic;fill:var(--muted);letter-spacing:.2em;opacity:.7}
+#kondisi .mlegend{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:12.5px;color:var(--muted);padding:8px 8px 2px}
+#kondisi .mlegend .ramp{display:inline-block;width:140px;height:10px;border-radius:2px;vertical-align:-1px;margin:0 6px}
+#kondisi .mlegend i{display:inline-block;width:14px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:6px}
+#kondisi #ks-map.narrow .lbl .s{display:none}
+@media (max-width:900px){#kondisi .grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:760px){#kondisi .cmp{grid-template-columns:1fr}
+}
+@media (max-width:640px){#kondisi .grid{grid-template-columns:1fr}
+#kondisi .row,#kondisi .axis{grid-template-columns:92px 1fr 70px;gap:8px}
+#kondisi .row .nm small{display:none}
+#kondisi .row .v{font-size:14px}
+#kondisi .seg button{padding:7px 10px;font-size:13px}
+
+}
+
+#kondisi h1{font-family:var(--font-anthropic-serif);font-weight:400;font-stretch:normal;font-size:calc(var(--cds-font-size-title)*1.5);letter-spacing:0}
+#kondisi h2{font-family:var(--font-anthropic-serif);font-weight:400;font-stretch:normal;font-size:var(--cds-font-size-title)}
+#kondisi .agg b,#kondisi .gc .k b,#kondisi .cmp b{font-family:var(--font-anthropic-serif);font-weight:400;font-stretch:normal}
+#kondisi>.wrap,#kondisi .wrap{max-width:none;padding:0;min-width:0}
+#kondisi,#kondisi section,#kondisi [role=tabpanel],#kondisi .tbl{min-width:0;max-width:100%}
+#kondisi header.ks-head{border-bottom-color:var(--x-line)}
+#kondisi .gc,#kondisi .card,#kondisi .tbl,#kondisi .mapbox{border-radius:var(--x-r,14px);box-shadow:var(--x-shadow)}
