@@ -41,6 +41,14 @@ function renderTake(tag){
     if(mv.l===1){const tot=D.find(r=>r.n==='TOTAL SISTEM GRID');if(tot&&tot.has)t+=` Cadangan grid SUMKAL ${b(nf(tot.cad,1)+' MW')}.`;}
     if(has.length<pool.length)t+=` ${pool.length-has.length} ${LT} belum punya data.`;}
   document.getElementById('ks-take').innerHTML=t;
+  // ringkasan cepat: total DMP dan BP sistem yang punya data pada tanggal itu (lapisan aktif)
+  const sDmp=has.reduce((x,r)=>x+(r.dmp||0),0),sBp=has.reduce((x,r)=>x+(r.bp||0),0),cad=sDmp-sBp;
+  const dg=v=>nf(v,Math.abs(v)>=1000?0:Math.abs(v)>=100?1:2);
+  document.getElementById('ks-qs').innerHTML=has.length?
+    `<div class="ks-q"><span>Total daya mampu pasok (DMP)</span><b>${dg(sDmp)}<i>MW</i></b></div>`+
+    `<div class="ks-q"><span>Total beban puncak (BP)</span><b>${dg(sBp)}<i>MW</i></b></div>`+
+    `<p class="ks-qn">Cadangan <b class="${cad<0?'neg':''}">${dg(cad)} MW</b> · dari ${has.length} ${mv.l===1?'sistem grid utama':'sistem'} yang punya data</p>`
+    :`<div class="ks-q"><span>Total daya mampu pasok (DMP)</span><b>–</b></div><div class="ks-q"><span>Total beban puncak (BP)</span><b>–</b></div>`;
   const gv=document.getElementById('ks-gauge-v');gv.textContent=has.length?String(nd.length):'–';gv.className='ss-gauge-val'+(nd.length?' neg':'');
   document.getElementById('ks-gauge-c').innerHTML=has.length?`${LT} defisit<br>${fd(SELD)}`:`belum ada data<br>${fd(SELD)}`;
 }
