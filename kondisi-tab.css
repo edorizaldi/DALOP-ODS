@@ -254,3 +254,23 @@
 #kondisi .ks-hero{grid-template-columns:minmax(0,.8fr) minmax(0,1.6fr);gap:var(--cds-gap-lg)}
 #kondisi .ks-mapfig .mlegend{justify-content:flex-start;gap:6px 16px}
 @media (max-width:52rem){#kondisi .ks-hero{grid-template-columns:1fr}}
+/* kolom kiri lebih ringkas agar seimbang dengan tinggi peta */
+#kondisi .ks-hero{align-items:center}
+#kondisi .ks-hero .ss-hero-main{gap:10px}
+#kondisi .ks-hero .ss-title{font-size:calc(var(--cds-font-size-title)*1.15);line-height:1.1}
+#kondisi .ks-hero .ss-take{font-size:13.5px;line-height:1.5}
+#kondisi .ks-hero .agg{display:grid;grid-template-columns:repeat(auto-fit,minmax(5.6rem,1fr));gap:6px 14px}
+#kondisi .ks-hero .agg div{min-width:0}
+#kondisi .ks-hero .agg b{font-size:19px}
+#kondisi .ks-hero .agg span{font-size:11.5px;line-height:1.25;display:block}
+#kondisi .ks-filt{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end}
+#kondisi .ks-filt .fg>span{font-size:11px}
+#kondisi .ks-filt .dinfo{flex-basis:100%;padding-left:0;max-width:none;font-size:12px}
+#kondisi .ks-filt .ss-chip{padding:5px 12px;font-size:13px}
+#kondisi .ks-filt .datebar input{padding:5px 6px;font-size:13px}
+#kondisi .ks-hero .dinfo{padding-left:0}
+/* angka ringkas di bawah peta, satu baris */
+#kondisi .ks-mapfig .ks-aggrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px 14px;border-top:1px solid var(--x-line);padding-top:10px;margin-top:4px}
+#kondisi .ks-mapfig .ks-aggrow b{font-size:20px}
+#kondisi .ks-mapfig .ks-aggrow span{font-size:11.5px;line-height:1.25;display:block}
+@media (max-width:40rem){#kondisi .ks-mapfig .ks-aggrow{grid-template-columns:repeat(3,minmax(0,1fr))}}
