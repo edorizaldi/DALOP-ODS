@@ -227,10 +227,11 @@ function renderMon(){
   const LS=mv.l===1?'GRID':'ISOLATED',LT=mv.l===1?'sistem grid':'sistem isolated';
   const q=monQ.trim().toLowerCase();const today=new Date(KY,KM-1,SELD);let rows;
   if(monV===0){
-    // Laporan kondisi hari ini: sistem yang siaga atau defisit pada tanggal terpilih, dengan laporan Monit Defisit terakhir sampai tanggal itu
-    const pool=(mv.l===1?GSYS:ISO).filter(r=>r.st==='DEFISIT'||r.st==='SIAGA');
-    rows=pool.map(r=>{const m=MONLAST[mkey(r)];const nm=r.s==='GRID'?gName(r.n):r.n;
-      return{t:m?m.t:'',s:r.s==='GRID'?'Grid':'Isolated',uid:m?m.uid:uN(r.u),sub:m?m.sub:nm,pen:m?m.pen:'',est:m?m.est:'',st:r.st,nomon:!m};});
+    // Laporan kondisi hari ini: sistem yang siaga atau defisit pada tanggal terpilih DAN punya laporan Monit Defisit bertanggal sama
+    const lim=isoOf(SELD);const pool=(mv.l===1?GSYS:ISO).filter(r=>r.st==='DEFISIT'||r.st==='SIAGA');
+    const today={};MON.forEach(m=>{if(m.key&&m.t===lim)today[m.key]=m;});
+    rows=pool.filter(r=>today[mkey(r)]).map(r=>{const m=today[mkey(r)];return{t:m.t,s:m.s,uid:m.uid,sub:m.sub,pen:m.pen,est:m.est,st:r.st,nomon:false};});
+    var noRep=pool.length-rows.length;
   }else{
     const lim=isoOf(SELD);rows=MON.filter(m=>m.t<=lim&&m.s.toUpperCase()===LS).map(m=>{const r=m.key&&D.find(x=>mkey(x)===m.key);return{...m,st:r?r.st:''};});
   }
@@ -238,13 +239,13 @@ function renderMon(){
   rows.sort((a,b)=>monV===0?rk(b.st)-rk(a.st)||a.sub.localeCompare(b.sub):b.t.localeCompare(a.t)||a.sub.localeCompare(b.sub));
   const has=(mv.l===1?GSYS:ISO).some(r=>r.has);
   if(monV===0){const nd=rows.filter(r=>r.st==='DEFISIT').length,ns=rows.filter(r=>r.st==='SIAGA').length;
-    document.getElementById('ks-monsub').textContent=!has?`Belum ada data kondisi ${LT} pada ${fd(SELD,1)}.`:!rows.length&&!q?`Tidak ada ${LT} yang siaga atau defisit pada ${fd(SELD,1)}.`
-      :`${rows.length} ${LT} siaga atau defisit pada ${fd(SELD,1)}: ${nd} defisit, ${ns} siaga. Penyebab dan estimasi diambil dari laporan Monit Defisit terakhir sampai tanggal itu.`;}
+    document.getElementById('ks-monsub').textContent=!has?`Belum ada data kondisi ${LT} pada ${fd(SELD,1)}.`:!rows.length&&!q?`Tidak ada laporan Monit Defisit bertanggal ${fd(SELD,1)} untuk ${LT} yang siaga atau defisit.`+(noRep?` Ada ${noRep} ${LT} siaga atau defisit pada tanggal itu tanpa laporan.`:'')
+      :`${rows.length} ${LT} siaga atau defisit pada ${fd(SELD,1)} yang dilaporkan di Monit Defisit tanggal itu: ${nd} defisit, ${ns} siaga.`+(noRep?` ${noRep} ${LT} siaga atau defisit lain tidak punya laporan bertanggal ${fd(SELD)}.`:'');}
   else document.getElementById('ks-monsub').textContent=!rows.length&&!q?`Belum ada laporan defisit ${LT} sampai ${fd(SELD,1)}.`:`${rows.length} laporan harian ${LT} sampai ${fd(SELD,1)}, terbaru di atas.`;
   let h=`<thead><tr><th>Tanggal laporan</th><th>Nama sistem</th><th>UID</th><th>Nama subsistem</th><th>Penyebab defisit</th><th>Estimasi kembali normal</th><th>Status hari ini</th></tr></thead><tbody>`;
   h+=rows.map(m=>{const st=m.st;const late=st==='DEFISIT'&&m.est&&new Date(m.est+'T00:00:00')<today;
     return `<tr class="${st==='DEFISIT'?'now':st==='SIAGA'&&monV===0?'sia':''}"><td class="nw">${m.t?fdi(m.t):'<span class="mut">Belum ada laporan</span>'}</td><td class="nw">${esc(m.s)}</td><td class="nw">${esc(m.uid)}</td><td><b>${esc(m.sub)}</b></td><td class="pen">${m.nomon?'<span class="mut">Belum ada laporan di Monit Defisit</span>':esc(m.pen||'–')}</td><td class="nw">${m.est?fdi(m.est):m.nomon?'–':'<span class="mut">Belum ditentukan</span>'}${late?'<span class="late">Lewat estimasi</span>':''}</td><td class="nw">${st?chip(st):'–'}</td></tr>`;}).join('');
-  if(!rows.length)h+=`<tr><td colspan="7" class="mut">${monV===0&&!q?'Tidak ada sistem siaga atau defisit pada tanggal ini.':'Tidak ada laporan yang cocok.'}</td></tr>`;
+  if(!rows.length)h+=`<tr><td colspan="7" class="mut">${monV===0&&!q?'Tidak ada laporan siaga atau defisit untuk tanggal ini.':'Tidak ada laporan yang cocok.'}</td></tr>`;
   tbl.innerHTML=h+'</tbody>';
 }
 document.getElementById('ks-mon-v').addEventListener('click',e=>{const b=e.target.closest('button[data-mv]');if(!b)return;monV=+b.dataset.mv;
