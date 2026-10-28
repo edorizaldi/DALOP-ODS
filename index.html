@@ -12,6 +12,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 #ss-admin{position:fixed;right:14px;bottom:14px;z-index:50;font:500 12px var(--font-anthropic-sans);padding:7px 12px;border-radius:999px;border:1px solid var(--color-border-line);background:#fff;color:var(--color-fg-muted);box-shadow:0 2px 8px #0001;cursor:pointer}
 #ss-admin[data-on="1"]{background:#eef6ee;color:#1F5A28;border-color:#9cc79f}
 </style>
+<link rel="stylesheet" href="slides-tab.css">
 <link rel="stylesheet" href="kondisi-tab.css?v=20261028h">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
@@ -611,6 +612,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <button type="button" role="tab" class="ss-tab" id="tab-penyulang" data-tab-to="penyulang" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12h10M7 12l10-7M7 12l10 7"/></svg><span>Database Penyulang</span></button>
       <span class="ss-side-sep" role="presentation"></span>
       <button type="button" role="tab" class="ss-tab" id="tab-update" data-tab-to="update" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span>Update Data Bulanan</span></button>
+      <button type="button" role="tab" class="ss-tab" id="tab-slides" data-tab-to="slides" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M7 12l3-3 2 2 4-4"/></svg><span>Desain Paparan</span></button>
     </nav>
     <div class="ss-side-foot"><span class="ss-datechip" id="ss-datechip"><i></i><span id="ss-datechip-t"></span></span></div>
   </aside>
@@ -1008,6 +1010,48 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
     </div>
   </section>
 
+  <section class="ss-sec" id="slides" data-tab="slides" hidden>
+    <header class="ss-hero ss-g-hero" id="sl-ringkasan">
+      <div class="ss-hero-main">
+        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>Laporan PowerPoint</span>
+        <h1 class="ss-title" id="slides-h">Desain Paparan</h1>
+        <p class="ss-take">Pilih bulan cutoff data, atur slide yang akan ditampilkan, lalu unduh paparan PowerPoint. Slide data dihitung dari database dashboard sampai bulan yang dipilih. Slide tambahan bisa diunggah sebagai file PowerPoint atau gambar.</p>
+      </div>
+    </header>
+    <div class="ss-card sl-pick">
+      <div class="sl-step"><i>1</i>Pilih data sampai bulan</div>
+      <div class="ss-chips ss-strong sl-months" id="sl-months" role="group" aria-label="Bulan cutoff" data-source="kumulatif bulanan target gangguan_ps kc_bulanan gangguan_dupont"></div>
+      <p class="sl-avail" id="sl-avail"></p>
+    </div>
+    <div class="ss-card sl-pick">
+      <div class="sl-step"><i>2</i>Atur slide paparan</div>
+      <p class="sl-avail">Urutkan dengan tombol panah atau seret baris. Susunan yang sudah disimpan di database langsung dipakai, jadi tidak perlu input ulang selama desainnya masih sama.</p>
+      <div class="sl-statebar"><span class="sl-state" id="sl-state" role="status"></span><button type="button" class="h-act h-act-primary" id="sl-save" hidden>Simpan susunan ke database</button><button type="button" class="h-act" id="sl-reset" hidden>Kembalikan ke database</button></div>
+      <ol class="sl-order" id="sl-order" aria-label="Urutan slide paparan"></ol>
+      <div class="sl-add">
+        <div class="sl-add-l">
+          <label class="h-drop sl-drop" id="sl-drop" tabindex="0">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+            <b>Tambah slide desain: tarik file ke sini, atau klik untuk memilih</b>
+            <span class="ss-note">PowerPoint (.pptx): semua slidenya ditambahkan, tetap bisa diedit, dan bisa diisi data database. Gambar (.png/.jpg): satu gambar jadi satu slide. Maks. 15 MB per file.</span>
+            <input type="file" id="sl-file" accept=".pptx,.png,.jpg,.jpeg,image/png,image/jpeg" multiple hidden>
+          </label>
+          <div class="sl-add-row"><select class="sl-sel" id="sl-add-core" aria-label="Tambah slide data"></select><button type="button" class="h-act" id="sl-sample">Unduh contoh desain</button></div>
+        </div>
+        <aside class="sl-data" aria-labelledby="sl-data-h">
+          <h4 id="sl-data-h">Data dari database untuk desain <span class="sl-data-m" id="sl-data-m"></span></h4>
+          <p class="sl-avail">Tulis kode di kotak teks desain PowerPoint. Saat paparan dibuat, kode diganti angka sesuai bulan cutoff. Untuk tabel, buat kotak teks yang isinya hanya kode tabel; kotak itu diganti tabel dengan posisi dan ukuran yang sama. Klik kode untuk menyalin.</p>
+          <input type="search" class="sl-q" id="sl-data-q" placeholder="Cari data, misalnya SAIDI Aceh atau tabel" aria-label="Cari data database">
+          <div class="sl-data-list" id="sl-data-list"><p class="sl-avail">Memuat data…</p></div>
+        </aside>
+      </div>
+      <span class="sl-msg" id="sl-add-msg" role="status"></span>
+    </div>
+    <div class="ss-card sl-pick">
+      <div class="sl-step"><i>3</i>Buat dan unduh slide</div>
+      <div class="sl-act"><button type="button" class="ss-u-btn" id="sl-btn" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg><span id="sl-btn-t">Memuat data…</span></button><span class="sl-msg" id="sl-msg" role="status"></span></div>
+    </div>
+  </section>
   <section class="ss-sec" id="kondisi" data-tab="kondisi" hidden>
     <div class="h-actions" id="ks-actions"><div class="ss-dbinfo ss-dbinfo-inline" data-dbinfo="kondisi" data-source="info_update"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span class="ss-dbinfo-t">Memuat info update database…</span></div><button type="button" class="h-act" id="ks-btn-update" aria-expanded="false" aria-controls="ks-upload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/></svg>Update laporan harian</button></div>
     <div class="h-upload ss-card" id="ks-upload" hidden>
@@ -1281,7 +1325,7 @@ window.SSD = (() => {
 </script>
 <script>
 (() => {
-  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'penyulang', 'update', 'harian', 'kondisi'];
+  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'penyulang', 'update', 'harian', 'kondisi', 'slides'];
   window.SSC = ['var(--x-c0)', 'var(--x-c1)', 'var(--x-c2)', 'var(--x-c3)', 'var(--x-c4)', 'var(--x-c5)', 'var(--x-c6)', 'var(--x-c7)'];
   const h1 = new Date(); h1.setDate(h1.getDate() - 1);
   const BLNF = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -2636,6 +2680,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="dp-tab.js"></script>
 <script src="upd-core.js"></script>
 <script src="upd-bulanan.js"></script>
+<script src="slides-tab.js"></script>
 <script src="kondisi_data.js"></script>
 <script src="kondisi_update.js"></script>
 <script src="kondisi-tab.js?v=20261028h"></script>
