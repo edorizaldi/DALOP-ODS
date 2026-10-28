@@ -43,7 +43,13 @@
     // filter
     const kodes = [...new Set(rows.map((r) => r.k))].sort();
     const chip = (v, l, cur) => { const b = mk('button', l, 'ss-chip'); b.type = 'button'; b.dataset.v = v; b.setAttribute('aria-pressed', String(v === cur)); return b; };
-    $('kc-f-kode').replaceChildren(chip('', 'Semua', sel.k || ''), ...kodes.map((k) => chip(k, k, sel.k || '')));
+    // identitas kode laporan APKT
+    const KODE_KET = { J: 'Event padam karena gangguan', P: 'Event padam karena pemeliharaan', G: 'Event padam karena gangguan individu' };
+    $('kc-f-kode').replaceChildren(chip('', 'Semua', sel.k || ''), ...kodes.map((k) => { const b = chip(k, k, sel.k || ''); if (KODE_KET[k]) { b.title = 'Kode ' + k + ': ' + KODE_KET[k]; b.setAttribute('aria-label', 'Kode ' + k + ', ' + KODE_KET[k]); } return b; }));
+    // keterangan kode di bawah filter; kode yang dipilih disorot
+    $('kc-kode-ket').replaceChildren(...['J', 'P', 'G'].filter((k) => kodes.includes(k)).concat(kodes.filter((k) => !['J', 'P', 'G'].includes(k))).map((k) => {
+      const s = mk('span', null, sel.k === k ? 'on' : ''); const b = mk('b', k); s.append(b, KODE_KET[k] || 'Kode ' + k); return s;
+    }));
     const su = $('kc-f-unit');
     if (su.options.length !== units.length + 1) su.replaceChildren(new Option('Semua unit (Sumkal)', ''), ...units.map((u) => new Option(uname(u), u)));
     su.value = sel.u || '';
