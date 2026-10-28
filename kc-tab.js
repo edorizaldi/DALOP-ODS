@@ -218,7 +218,7 @@
     {
       const by = new Map();
       rows.forEach((r) => { if (!passK(r) || (sel.u && r.u !== sel.u)) return; const key = sel.u ? r.p : r.u; const o = by.get(key) || { key, Koreksi: 0, Cleansing: 0 }; o[r.j] += r.n; by.set(key, o); });
-      // event gangguan permanen / sesaat (kolom P/S di data Kali Gangguan Penyulang), kode dan bulan yang sama
+      // event gangguan permanen / sesaat (kolom P/S di data Event Padam Penyulang), kode dan bulan yang sama
       const GP = SSD.data('gangguan_ps'); const hasPS = GP.status === 'ok';
       const kodeSet = new Set(sel.k ? [sel.k] : kodes); const mSet = new Set(months);
       if (hasPS) GP.data.forEach((r) => {
@@ -228,7 +228,7 @@
       });
       const list = [...by.values()].filter((o) => o.Koreksi + o.Cleansing > 0 || !String(o.key).startsWith('UP3 tidak')).map((o) => ({ ...o, Permanen: o.Permanen || 0, Sesaat: o.Sesaat || 0, t: o.Koreksi + o.Cleansing })).sort((a, b) => b.t - a.t);
       $('kc-unit-h').textContent = sel.u ? 'Per UP3 di ' + uname(sel.u) : 'Per unit induk';
-      $('kc-unit-note').textContent = `${sel.k ? 'Kode ' + sel.k : 'Kode ' + kodes.join(' dan ')}, ${per}. Event permanen dan sesaat diambil dari kolom P/S data Kali Gangguan Penyulang, hanya bidang Distribusi, dengan kode dan bulan yang sama; No. Laporan yang sama dihitung satu kali. Klik baris untuk memilih ${sel.u ? 'UP3' : 'unit'}.`;
+      $('kc-unit-note').textContent = `${sel.k ? 'Kode ' + sel.k : 'Kode ' + kodes.join(' dan ')}, ${per}. Event permanen dan sesaat diambil dari kolom P/S data Event Padam Penyulang, hanya bidang Distribusi, dengan kode dan bulan yang sama; No. Laporan yang sama dihitung satu kali. Klik baris untuk memilih ${sel.u ? 'UP3' : 'unit'}.`;
       const th = mk('thead'), hr1 = mk('tr'), hr = mk('tr');
       const g1 = mk('th', ''); g1.rowSpan = 1; const g2 = mk('th', 'Koreksi & cleansing (disetujui)', 'ss-kc-grp'); g2.colSpan = 2; const g3 = mk('th', 'Event gangguan distribusi', 'ss-kc-grp'); g3.colSpan = 2; const g4 = mk('th', '', 'ss-kc-grp');
       hr1.append(g1, g2, g3, g4);

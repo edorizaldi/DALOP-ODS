@@ -208,7 +208,7 @@
         el('td', { className: 'num', textContent: f0.format(p.unik) }), el('td', { textContent: `${fmtD(p.tgl_min)} – ${fmtD(p.tgl_max)}` }),
         el('td', {}, el('span', { className: 'ss-up-chip ' + (have.has(m) ? 'replace' : 'new'), textContent: have.has(m) ? 'Ganti data lama' : 'Baru' })));
     }));
-    $('up-g-sum').textContent = `${gRes.file}: ${f0.format(gRes.res.rows)} baris dibaca. Duplikat No. Laporan dibuang (kemunculan pertama dipertahankan). Bulan yang dicentang menggantikan data bulan itu di tab Kali Gangguan Penyulang dan Database Penyulang.`;
+    $('up-g-sum').textContent = `${gRes.file}: ${f0.format(gRes.res.rows)} baris dibaca. Duplikat No. Laporan dibuang (kemunculan pertama dipertahankan). Bulan yang dicentang menggantikan data bulan itu di tab Event Padam Penyulang dan Database Penyulang.`;
     const b = $('up-g-go'); b.disabled = !gRes.pick.size; b.textContent = gRes.pick.size ? `Update dashboard sekarang (${gRes.pick.size} bulan)` : 'Update dashboard sekarang';
   }
   async function gGo() {

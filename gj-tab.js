@@ -1,4 +1,4 @@
-// Tab Kali Gangguan Penyulang: tren jumlah laporan per bulan menurut Jenis Padam (batang bertumpuk).
+// Tab Event Padam Penyulang: tren jumlah laporan per bulan menurut Jenis Padam (batang bertumpuk).
 (() => {
   const $ = (id) => document.getElementById(id);
   const BS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];

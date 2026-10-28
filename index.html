@@ -599,7 +599,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <button type="button" role="tab" class="ss-tab" id="tab-kondisi" data-tab-to="kondisi" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><path d="M12.8 6.5 10 10.8h2.4l-.9 3.7 2.9-4.4H12z"/></svg><span>Kondisi Sistem</span></button>
       <span class="ss-side-label ss-side-label-gap" role="presentation">Laporan Bulanan</span>
       <button type="button" role="tab" class="ss-tab" id="tab-saidi" data-tab-to="saidi" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.2"/></svg><span>SAIDI SAIFI ENS</span></button>
-      <button type="button" role="tab" class="ss-tab" id="tab-gangguan" data-tab-to="gangguan" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13h6l-1 8 8-10h-6z"/></svg><span>Kali Gangguan Penyulang</span></button>
+      <button type="button" role="tab" class="ss-tab" id="tab-gangguan" data-tab-to="gangguan" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13h6l-1 8 8-10h-6z"/></svg><span>Event Padam Penyulang</span></button>
       <button type="button" role="tab" class="ss-tab" id="tab-kc" data-tab-to="kc" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg><span>Koreksi Cleansing</span></button>
       <button type="button" role="tab" class="ss-tab" id="tab-dp" data-tab-to="dp" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="9" width="6" height="6" rx="1.5"/><rect x="16" y="3" width="6" height="5" rx="1.5"/><rect x="16" y="10" width="6" height="5" rx="1.5"/><rect x="16" y="17" width="6" height="5" rx="1.5"/><path d="M8 12h4M12 5.5v13M12 5.5h4M12 12.5h4M12 18.5h4"/></svg><span>Dupont Gangguan</span></button>
       <span class="ss-side-label ss-side-label-gap" role="presentation">Database Aset</span>
@@ -745,7 +745,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
     <header class="ss-hero" id="g-ringkasan">
       <div class="ss-hero-main">
         <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>Gangguan penyulang · Sumatera &amp; Kalimantan</span>
-        <h1 class="ss-title" id="gangguan-h">Gangguan Penyulang</h1>
+        <h1 class="ss-title" id="gangguan-h">Kali Event Padam Penyulang</h1>
         <p class="ss-take dash-skeleton" id="g-take" data-source="gangguan">—</p>
         <div class="ss-filters" id="g-filter" data-source="gangguan">
           <div class="ss-frow"><span class="ss-flabel">Kode</span><div class="ss-chips ss-strong" id="g-f-kode" role="group" aria-label="Kode"></div></div>
@@ -934,13 +934,13 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="ss-u-acts"><button type="button" class="ss-u-btn" data-up-open="saidi" aria-expanded="false" aria-controls="up-saidi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Unggah &amp; update langsung</button></div>
       </div>
       <div class="ss-card ss-u-card" id="u-gangguan" data-source="gangguan">
-        <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13h6l-1 8 8-10h-6z"/></svg></span><h3>Kali Gangguan Penyulang</h3></div>
+        <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13h6l-1 8 8-10h-6z"/></svg></span><h3>Event Padam Penyulang</h3></div>
         <dl class="ss-u-dl"><dt>File sumber</dt><dd>Detail gangguan APKT (.xlsx), satu bulan atau banyak bulan</dd><dt>Data di dashboard</dt><dd id="u-g-per">—</dd><dt>Update terakhir</dt><dd data-dbinfo-when="gangguan">—</dd><dt>Isi</dt><dd id="u-g-isi">—</dd></dl>
         <div class="ss-u-acts"><button type="button" class="ss-u-btn" data-up-open="gangguan" aria-expanded="false" aria-controls="up-gangguan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Unggah &amp; update langsung</button></div>
       </div>
       <div class="ss-card ss-u-card" id="u-penyulang" data-source="peny_profil peny_bulanan">
         <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12h10M7 12l10-7M7 12l10 7"/></svg></span><h3>Database Penyulang</h3></div>
-        <dl class="ss-u-dl"><dt>File sumber</dt><dd>Database penyulang (.xlsx) dan detail gangguan APKT yang sama dengan tab Kali Gangguan</dd><dt>Data di dashboard</dt><dd id="u-p-per">—</dd><dt>Update terakhir</dt><dd data-dbinfo-when="penyulang">—</dd><dt>Isi</dt><dd id="u-p-isi">—</dd></dl>
+        <dl class="ss-u-dl"><dt>File sumber</dt><dd>Database penyulang (.xlsx) dan detail gangguan APKT yang sama dengan tab Event Padam Penyulang</dd><dt>Data di dashboard</dt><dd id="u-p-per">—</dd><dt>Update terakhir</dt><dd data-dbinfo-when="penyulang">—</dd><dt>Isi</dt><dd id="u-p-isi">—</dd></dl>
         <div class="ss-u-acts"><button type="button" class="ss-u-btn" data-up-open="penyulang" aria-expanded="false" aria-controls="up-penyulang"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Unggah &amp; update langsung</button></div>
       </div>
       <div class="ss-card ss-u-card" id="u-kc" data-source="kc_bulanan">
@@ -960,7 +960,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <p class="ss-up-msg" id="up-s-msg" role="status"></p>
     </div>
     <div class="ss-card ss-up-panel" id="up-gangguan" hidden>
-      <div class="ss-up-head"><h3>Update Kali Gangguan Penyulang</h3><p class="ss-note">Detail gangguan APKT (.xlsx), satu bulan atau banyak bulan, dengan kolom NO. LAPORAN, KODE, BIDANG, JENIS PADAM, UNIT, BULAN, ULP, PENYULANG dan P/S. Tab Database Penyulang ikut diperbarui dari file yang sama. File besar (ratusan MB) butuh beberapa menit untuk dibaca.</p></div>
+      <div class="ss-up-head"><h3>Update Event Padam Penyulang</h3><p class="ss-note">Detail gangguan APKT (.xlsx), satu bulan atau banyak bulan, dengan kolom NO. LAPORAN, KODE, BIDANG, JENIS PADAM, UNIT, BULAN, ULP, PENYULANG dan P/S. Tab Database Penyulang ikut diperbarui dari file yang sama. File besar (ratusan MB) butuh beberapa menit untuk dibaca.</p></div>
       <label class="h-drop" id="up-g-drop" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><b>Tarik file detail APKT ke sini, atau klik untuk memilih</b><span class="ss-note">Format .xlsx · sheet pertama berisi detail gangguan</span><input type="file" id="up-g-file" accept=".xlsx" hidden></label>
       <div class="ss-up-prog"><progress id="up-g-bar" max="100" value="0" hidden></progress><span class="ss-note" id="up-g-barlabel"></span></div>
       <div id="up-g-review" class="ss-up-review" hidden>
@@ -1732,7 +1732,7 @@ SSD.calc('up3_yoy', {
 
   // Titik berdenyut untuk menandai unit teratas
   const pulse = (g, x, y, r, color) => { [0, 0.9].forEach((d) => g.insert('circle', ':first-child').attr('class', 'ss-pulse').attr('cx', x).attr('cy', y).attr('r', r).attr('fill', 'none').attr('stroke', color).attr('stroke-width', 2).style('animation-delay', d + 's').style('pointer-events', 'none')); };
-  // Peta generik untuk tab Kali Gangguan Penyulang dan Penyulang per UP3
+  // Peta generik untuk tab Event Padam Penyulang dan Penyulang per UP3
   window.SSMAP = (box, o) => {
     const P = SSD.data('peta'), KO = SSD.data('koordinat');
     if (P.status === 'error' || KO.status === 'error') { fail(box); return; }
@@ -2252,7 +2252,7 @@ SSD.calc('up3_yoy', {
       tk.classList.remove('dash-skeleton'); tk.replaceChildren();
       const B = (s) => { const b = document.createElement('b'); b.textContent = s; return b; };
       const lab = (v) => (v ? `${BLNF[v % 100 - 1]} ${Math.floor(v / 100)}` : '—');
-      tk.append('Data terakhir di dashboard: SAIDI SAIFI ENS s.d. ', B(lab(sLast)), ', Kali Gangguan Penyulang s.d. ', B(lab(gLast)), ', Database Penyulang s.d. ', B(lab(pLast)), ', Koreksi Cleansing s.d. ', B(lab(kLast)), '. Unggah file terbaru lewat tombol Unggah & update langsung di kartu di bawah.');
+      tk.append('Data terakhir di dashboard: SAIDI SAIFI ENS s.d. ', B(lab(sLast)), ', Event Padam Penyulang s.d. ', B(lab(gLast)), ', Database Penyulang s.d. ', B(lab(pLast)), ', Koreksi Cleansing s.d. ', B(lab(kLast)), '. Unggah file terbaru lewat tombol Unggah & update langsung di kartu di bawah.');
     }
   });
 })();
