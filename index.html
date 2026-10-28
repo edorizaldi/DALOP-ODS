@@ -589,6 +589,11 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 .ss-p-table tbody tr.ss-p-on td:first-child { box-shadow: inset 3px 0 0 var(--ss-acc); }
 .ss-p-table td.ss-p-c { min-width: 2.6rem; }
 .ss-p-table tbody tr:focus-visible { outline: 2px solid var(--ss-acc); outline-offset: -2px; }
+.ss-kodeket { margin: -2px 0 2px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.45; }
+.ss-kodeket span { white-space: nowrap; }
+.ss-kodeket b { display: inline-block; min-width: 1.4em; padding: 0 5px; margin-right: 4px; border-radius: 5px; text-align: center; font-weight: 700; color: var(--color-fg); background: color-mix(in srgb, var(--color-fg) 8%, transparent); }
+.ss-kodeket span.on { color: var(--color-fg); font-weight: 600; }
+.ss-kodeket span.on b { background: var(--x-lime, #C8E86B); color: var(--x-on-lime, #1b2a0a); }
 </style>
 
 <div class="ss-shell" id="ss-shell" data-ss-theme="light">
@@ -749,6 +754,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <p class="ss-take dash-skeleton" id="g-take" data-source="gangguan">—</p>
         <div class="ss-filters" id="g-filter" data-source="gangguan">
           <div class="ss-frow"><span class="ss-flabel">Kode</span><div class="ss-chips ss-strong" id="g-f-kode" role="group" aria-label="Kode"></div></div>
+          <p class="ss-kodeket" id="g-kode-ket" aria-live="polite"></p>
           <div class="ss-frow"><span class="ss-flabel">Bidang</span><div class="ss-chips" id="g-f-bidang" role="group" aria-label="Bidang"></div></div>
           <div class="ss-frow"><span class="ss-flabel">Jenis padam</span><div class="ss-chips" id="g-f-jenis" role="group" aria-label="Jenis padam"></div></div>
           <div class="ss-frow"><span class="ss-flabel">Unit</span><select id="g-f-unit" aria-label="Unit gangguan"></select>
@@ -1998,6 +2004,9 @@ SSD.calc('up3_yoy', {
     { p: 'g_jenis', col: 'JENIS_PADAM', el: 'g-f-jenis' },
   ];
   const BID = [['DISTRIBUSI', 'Distribusi', 0], ['TRANSMISI', 'Transmisi', 3], ['PEMBANGKIT', 'Pembangkit', 4]];
+  // identitas kode laporan APKT
+  const KODE_KET = { J: 'Event padam karena gangguan', P: 'Event padam karena pemeliharaan', G: 'Event padam karena gangguan individu' };
+  const KODE_URUT = ['J', 'P', 'G'];
   const UNAME = { ACEH: 'Aceh', BABEL: 'Bangka Belitung', KALBAR: 'Kalimantan Barat', KALSELTENG: 'Kalselteng', KALTIMRA: 'Kaltimra', LAMPUNG: 'Lampung', RKR: 'Riau & Kepri', S2JB: 'S2JB', SUMBAR: 'Sumatera Barat', SUMUT: 'Sumatera Utara' };
   const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   const BS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -2043,8 +2052,15 @@ SSD.calc('up3_yoy', {
       const opts = Array.from(new Set(rows.map((r) => r[key[f.col]]))).sort((a, b) => (f.col === 'BIDANG' ? BID.findIndex((x) => x[0] === a) - BID.findIndex((x) => x[0] === b) : a.localeCompare(b)));
       const cur = sel[f.col] || '';
       const btn = (v, l) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ss-chip'; b.dataset.v = v; b.textContent = l; b.setAttribute('aria-pressed', String(v === cur)); return b; };
-      $(f.el).replaceChildren(btn('', 'Semua'), ...opts.map((o) => btn(o, f.col === 'KODE' ? o : tc(o))));
+      $(f.el).replaceChildren(btn('', 'Semua'), ...opts.map((o) => { const b = btn(o, f.col === 'KODE' ? o : tc(o)); if (f.col === 'KODE' && KODE_KET[o]) { b.title = 'Kode ' + o + ': ' + KODE_KET[o]; b.setAttribute('aria-label', 'Kode ' + o + ', ' + KODE_KET[o]); } return b; }));
     });
+    // keterangan kode di bawah filter; kode yang dipilih ditebalkan
+    const kodes = Array.from(new Set(rows.map((r) => r.k)));
+    const ket = $('g-kode-ket');
+    ket.replaceChildren(...[...KODE_URUT.filter((k) => kodes.includes(k)), ...kodes.filter((k) => !KODE_URUT.includes(k)).sort()].map((k) => {
+      const s = document.createElement('span'); if (sel.KODE === k) s.className = 'on';
+      const b = document.createElement('b'); b.textContent = k; s.append(b, KODE_KET[k] || 'Kode ' + k); return s;
+    }));
     const us = Array.from(new Set(rows.map((r) => r.u))).sort((a, b) => uname(a).localeCompare(uname(b)));
     const su = $('g-f-unit');
     if (su.options.length !== us.length + 1) su.replaceChildren(new Option('Semua unit', ''), ...us.map((u) => new Option(uname(u), u)));
@@ -2058,7 +2074,7 @@ SSD.calc('up3_yoy', {
     const T = sum(ser.map((d) => d.t));
     const peak = ser.reduce((a, b) => (b.t > a.t ? b : a), ser[0]);
     const last = ser[ser.length - 1], prev = ser[ser.length - 2];
-    const lbl = [sel.KODE && 'Kode ' + sel.KODE, sel.BIDANG && tc(sel.BIDANG), sel.JENIS_PADAM && tc(sel.JENIS_PADAM), sel.UNIT && uname(sel.UNIT)].filter(Boolean);
+    const lbl = [sel.KODE && 'Kode ' + sel.KODE + (KODE_KET[sel.KODE] ? ' (' + KODE_KET[sel.KODE].toLowerCase() + ')' : ''), sel.BIDANG && tc(sel.BIDANG), sel.JENIS_PADAM && tc(sel.JENIS_PADAM), sel.UNIT && uname(sel.UNIT)].filter(Boolean);
     const scope = lbl.length ? lbl.join(' · ') : 'Semua kode, bidang, jenis padam dan unit';
 
     // summary (seperti ringkasan di tab SAIDI SAIFI ENS)
