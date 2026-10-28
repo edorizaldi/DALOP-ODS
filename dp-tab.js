@@ -93,7 +93,8 @@
       if (D.status === 'error') { tree.replaceChildren(mk('div', 'Failed to load', 'ss-fail')); tree.classList.remove('dash-skeleton'); }
       return;
     }
-    const all = D.data.map((r) => ({ u: r.UNIT, p: r.UP3, m: Number(r.BULAN_NO), v: LV.map((l) => r[l.f] == null ? '' : String(r[l.f])), n: Number(r.JUMLAH) }));
+    const all = D.data.map((r) => ({ u: r.UNIT, p: r.UP3, m: Number(r.BULAN_NO), v: LV.map((l) => r[l.f] == null ? '' : String(r[l.f])), s: r.PS ? String(r.PS) : '', n: Number(r.JUMLAH) }));
+    const hasPS = all.some((r) => r.s);
     const P = dash.params();
     const units = UORD.filter((u) => all.some((r) => r.u === u));
     const sel = { u: units.includes(P.dp_unit) ? P.dp_unit : null, p: null, m: null };
@@ -121,12 +122,13 @@
     // susun level demi level mengikuti jalur terpilih
     const levels = []; let cur = rows;
     for (let i = 0; i < LV.length; i++) {
-      const agg = new Map(); cur.forEach((r) => agg.set(r.v[i], (agg.get(r.v[i]) || 0) + r.n));
+      const agg = new Map(), aP = new Map(), aS = new Map();
+      cur.forEach((r) => { agg.set(r.v[i], (agg.get(r.v[i]) || 0) + r.n); if (r.s === 'Permanen') aP.set(r.v[i], (aP.get(r.v[i]) || 0) + r.n); else if (r.s === 'Sesaat') aS.set(r.v[i], (aS.get(r.v[i]) || 0) + r.n); });
       const items = [...agg].sort((a, b) => b[1] - a[1]);
       if (!items.length) break;
       let pick = path[i];
       if (pick == null || !agg.has(pick)) { pick = items[0][0]; path = path.slice(0, i); path[i] = pick; }
-      levels.push({ items, pick, parentN: cur.reduce((a, r) => a + r.n, 0) });
+      levels.push({ items, pick, parentN: cur.reduce((a, r) => a + r.n, 0), aP, aS });
       cur = cur.filter((r) => r.v[i] === pick);
     }
     path = path.slice(0, levels.length);
@@ -270,9 +272,11 @@
         const on = k === l.pick;
         const b = mk('button', null, 'dp-node' + (on ? ' on' : '')); b.type = 'button';
         b.setAttribute('aria-pressed', String(on));
-        b.title = `${LV[i].name}: ${nice(k, i)}\n${fmt(n)} gangguan kode J\n${pc(n / Math.max(1, T))} dari total kode J · ${pc(n / Math.max(1, l.parentN))} dari level sebelumnya`;
+        const nP = l.aP.get(k) || 0, nS = l.aS.get(k) || 0;
+        b.title = `${LV[i].name}: ${nice(k, i)}\n${fmt(n)} gangguan kode J\n${pc(n / Math.max(1, T))} dari total kode J · ${pc(n / Math.max(1, l.parentN))} dari level sebelumnya` + (hasPS ? `\nPermanen ${fmt(nP)} · Sesaat ${fmt(nS)}` : '');
         const ic = mk('span', null, 'dp-ic'); ic.append(icon(i === 5 ? causeIcon(k) : ICON[i]));
         const tx = mk('div', null, 'dp-tx'); tx.append(mk('b', nice(k, i)), mk('span', `${fmt(n)} · ${pc(n / Math.max(1, T))}`));
+        if (hasPS && i === 5) { const ps = mk('span', null, 'dp-ps'); const pp = (nP + nS) ? Math.round(nP / (nP + nS) * 100) : 0; ps.append(mk('i', 'P'), ` ${pp}%  `, mk('i', 'S', 'dp-ps-s'), ` ${(nP + nS) ? 100 - pp : 0}%`); ps.title = `Permanen ${fmt(nP)} · Sesaat ${fmt(nS)}`; tx.append(ps); }
         b.append(ic, tx);
         b.addEventListener('click', () => { path = path.slice(0, i); path[i] = k; redraw(); });
         col.append(b);
@@ -285,7 +289,41 @@
     tree.replaceChildren(wrap);
     $('dp-path').textContent = levels.length ? 'Jalur terpilih: ' + ['Gangguan kode J', ...levels.map((l) => nice(l.pick, levels.indexOf(l)))].join(' → ') + '. Klik kotak lain untuk membuka cabangnya.' : '';
     requestAnimationFrame(drawLinks);
+    psTable(rows, levels, where, per, hasPS);
   };
+  // Tabel event permanen dan sesaat per penyebab (cause), mengikuti filter dan Bidang + Jenis padam terpilih di pohon
+  let psCtx = { name: '' };
+  function psTable(rows, levels, where, per, hasPS) {
+    const tb = $('dp-ps-table'), note = $('dp-ps-sel');
+    $('dp-ps-card').style.display = hasPS ? '' : 'none';
+    if (!hasPS) return;
+    const bid = levels[0] ? levels[0].pick : null, jen = levels[1] ? levels[1].pick : null;
+    const cur = rows.filter((r) => (bid == null || r.v[0] === bid) && (jen == null || r.v[1] === jen));
+    const m = new Map();
+    cur.forEach((r) => { const o = m.get(r.v[5]) || { p: 0, s: 0, t: 0 }; if (r.s === 'Permanen') o.p += r.n; else if (r.s === 'Sesaat') o.s += r.n; o.t += r.n; m.set(r.v[5], o); });
+    const list = [...m].sort((a, b) => b[1].t - a[1].t);
+    const tot = list.reduce((a, [, o]) => ({ p: a.p + o.p, s: a.s + o.s, t: a.t + o.t }), { p: 0, s: 0, t: 0 });
+    const scope = [bid != null ? nice(bid, 0) : null, jen != null ? nice(jen, 1) : null].filter(Boolean).join(' · ');
+    psCtx = { name: [where, scope, per].join('_') };
+    note.textContent = `${where} · ${scope || 'semua bidang'} · ${per}. Gangguan kode J (No. Laporan unik) menurut kolom P/S. Bidang dan jenis padam mengikuti pilihan di Dupont chart; klik kotak lain di pohon untuk mengganti.`;
+    const mx = Math.max(1, ...list.map(([, o]) => o.t));
+    const th = mk('thead'), hr = mk('tr');
+    ['Penyebab (cause)', 'Permanen', 'Sesaat', 'Total', '% Permanen', ''].forEach((h, i) => { const c = mk('th', h); if (i === 5) c.className = 'dp-ps-barh'; hr.append(c); });
+    th.append(hr);
+    const body = mk('tbody');
+    const row = ([k, o], cls) => {
+      const tr = mk('tr', null, cls || '');
+      const c0 = mk('td'); if (!cls) { const ic = mk('span', null, 'dp-ps-ic'); ic.append(svgIcon(causeIcon(k))); c0.append(ic); } c0.append(cls ? k : nice(k, 5)); tr.append(c0);
+      tr.append(mk('td', fmt(o.p), 'num'), mk('td', fmt(o.s), 'num'), mk('td', fmt(o.t), 'num'), mk('td', o.t ? pc(o.p / o.t) : '–', 'num'));
+      const bc = mk('td', null, 'dp-ps-barc');
+      if (!cls) { const bar = mk('div', null, 'dp-ps-bar'); bar.style.width = (o.t / mx * 100) + '%'; const bp = mk('i', null, 'p'); bp.style.width = (o.t ? o.p / o.t * 100 : 0) + '%'; const bs = mk('i', null, 's'); bs.style.width = (o.t ? o.s / o.t * 100 : 0) + '%'; bar.append(bp, bs); bar.title = `${nice(k, 5)}: permanen ${fmt(o.p)}, sesaat ${fmt(o.s)}`; bc.append(bar); }
+      tr.append(bc); return tr;
+    };
+    list.forEach((e) => body.append(row(e)));
+    body.append(row(['Total', tot], 'dp-ps-tot'));
+    tb.replaceChildren(th, body);
+  }
+  $('dp-ps-dl').addEventListener('click', () => window.SSExport({ card: 'dp-ps-card', btn: 'dp-ps-dl', msg: 'dp-ps-msg', preview: 'dp-ps-pv', filename: `Permanen_Sesaat_per_Penyebab_${psCtx.name.replace(/[^A-Za-z0-9]+/g, '_')}.png` }));
   const redraw = () => render();
   // unduh Dupont chart sebagai PNG
   $('dp-dl').addEventListener('click', async () => {
