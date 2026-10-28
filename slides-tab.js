@@ -229,12 +229,14 @@
   });
 
   // ---------- data database untuk desain ----------
+  // data kondisi sistem harian (kondisi_data.js + kondisi_update.js), tidak mengikuti bulan cutoff
+  const kondisiData = () => { const d = window.__D || {}; return d.kondisi_day ? { meta: d.kondisi_meta, day: d.kondisi_day, mon: d.kondisi_mon, upd: d.kondisi_update } : null; };
   let q = '';
   const openG = new Set(['Umum']);
   function renderData() {
     if (!D0 || !cutoff) return;
     load('slides-data.js', () => !!window.SSSlidesData).then(() => {
-      if (!cat || cat.m !== cutoff) { cat = window.SSSlidesData.catalog(D0, cutoff); cat.m = cutoff; renderList(); }
+      if (!cat || cat.m !== cutoff || cat.k !== !!kondisiData()) { cat = window.SSSlidesData.catalog(D0, cutoff, kondisiData()); cat.m = cutoff; cat.k = !!kondisiData(); renderList(); }
       $('sl-data-m').textContent = BLN[cutoff - 1] + ' 2026';
       const box = $('sl-data-list'); const ql = q.trim().toLowerCase();
       const gs = cat.groups.map((g) => {
@@ -300,7 +302,7 @@
       await load(PPTX_URL, () => !!window.PptxGenJS);
       await load('slides-core.js', () => !!window.SSSlides);
       await load('slides-assets.js', () => !!window.SS_SLIDE_ASSETS);
-      if (hasP) { await load(JSZIP_URL, () => !!window.JSZip); await load('slides-merge.js', () => !!window.SSPptxMerge); await load('slides-data.js', () => !!window.SSSlidesData); if (!cat || cat.m !== cutoff) { cat = window.SSSlidesData.catalog(D0, cutoff); cat.m = cutoff; } }
+      if (hasP) { await load(JSZIP_URL, () => !!window.JSZip); await load('slides-merge.js', () => !!window.SSPptxMerge); await load('slides-data.js', () => !!window.SSSlidesData); if (!cat || cat.m !== cutoff || cat.k !== !!kondisiData()) { cat = window.SSSlidesData.catalog(D0, cutoff, kondisiData()); cat.m = cutoff; cat.k = !!kondisiData(); } }
       msg('sl-msg', 'Menyiapkan slide unggahan…');
       const plan = []; const fills = [];
       for (let i = 0; i < items.length; i++) {
