@@ -17,7 +17,7 @@
     ['Penyebab gangguan penyulang', 'Rincian penyebab, komposisi, Dalam Investigasi per UID, insight.'],
   ];
   const DEFAULT = () => CORE.map((_, i) => ({ k: 'core', n: i + 1 }));
-  let cutoff = null, busy = false;
+  let cutoff = null, busy = false, cat = null, D0 = null;
   let saved = DEFAULT(), savedInfo = null, items = DEFAULT().map(withId);
   const pending = new Map(); // fid -> {blob, ext} file unggahan yang belum tersimpan
   const blobCache = new Map(); // path -> Blob
@@ -66,6 +66,7 @@
     SETS.forEach((k) => { const r = SSD.data(k); if (r.status !== 'ok') ok = false; else D[k] = r.data; });
     if (!ok) return;
     if (!window.SSSlides) { load('slides-core.js', () => !!window.SSSlides).then(renderMonths).catch((e) => msg('sl-msg', 'Tidak bisa memuat penyusun slide: ' + e.message, 'bad')); return; }
+    D0 = D;
     const mo = window.SSSlides.months(D);
     const opts = []; for (let m = 2; m <= mo.max; m++) opts.push(m);
     if (cutoff == null || !opts.includes(cutoff)) cutoff = opts[opts.length - 1] || null;
@@ -73,6 +74,7 @@
     const nm = (m) => (m ? BLN[m - 1] : '—');
     $('sl-avail').textContent = `Data tersedia: SAIDI/SAIFI s.d. ${nm(mo.lastS)} (bulan selesai), Event Padam Penyulang s.d. ${nm(mo.lastG)}, Koreksi Cleansing s.d. ${nm(mo.lastK)}, Dupont Gangguan s.d. ${nm(mo.lastD)}. Pilihan bulan dibatasi sampai bulan yang tersedia di semua data.`;
     renderBtn();
+    renderData();
   }
   function renderBtn() {
     $('sl-btn').disabled = !cutoff || busy || !items.length;
@@ -89,7 +91,7 @@
   function describe(it) {
     if (it.k === 'core') return { badge: 'Slide data', cls: 'core', title: CORE[it.n - 1][0], sub: CORE[it.n - 1][1] };
     if (it.k === 'img') return { badge: 'Gambar', cls: 'img', title: it.name || 'Gambar', sub: 'Ditampilkan penuh di satu slide.' };
-    return { badge: 'PowerPoint', cls: 'pptx', title: it.title || `Slide ${it.s + 1}`, sub: `${it.name || 'File PowerPoint'} · slide ${it.s + 1}${it.hidden ? ' (tersembunyi di file asal)' : ''}` };
+    return { badge: 'PowerPoint', cls: 'pptx', title: it.title || `Slide ${it.s + 1}`, sub: `${it.name || 'File PowerPoint'} · slide ${it.s + 1}${it.hidden ? ' (tersembunyi di file asal)' : ''}`, tokens: it.tokens || [] };
   }
   function renderList() {
     const ul = $('sl-order');
@@ -102,6 +104,19 @@
       const tx = el('div', 'sl-rtx'); const bd = el('span', 'sl-badge sl-b-' + d.cls, d.badge);
       if (!it.f && it.fid) bd.textContent += ' · baru';
       tx.append(bd, el('b', null, d.title), el('p', null, d.sub));
+      if (it.k === 'pptx') {
+        const known = cat ? d.tokens.filter((k) => k in cat.values || k in cat.tables) : d.tokens;
+        const bad = cat ? d.tokens.filter((k) => !(k in cat.values || k in cat.tables)) : [];
+        const dp = el('p', 'sl-tok');
+        if (!d.tokens.length) dp.textContent = 'Tanpa data database (desain statis).';
+        else {
+          dp.append(el('span', null, `Data database: ${known.length} kode`));
+          known.slice(0, 6).forEach((k) => dp.append(el('code', null, k)));
+          if (known.length > 6) dp.append(el('span', null, `+${known.length - 6} lagi`));
+          if (bad.length) { const w = el('span', 'sl-tok-bad', `Kode tidak dikenal (dibiarkan apa adanya): ${bad.join(', ')}`); dp.append(w); }
+        }
+        tx.append(dp);
+      } else if (it.k === 'img') tx.append(el('p', 'sl-tok', 'Gambar tidak bisa diisi data. Untuk desain berisi data, unggah sebagai .pptx.'));
       const act = el('div', 'sl-ract');
       const mk = (a, label, svg, dis) => { const b = el('button', 'sl-ib'); b.type = 'button'; b.dataset.act = a; b.setAttribute('aria-label', label); b.title = label; b.innerHTML = svg; b.disabled = !!dis; return b; };
       act.append(
@@ -165,7 +180,8 @@
           const ins = await window.SSPptxMerge.inspect(window.JSZip, f);
           if (!ins.slides.length) { notes.push(`${f.name}: tidak ada slide`); continue; }
           pending.set(fid, { blob: f, ext: 'pptx' }); zipCache.set(fid, ins);
-          ins.slides.forEach((s, i) => items.push(withId({ k: 'pptx', fid, name: f.name, s: i, title: s.title, hidden: s.hidden || undefined })));
+          await load('slides-data.js', () => !!window.SSSlidesData);
+          ins.slides.forEach((s, i) => { const tk = window.SSSlidesData.scan(s.xml); items.push(withId({ k: 'pptx', fid, name: f.name, s: i, title: s.title, hidden: s.hidden || undefined, tokens: tk.length ? tk : undefined })); });
           const sz = ins.size; if (sz && (Math.abs(sz.cx / sz.cy - 16 / 9) > 0.02 || Math.abs(sz.cx - 12192000) > 120000)) notes.push(`${f.name}: ukuran slide berbeda dari paparan (16:9, 13,33 × 7,5 inci), posisi isi bisa tidak pas`);
           notes.push(`${f.name}: ${ins.slides.length} slide ditambahkan`);
         } catch (e) { notes.push(`${f.name}: ${e.message}`); }
@@ -212,6 +228,67 @@
     busy = false; renderList();
   });
 
+  // ---------- data database untuk desain ----------
+  let q = '';
+  const openG = new Set(['Umum']);
+  function renderData() {
+    if (!D0 || !cutoff) return;
+    load('slides-data.js', () => !!window.SSSlidesData).then(() => {
+      if (!cat || cat.m !== cutoff) { cat = window.SSSlidesData.catalog(D0, cutoff); cat.m = cutoff; renderList(); }
+      $('sl-data-m').textContent = BLN[cutoff - 1] + ' 2026';
+      const box = $('sl-data-list'); const ql = q.trim().toLowerCase();
+      const gs = cat.groups.map((g) => {
+        const its = g.items.filter((x) => { const h = (x.label + ' ' + x.key + ' ' + x.value + ' ' + g.name).toLowerCase(); return !ql || ql.split(/\s+/).every((w) => h.includes(w)); });
+        if (!its.length) return null;
+        const det = el('details', 'sl-dg'); det.open = !!ql || openG.has(g.name); det.dataset.g = g.name;
+        const sm = el('summary', null, g.name); sm.append(el('span', 'sl-dg-n', String(its.length))); det.append(sm);
+        const ul = el('ul', 'sl-dl');
+        its.forEach((x) => {
+          const li = el('li', 'sl-di' + (x.table ? ' tbl' : ''));
+          const b = el('button', 'sl-code'); b.type = 'button'; b.dataset.code = `{{${x.key}}}`; b.title = 'Salin kode'; b.textContent = `{{${x.key}}}`;
+          li.append(el('span', 'sl-dl-l', x.label), el('span', 'sl-dl-v', x.value), b); ul.append(li);
+        });
+        det.append(ul); return det;
+      }).filter(Boolean);
+      box.replaceChildren(...(gs.length ? gs : [el('p', 'sl-avail', 'Tidak ada data yang cocok.')]));
+    }).catch(() => {});
+  }
+  $('sl-data-q').addEventListener('input', (e) => { q = e.target.value; renderData(); });
+  $('sl-data-list').addEventListener('toggle', (e) => { const d = e.target; if (!q && d.dataset && d.dataset.g) { if (d.open) openG.add(d.dataset.g); else openG.delete(d.dataset.g); } }, true);
+  $('sl-data-list').addEventListener('click', async (e) => {
+    const b = e.target.closest('button[data-code]'); if (!b) return;
+    const code = b.dataset.code; let ok = false;
+    try { await navigator.clipboard.writeText(code); ok = true; } catch (err) {
+      const t = document.createElement('textarea'); t.value = code; document.body.appendChild(t); t.select(); try { ok = document.execCommand('copy'); } catch (e2) { ok = false; } t.remove();
+    }
+    b.textContent = ok ? 'Tersalin' : code; b.classList.toggle('ok', ok);
+    setTimeout(() => { b.textContent = code; b.classList.remove('ok'); }, 1400);
+  });
+  // contoh desain berisi kode data
+  $('sl-sample').addEventListener('click', async () => {
+    try {
+      msg('sl-add-msg', 'Menyiapkan contoh desain…');
+      await load(PPTX_URL, () => !!window.PptxGenJS);
+      const P = new window.PptxGenJS(); P.layout = 'LAYOUT_WIDE'; P.title = 'Contoh desain paparan';
+      const s = P.addSlide(); s.background = { color: 'FFFFFF' };
+      s.addShape(P.shapes.RECTANGLE, { x: 0, y: 0, w: 13.333, h: 1.0, fill: { color: '13254A' }, line: { color: '13254A' } });
+      s.addText('KINERJA SAIDI S.D. {{BULAN}} {{TAHUN}}', { x: 0.4, y: 0.15, w: 12.5, h: 0.7, fontFace: 'Arial', fontSize: 26, bold: true, color: 'FFFFFF' });
+      [['SAIDI Sumkal', '{{SAIDI_REAL_SUMKAL}}', 'menit/pelanggan'], ['Target s.d. bulan', '{{SAIDI_TARGET_SUMKAL}}', 'menit/pelanggan'], ['Pencapaian', '{{SAIDI_CAPAIAN_SUMKAL}}', 'terhadap target']].forEach(([l, v, u], i) => {
+        const x = 0.4 + i * 4.2;
+        s.addShape(P.shapes.ROUNDED_RECTANGLE, { x, y: 1.25, w: 4.0, h: 1.2, rectRadius: 0.1, fill: { color: 'EAF3FC' }, line: { color: 'C9D6EA' } });
+        s.addText([{ text: l + '\n', options: { fontSize: 12, color: '5B6B86' } }, { text: v, options: { fontSize: 26, bold: true, color: '1E5BC6' } }, { text: '  ' + u, options: { fontSize: 11, color: '5B6B86' } }], { x: x + 0.15, y: 1.3, w: 3.7, h: 1.1, fontFace: 'Arial', valign: 'middle' });
+      });
+      s.addText('{{TABEL_SAIDI_UID}}', { x: 0.4, y: 2.7, w: 7.4, h: 4.5, fontFace: 'Arial', fontSize: 14, color: '1E5BC6', align: 'center', valign: 'middle', fill: { color: 'F3F7FC' }, line: { color: '1E5BC6', dashType: 'dash' } });
+      s.addText([{ text: 'Cara pakai\n', options: { bold: true, fontSize: 13 } }, { text: 'Kode {{...}} di kotak teks diganti angka sesuai bulan cutoff saat paparan dibuat. Kotak yang isinya hanya kode tabel (kiri) diganti tabel dengan posisi dan ukuran yang sama. Daftar kode ada di tab Desain Paparan.\n\nPenyebab terbesar: {{PENYEBAB_1_NAMA}} ({{PENYEBAB_1_JUMLAH}} kali).', options: { fontSize: 11 } }], { x: 8.1, y: 2.7, w: 4.8, h: 4.5, fontFace: 'Arial', color: '13254A', valign: 'top', fill: { color: 'FFF8E1' }, line: { color: 'FFC81E' } });
+      const blob = await P.write({ outputType: 'blob' });
+      const filename = 'Contoh_Desain_Paparan.pptx';
+      let dl = null; try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+      if (dl) await dl.save({ filename, data: blob });
+      else { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000); }
+      msg('sl-add-msg', `${filename} sudah diunduh. Ubah desainnya di PowerPoint, lalu unggah kembali di sini.`, 'ok');
+    } catch (e) { if (!(e && e.code === 'declined')) msg('sl-add-msg', 'Gagal membuat contoh: ' + ((e && e.message) || e), 'bad'); else msg('sl-add-msg', ''); }
+  });
+
   // ---------- langkah 3: buat dan unduh ----------
   $('sl-months').addEventListener('click', (e) => { const b = e.target.closest('button[data-m]'); if (!b || busy) return; cutoff = Number(b.dataset.m); renderMonths(); msg('sl-msg', ''); });
   $('sl-btn').addEventListener('click', async () => {
@@ -223,7 +300,7 @@
       await load(PPTX_URL, () => !!window.PptxGenJS);
       await load('slides-core.js', () => !!window.SSSlides);
       await load('slides-assets.js', () => !!window.SS_SLIDE_ASSETS);
-      if (hasP) { await load(JSZIP_URL, () => !!window.JSZip); await load('slides-merge.js', () => !!window.SSPptxMerge); }
+      if (hasP) { await load(JSZIP_URL, () => !!window.JSZip); await load('slides-merge.js', () => !!window.SSPptxMerge); await load('slides-data.js', () => !!window.SSSlidesData); if (!cat || cat.m !== cutoff) { cat = window.SSSlidesData.catalog(D0, cutoff); cat.m = cutoff; } }
       msg('sl-msg', 'Menyiapkan slide unggahan…');
       const plan = []; const fills = [];
       for (let i = 0; i < items.length; i++) {
@@ -235,7 +312,7 @@
           if (!zipCache.has(key)) zipCache.set(key, await window.SSPptxMerge.inspect(window.JSZip, await fileBlob(it)));
           const ins = zipCache.get(key); const s = ins.slides[it.s];
           if (!s) throw new Error(`slide ${it.s + 1} tidak ada di ${it.name}`);
-          plan.push({ k: 'pptx' }); fills.push({ at: i + 1, zip: ins.zip, path: s.path });
+          plan.push({ k: 'pptx' }); fills.push({ at: i + 1, zip: ins.zip, path: s.path, transform: (x) => window.SSSlidesData.fill(x, cat) });
         }
       }
       msg('sl-msg', `Menyusun ${items.length} slide…`);

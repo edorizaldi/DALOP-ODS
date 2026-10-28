@@ -49,11 +49,11 @@
     for (const id of ids) {
       const r = rels.find((x) => x.Id === id); if (!r) continue;
       const path = resolve('ppt', r.Target); const xml = (await read(zip, path)) || '';
-      const texts = (s) => (s.match(/<a:t>([^<]*)<\/a:t>/g) || []).map((t) => unesc(t.slice(5, -6))).join(' ').replace(/\s+/g, ' ').trim();
+      const texts = (s) => (s.match(/<a:p>[\s\S]*?<\/a:p>/g) || []).map((p) => (p.match(/<a:t>([^<]*)<\/a:t>/g) || []).map((t) => unesc(t.slice(5, -6))).join('')).join(' ').replace(/\s+/g, ' ').trim();
       let title = '';
       (xml.match(/<p:sp>[\s\S]*?<\/p:sp>/g) || []).some((sp) => { if (/<p:ph\b[^>]*type="(title|ctrTitle)"/.test(sp)) { title = texts(sp); return !!title; } return false; });
       if (!title) title = texts(xml).slice(0, 90);
-      slides.push({ path, title: title.slice(0, 120), hidden: /<p:sld\b[^>]*\sshow="0"/.test(xml) });
+      slides.push({ path, xml, title: title.slice(0, 120), hidden: /<p:sld\b[^>]*\sshow="0"/.test(xml) });
     }
     return { zip, slides, size: sldSize(pres) };
   }
@@ -130,7 +130,8 @@
       }
       const st = srcState.get(f.zip);
       const keep = parseRels(await read(out, relsOf(dst))).filter((r) => /\/notesSlide$/.test(r.Type));
-      const body = await read(f.zip, f.path);
+      let body = await read(f.zip, f.path);
+      if (f.transform) body = f.transform(body);
       const rels = (await rewriteRels(st, f.path, dst, dst)) || [];
       keep.forEach((r) => { let id = r.Id; while (rels.some((x) => x.Id === id)) id += 'n'; rels.push({ ...r, Id: id }); });
       out.file(dst, body);

@@ -1029,13 +1029,21 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <div class="sl-statebar"><span class="sl-state" id="sl-state" role="status"></span><button type="button" class="h-act h-act-primary" id="sl-save" hidden>Simpan susunan ke database</button><button type="button" class="h-act" id="sl-reset" hidden>Kembalikan ke database</button></div>
       <ol class="sl-order" id="sl-order" aria-label="Urutan slide paparan"></ol>
       <div class="sl-add">
-        <label class="h-drop sl-drop" id="sl-drop" tabindex="0">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
-          <b>Tambah slide: tarik file ke sini, atau klik untuk memilih</b>
-          <span class="ss-note">PowerPoint (.pptx): semua slidenya ditambahkan dan tetap bisa diedit. Gambar (.png/.jpg): satu gambar jadi satu slide. Maks. 15 MB per file.</span>
-          <input type="file" id="sl-file" accept=".pptx,.png,.jpg,.jpeg,image/png,image/jpeg" multiple hidden>
-        </label>
-        <select class="sl-sel" id="sl-add-core" aria-label="Tambah slide data"></select>
+        <div class="sl-add-l">
+          <label class="h-drop sl-drop" id="sl-drop" tabindex="0">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+            <b>Tambah slide desain: tarik file ke sini, atau klik untuk memilih</b>
+            <span class="ss-note">PowerPoint (.pptx): semua slidenya ditambahkan, tetap bisa diedit, dan bisa diisi data database. Gambar (.png/.jpg): satu gambar jadi satu slide. Maks. 15 MB per file.</span>
+            <input type="file" id="sl-file" accept=".pptx,.png,.jpg,.jpeg,image/png,image/jpeg" multiple hidden>
+          </label>
+          <div class="sl-add-row"><select class="sl-sel" id="sl-add-core" aria-label="Tambah slide data"></select><button type="button" class="h-act" id="sl-sample">Unduh contoh desain</button></div>
+        </div>
+        <aside class="sl-data" aria-labelledby="sl-data-h">
+          <h4 id="sl-data-h">Data dari database untuk desain <span class="sl-data-m" id="sl-data-m"></span></h4>
+          <p class="sl-avail">Tulis kode di kotak teks desain PowerPoint. Saat paparan dibuat, kode diganti angka sesuai bulan cutoff. Untuk tabel, buat kotak teks yang isinya hanya kode tabel; kotak itu diganti tabel dengan posisi dan ukuran yang sama. Klik kode untuk menyalin.</p>
+          <input type="search" class="sl-q" id="sl-data-q" placeholder="Cari data, misalnya SAIDI Aceh atau tabel" aria-label="Cari data database">
+          <div class="sl-data-list" id="sl-data-list"><p class="sl-avail">Memuat data…</p></div>
+        </aside>
       </div>
       <span class="sl-msg" id="sl-add-msg" role="status"></span>
     </div>
