@@ -69,7 +69,7 @@
     return { data, data3, data5, data6 };
   }
 
-  function build(PptxGenJS, D, m, A) {
+  function build(PptxGenJS, D, m, A, plan) {
     const { data, data3, data5, data6 } = compute(D, m);
     const LAST = m;
     const icon = (name, color) => A.icons[name + '|' + color] || A.icons['FaCircle|FFFFFF'];
@@ -86,11 +86,11 @@
         { image: { data: A.pln, x: 12.45, y: 0.12, w: 0.56, h: 0.82, altText: 'PLN' } },
       ],
     });
-    return (async () => {
-      for (const M of [
-        { key: 'saidi', name: 'SAIDI', unit: 'Menit/pelanggan', unitShort: 'menit/pelanggan', dec: 2 },
-        { key: 'saifi', name: 'SAIFI', unit: 'Kali/pelanggan', unitShort: 'kali/pelanggan', dec: 2 },
-      ]) {
+    const KM = [
+      { key: 'saidi', name: 'SAIDI', unit: 'Menit/pelanggan', unitShort: 'menit/pelanggan', dec: 2 },
+      { key: 'saifi', name: 'SAIFI', unit: 'Kali/pelanggan', unitShort: 'kali/pelanggan', dec: 2 },
+    ];
+    const kinerja = async (M) => {
         const s = pres.addSlide({ masterName: 'KINERJA_UID' });
         // judul
         s.addText(`KINERJA ${M.name} PER UID`, { x: 2.6, y: 0.12, w: 8.1, h: 0.55, fontSize: 30, bold: true, color: C.text1, align: 'center', valign: 'middle', margin: 0, isTextBox: true, objectName: 'Judul' });
@@ -175,15 +175,30 @@
           objectName: 'Tren grafik',
         });
         s.addNotes(`Sumber: dashboard SAIDI SAIFI Sumkal 2026 (komponen Distribusi, nilai kumulatif Januari–${BLN[LAST - 1]} 2026). Target per UID dari Target-26 sheet target kewenangan 2026; target Sumkal dari Target_SUMKAL_2026.xlsx. Pencapaian = 2 − realisasi ÷ target s.d. ${BLN[LAST - 1]}. Warna hijau pada realisasi: di bawah atau sama dengan target s.d. ${BLN[LAST - 1]}; merah: melampaui target.`);
+    };
+
+    const ctx3 = { C, HEX, BLN, BS, nf, icon, targets: { saidi: data.units.SUMKAL.saidi, saifi: data.units.SUMKAL.saifi }, data3, data5, data6 };
+    const CORE = {
+      1: () => kinerja(KM[0]),
+      2: () => kinerja(KM[1]),
+      3: () => slide3(pres, ctx3, { key: 'saidi', name: 'SAIDI', unit: 'menit/pelanggan', unitS: 'menit/plg', raw: 'jam padam', md: 2, kd: 2 }),
+      4: () => slide3(pres, ctx3, { key: 'saifi', name: 'SAIFI', unit: 'kali/pelanggan', unitS: 'kali/plg', raw: 'kali padam', md: 3, kd: 2 }),
+      5: () => slide5(pres, ctx3),
+      6: () => slide6(pres, ctx3),
+    };
+    // plan: urutan slide paparan. {k:'core', n:1..6} slide data; {k:'img', data, w, h} slide gambar;
+    // {k:'pptx'} slide kosong sebagai tempat slide dari file PowerPoint (diisi oleh SSPptxMerge).
+    const P = plan || [1, 2, 3, 4, 5, 6].map((n) => ({ k: 'core', n }));
+    return (async () => {
+      for (const it of P) {
+        if (it.k === 'core' && CORE[it.n]) await CORE[it.n]();
+        else if (it.k === 'img') {
+          const s = pres.addSlide(); s.background = { color: 'FFFFFF' };
+          const W = 13.333, H = 7.5, r = Math.min(W / (it.w || W), H / (it.h || H));
+          const w = (it.w || W) * r, h = (it.h || H) * r;
+          s.addImage({ data: it.data, x: (W - w) / 2, y: (H - h) / 2, w, h, altText: it.name || 'Slide gambar' });
+        } else pres.addSlide();
       }
-
-
-
-      const ctx3 = { C, HEX, BLN, BS, nf, icon, targets: { saidi: data.units.SUMKAL.saidi, saifi: data.units.SUMKAL.saifi }, data3, data5, data6 };
-      await slide3(pres, ctx3, { key: 'saidi', name: 'SAIDI', unit: 'menit/pelanggan', unitS: 'menit/plg', raw: 'jam padam', md: 2, kd: 2 });
-      await slide3(pres, ctx3, { key: 'saifi', name: 'SAIFI', unit: 'kali/pelanggan', unitS: 'kali/plg', raw: 'kali padam', md: 3, kd: 2 });
-      await slide5(pres, ctx3);
-      await slide6(pres, ctx3);
       return pres;
     })();
   }
