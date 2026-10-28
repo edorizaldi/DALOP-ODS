@@ -594,6 +594,10 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 .ss-kodeket b { display: inline-block; min-width: 1.4em; padding: 0 5px; margin-right: 4px; border-radius: 5px; text-align: center; font-weight: 700; color: var(--color-fg); background: color-mix(in srgb, var(--color-fg) 8%, transparent); }
 .ss-kodeket span.on { color: var(--color-fg); font-weight: 600; }
 .ss-kodeket span.on b { background: var(--x-lime, #C8E86B); color: var(--x-on-lime, #1b2a0a); }
+.kc-unit-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.kc-unit-head h3 { margin: 0; }
+.kc-back { display: inline-flex; align-items: center; gap: 4px; }
+.kc-back svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 </style>
 
 <div class="ss-shell" id="ss-shell" data-ss-theme="light">
@@ -835,7 +839,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="ss-g-wrap" data-source="kc_bulanan gangguan_ps"><table class="ss-table" id="kc-rincian"></table></div>
       </div>
       <div class="ss-card" id="kc-unit-card">
-        <h3 id="kc-unit-h">Per unit</h3>
+        <div class="kc-unit-head"><h3 id="kc-unit-h">Per unit</h3><button type="button" class="ss-g-reset kc-back" id="kc-unit-back" style="display:none"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Kembali ke semua unit induk</button></div>
         <p class="ss-note" id="kc-unit-note"></p>
         <div class="ss-g-wrap" data-source="kc_bulanan gangguan_ps"><table class="ss-table" id="kc-unit"></table></div>
       </div>

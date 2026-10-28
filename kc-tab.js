@@ -18,6 +18,8 @@
   $('kc-f-unit').addEventListener('change', (e) => dash.setParams({ kc_unit: e.target.value || null, kc_up3: null }));
   $('kc-f-up3').addEventListener('change', (e) => dash.setParams({ kc_up3: e.target.value || null }));
   $('kc-reset').addEventListener('click', () => dash.setParams({ kc_kode: null, kc_unit: null, kc_up3: null }));
+  // kembali dari tabel per UP3 ke tabel per unit induk (filter kode tetap)
+  $('kc-unit-back').addEventListener('click', () => dash.setParams({ kc_unit: null, kc_up3: null }));
 
   const chart = $('kc-chart');
   const tip = mk('div', null, 'ss-tip'); tip.hidden = true;
@@ -234,6 +236,7 @@
       });
       const list = [...by.values()].filter((o) => o.Koreksi + o.Cleansing > 0 || !String(o.key).startsWith('UP3 tidak')).map((o) => ({ ...o, Permanen: o.Permanen || 0, Sesaat: o.Sesaat || 0, t: o.Koreksi + o.Cleansing })).sort((a, b) => b.t - a.t);
       $('kc-unit-h').textContent = sel.u ? 'Per UP3 di ' + uname(sel.u) : 'Per unit induk';
+      $('kc-unit-back').style.display = sel.u ? '' : 'none';
       $('kc-unit-note').textContent = `${sel.k ? 'Kode ' + sel.k : 'Kode ' + kodes.join(' dan ')}, ${per}. Event permanen dan sesaat diambil dari kolom P/S data Event Padam Penyulang, hanya bidang Distribusi, dengan kode dan bulan yang sama; No. Laporan yang sama dihitung satu kali. Klik baris untuk memilih ${sel.u ? 'UP3' : 'unit'}.`;
       const th = mk('thead'), hr1 = mk('tr'), hr = mk('tr');
       const g1 = mk('th', ''); g1.rowSpan = 1; const g2 = mk('th', 'Koreksi & cleansing (disetujui)', 'ss-kc-grp'); g2.colSpan = 2; const g3 = mk('th', 'Event gangguan distribusi', 'ss-kc-grp'); g3.colSpan = 2; const g4 = mk('th', '', 'ss-kc-grp');
