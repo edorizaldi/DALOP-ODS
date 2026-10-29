@@ -1387,6 +1387,7 @@ window.SSD = (() => {
     g.addEventListener('mouseenter', () => { if (!canHover.matches) return; clearTimeout(hoverT); open(g); });
     g.addEventListener('mouseleave', () => { if (!canHover.matches) return; clearTimeout(hoverT); hoverT = setTimeout(() => close(g), 200); });
     b.addEventListener('click', () => { if (p.hidden) open(g); else if (!canHover.matches) close(g); });
+    b.addEventListener('mousemove', () => { if (canHover.matches && p.hidden) open(g); }); // buka lagi bila kursor masih di atas grup setelah memilih halaman
     b.addEventListener('keydown', (e) => {
       const i = groups.indexOf(g);
       if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(g, true); }
@@ -1401,12 +1402,14 @@ window.SSD = (() => {
       else if (e.key === 'Escape') { e.preventDefault(); close(g); b.focus(); }
       else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const k = groups.indexOf(g); const n = groups[(k + (e.key === 'ArrowRight' ? 1 : groups.length - 1)) % groups.length]; open(n, true); }
     });
-    g.addEventListener('focusout', (e) => { if (!g.contains(e.relatedTarget)) close(g); });
+    // klik item tidak boleh memindahkan fokus dulu (di Safari fokus lepas saat tombol ditekan dan menutup daftar sebelum klik terjadi)
+    p.addEventListener('mousedown', (e) => { if (e.target.closest('.ss-tab')) e.preventDefault(); });
+    g.addEventListener('focusout', (e) => { if (g.contains(e.relatedTarget)) return; setTimeout(() => { if (!g.contains(document.activeElement) && !(canHover.matches && g.matches(':hover'))) close(g); }, 0); });
   });
   document.addEventListener('click', (e) => { if (!menu.contains(e.target)) closeAll(); });
   menu.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-tab-to]'); if (!b) return;
-    const g = b.closest('.ss-mg'); closeAll(); parts(g).b.focus();
+    const g = b.closest('.ss-mg'); closeAll(); if (e.detail === 0) parts(g).b.focus(); // fokus kembali ke grup hanya saat dipilih lewat keyboard
     if (dash.params().tab !== b.dataset.tabTo) go(b.dataset.tabTo);
   });
   // jam (WIB)
