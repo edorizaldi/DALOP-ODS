@@ -1356,13 +1356,11 @@ window.SSD = (() => {
 (() => {
   const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'penyulang', 'update', 'harian', 'kondisi', 'slides'];
   window.SSC = ['var(--x-c0)', 'var(--x-c1)', 'var(--x-c2)', 'var(--x-c3)', 'var(--x-c4)', 'var(--x-c5)', 'var(--x-c6)', 'var(--x-c7)'];
-  const h1 = new Date(); h1.setDate(h1.getDate() - 1);
-  const BLNF = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-  document.getElementById('ss-datechip-t').textContent = 'Data s.d. ' + h1.getDate() + ' ' + BLNF[h1.getMonth()] + ' ' + h1.getFullYear() + ' (H-1)';
   const show = (tab) => {
     if (!TABS.includes(tab)) tab = 'saidi';
     document.querySelectorAll('#ss-shell [data-tab]').forEach((el) => { el.hidden = el.dataset.tab !== tab; });
     document.querySelectorAll('#ss-shell .ss-tab').forEach((b) => { if (b.dataset.tabTo === tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+    if (window.SSDbInfo && window.SSDbInfo.chip) window.SSDbInfo.chip(tab);
     document.querySelectorAll('#ss-shell .ss-mg').forEach((g) => {
       const cur = g.querySelector(`.ss-tab[data-tab-to="${tab}"]`); g.querySelector('.ss-mg-btn').classList.toggle('on', !!cur);
       if (cur) { const c = document.getElementById('ss-crumb'); c.replaceChildren(document.createTextNode(g.querySelector('.ss-mg-btn span').textContent + ' / ')); const bb = document.createElement('b'); bb.textContent = cur.querySelector('.ss-tab-t b').textContent; c.append(bb); }
@@ -2729,6 +2727,19 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
       t.replaceChildren('Database terakhir diperbarui ', b(fmtWIB(r.diperbarui)), sep(), 'Data ', b(r.periode), sep(), 'Sumber: ' + r.sumber);
     });
     document.querySelectorAll('[data-dbinfo-when]').forEach((el) => { const r = INFO[el.dataset.dbinfoWhen]; if (r) el.textContent = fmtWIB(r.diperbarui); });
+    chip();
+  };
+  // penanda periode data di panel menu, mengikuti halaman yang dibuka
+  const chip = (tab) => {
+    tab = tab || (window.dash && dash.params().tab) || 'saidi';
+    const el = document.getElementById('ss-datechip'); if (!el) return;
+    const r = INFO[tab];
+    if (!r) { el.hidden = true; return; }
+    const per = String(r.periode || '');
+    const txt = BLN.some((m) => per.startsWith(m)) || /^\d/.test(per) ? per : per.charAt(0).toLowerCase() + per.slice(1);
+    document.getElementById('ss-datechip-t').textContent = 'Data ' + txt;
+    el.title = 'Database diperbarui ' + fmtWIB(r.diperbarui) + (r.sumber ? ' · Sumber: ' + r.sumber : '');
+    el.hidden = false;
   };
   SSD.onData(() => {
     const D = SSD.data('info_update'); if (D.status !== 'ok') return;
@@ -2736,7 +2747,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
     INFO = {}; D.data.forEach((r) => { INFO[r.tab] = r; }); if (keep) INFO.harian = keep; paint();
   });
   // unggahan langsung di tab Infografis Laporan Harian
-  window.SSDbInfo = { harian: (iso, periode, sumber) => { INFO.harian = { tab: 'harian', diperbarui: iso, periode, sumber, live: true }; paint(); },
+  window.SSDbInfo = { chip, harian: (iso, periode, sumber) => { INFO.harian = { tab: 'harian', diperbarui: iso, periode, sumber, live: true }; paint(); },
     set: (tab, iso, periode, sumber) => { INFO[tab] = { tab, diperbarui: iso, periode, sumber, live: true }; paint(); } };
 })();
 </script>
