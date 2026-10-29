@@ -595,6 +595,17 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 .ss-kodeket b { display: inline-block; min-width: 1.4em; padding: 0 5px; margin-right: 4px; border-radius: 5px; text-align: center; font-weight: 700; color: var(--color-fg); background: color-mix(in srgb, var(--color-fg) 8%, transparent); }
 .ss-kodeket span.on { color: var(--color-fg); font-weight: 600; }
 .ss-kodeket span.on b { background: var(--x-lime, #C8E86B); color: var(--x-on-lime, #1b2a0a); }
+.dp-ps { display: flex; gap: 3px; align-items: center; font-size: 10.5px; color: var(--color-fg-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dp-ps i { font-style: normal; font-weight: 700; font-size: 9.5px; color: #fff; background: #B3261E; border-radius: 3px; padding: 0 3px; }
+.dp-ps i.dp-ps-s { background: #D9827A; }
+.dp-node.on .dp-ps { color: inherit; opacity: .9; }
+.dp-ps-table td.num, .dp-ps-table th:nth-child(n+2):nth-child(-n+5) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dp-ps-table td:first-child { display: flex; align-items: center; gap: 8px; min-width: 200px; }
+.dp-ps-ic svg { width: 16px; height: 16px; fill: none; stroke: var(--color-fg-muted); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.dp-ps-barc { width: 32%; min-width: 140px; }
+.dp-ps-bar { display: flex; height: 12px; border-radius: 3px; overflow: hidden; min-width: 2px; }
+.dp-ps-bar i.p { background: #B3261E; } .dp-ps-bar i.s { background: #E8A39C; }
+.dp-ps-table tr.dp-ps-tot td { font-weight: 700; border-top: 2px solid var(--color-border-line); }
 </style>
 
 <div class="ss-shell" id="ss-shell" data-ss-theme="light">
@@ -878,6 +889,14 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <p class="ss-g-sel" id="dp-cause-sel"></p>
       <div class="ss-legend" id="dp-cause-legend"></div>
       <div class="ss-chart ss-tall dash-skeleton" id="dp-cause-chart" data-source="gangguan_dupont"></div>
+    </div>
+    <div class="ss-card" id="dp-ps-card" style="display:none">
+      <div class="dp-head"><h3>Event permanen dan sesaat per penyebab</h3>
+        <div class="dp-dl"><span class="ss-note" id="dp-ps-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="dp-ps-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
+      <p class="ss-g-sel" id="dp-ps-sel"></p>
+      <div class="ss-legend"><span><i class="ss-sw" style="background:#B3261E"></i>Permanen</span><span><i class="ss-sw" style="background:#E8A39C"></i>Sesaat</span></div>
+      <div class="ss-g-wrap" data-source="gangguan_dupont"><table class="ss-table dp-ps-table" id="dp-ps-table"></table></div>
+      <div class="h-preview" id="dp-ps-pv" hidden><span class="ss-note"></span><img alt="Event permanen dan sesaat per penyebab"></div>
     </div>
   </section>
 

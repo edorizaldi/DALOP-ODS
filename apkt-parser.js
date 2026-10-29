@@ -192,7 +192,7 @@ const APKT = (() => {
       p.agg.set(key, (p.agg.get(key) || 0) + 1);
       const dkey = key + '\u0001' + U(store.ULP[i]) + '\u0001' + U(store.PENY[i]) + '\u0001' + U(store.PS[i]);
       p.det.set(dkey, (p.det.get(dkey) || 0) + 1);
-      if (U(store.KODE[i]) === 'J') { const T = (v) => S(v).trim(); const pk = [U(store.UNIT[i]), U(store.ULP[i]), U(store.BIDANG[i]), U(store.JENIS[i]), T(store.FAS[i]), T(store.SUBF[i]), T(store.EQ[i]), T(store.CAUSE[i])].join('\u0001'); p.dp.set(pk, (p.dp.get(pk) || 0) + 1); }
+      if (U(store.KODE[i]) === 'J') { const T = (v) => S(v).trim(); const pk = [U(store.UNIT[i]), U(store.ULP[i]), U(store.BIDANG[i]), U(store.JENIS[i]), T(store.FAS[i]), T(store.SUBF[i]), T(store.EQ[i]), T(store.CAUSE[i]), U(store.PS[i])].join('\u0001'); p.dp.set(pk, (p.dp.get(pk) || 0) + 1); }
     }
     const perMonth = {};
     for (const [m, p] of Object.entries(per)) perMonth[m] = { mentah: p.mentah, dup: p.dup, unik: p.unik, tgl_min: p.tgl_min, tgl_max: p.tgl_max, rows: [...p.agg].map(([k, n]) => [...k.split('\u0001'), n]).sort((a, b) => (a.slice(0, 4).join() < b.slice(0, 4).join() ? -1 : 1)), detail: [...p.det].map(([k, n]) => [...k.split('\u0001'), n]), dupont: [...p.dp].map(([k, n]) => [...k.split('\u0001'), n]) };
