@@ -14,6 +14,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 </style>
 <link rel="stylesheet" href="slides-tab.css">
 <link rel="stylesheet" href="kondisi-tab.css?v=20261028h">
+<link rel="stylesheet" href="hirarki-tab.css">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
@@ -635,6 +636,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <li class="ss-mg" data-group="database"><button type="button" class="ss-mg-btn" id="mg-database-b" aria-haspopup="true" aria-expanded="false" aria-controls="mg-database"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span>Database</span><svg class="ss-mg-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         <div class="ss-mg-pop" id="mg-database" role="menu" aria-labelledby="mg-database-b" hidden>
           <button type="button" class="ss-tab" id="tab-penyulang" data-tab-to="penyulang" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12h10M7 12l10-7M7 12l10 7"/></svg><span class="ss-tab-t"><b>Database Penyulang</b><small>Profil dan peta penyulang</small></span></button>
+          <button type="button" class="ss-tab" id="tab-hirarki" data-tab-to="hirarki" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v5M12 8l-6 5M12 8l6 5M6 13v4M18 13v4M4 17h4v4H4zM16 17h4v4h-4z"/></svg><span class="ss-tab-t"><b>Hirarki Aset</b><small>GI, feeder, zona sampai gardu dan trafo</small></span></button>
           <button type="button" class="ss-tab" id="tab-update" data-tab-to="update" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span class="ss-tab-t"><b>Update Data Bulanan</b><small>Unggah file data bulanan ke database</small></span></button>
         </div></li>
     </ul>
@@ -1210,6 +1212,109 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 </div>
 <div class="tip" id="ks-tip" hidden></div>
   </section>
+  <section class="ss-sec" id="hirarki" data-tab="hirarki" hidden>
+    <header class="ss-hero ss-g-hero" id="hx-ringkasan">
+      <div class="ss-hero-main">
+        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v5M12 8l-6 5M12 8l6 5M6 13v4M18 13v4M4 17h4v4H4zM16 17h4v4h-4z"/></svg>Hirarki aset jaringan · GI sampai trafo</span>
+        <h1 class="ss-title" id="hirarki-h">Hirarki Aset Jaringan</h1>
+        <p class="ss-take">Pilih GI untuk melihat feeder-nya, lalu klik feeder untuk melihat Zona, Section, Segment, Lateral, serta Gardu dan Trafo di bawahnya. Urutan: GI → Feeder → Zona → Section → Segment → Lateral, lalu Gardu (lewat PARENT_ASSET gardu) dan Trafo (lewat KODE_GARDU trafo). Hanya aset yang rantai parent-nya tersambung sampai GI yang ditampilkan.</p>
+      </div>
+    </header>
+    <div id="hx-mount"></div>
+    <template id="hx-tpl">
+      <div class="ss-card" id="hx-sum-card">
+        <h3>Ringkasan seluruh data</h3>
+        <p class="ss-note">Per level: berapa aset yang rantai parent_asset-nya tersambung sampai GI, berapa yang putus, berapa yang parent-nya selevel, dan berapa yang berstatus PADAM. Kolom selevel dan PADAM tidak berlaku untuk Gardu dan Trafo.</p>
+        <div class="ss-tablewrap"><table class="ss-table" data-source="hx_ringkasan" data-row-key="level">
+          <thead><tr><th data-field="level">Level</th><th data-field="total">Total aset</th><th data-field="terhubung">Tersambung ke GI</th><th data-field="putus">Rantai putus</th><th data-field="parent_selevel">Parent selevel</th><th data-field="padam">PADAM</th></tr></thead>
+          <tbody id="hx-t-ringkasan"></tbody></table></div>
+        <h3>Cara trafo dicocokkan ke gardu</h3>
+        <p class="ss-note">KODE_GARDU = kode gardu di sheet TRAFO ada di KODE_ASSET sheet GARDU. NAMA (cadangan) = kodenya tidak ada, tapi nama trafo (tanpa awalan TRAFO/GD/nomor) sama persis dengan satu NAMA_GARDU di ULP yang sama. TIDAK COCOK = keduanya gagal, trafo tidak bisa diletakkan.</p>
+        <div class="ss-tablewrap"><table class="ss-table" data-source="hx_trafo_metode" data-row-key="metode">
+          <thead><tr><th data-field="metode">Metode</th><th data-field="jumlah">Jumlah trafo</th></tr></thead>
+          <tbody id="hx-t-metode"></tbody></table></div>
+      </div>
+
+      <div class="ss-card hx-filters">
+        <div class="ss-filters">
+          <div class="ss-frow"><span class="ss-flabel">Wilayah</span><select id="hx-f-wil" aria-label="Wilayah" data-source="hx_gi"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">UP3</span><select id="hx-f-up3" aria-label="UP3" data-source="hx_gi"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">Gardu Induk</span><select id="hx-f-gi" aria-label="Gardu Induk" data-source="hx_gi"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">Feeder</span><select id="hx-f-fd" aria-label="Feeder" data-source="hx_feeder"></select></div>
+        </div>
+      </div>
+
+      <p class="ss-note" id="hx-need-gi" hidden>Pilih Gardu Induk di atas untuk menampilkan daftar feeder.</p>
+      <div class="ss-card" id="hx-gi-card">
+        <h3>GI <span id="hx-gi-nama" data-source="hx_gi" data-field="nama">—</span></h3>
+        <p class="ss-note"><span id="hx-gi-up3" data-source="hx_gi" data-field="up3">—</span> · jumlah aset yang tersambung ke GI ini</p>
+        <div class="ss-tiles hx-tiles">
+          <div class="ss-tile"><div class="ss-tile-label">Feeder</div><div class="ss-big"><span class="hx-gi-n" data-f="feeder" data-source="hx_gi" data-field="feeder">—</span></div></div>
+          <div class="ss-tile"><div class="ss-tile-label">Zona</div><div class="ss-big"><span class="hx-gi-n" data-f="zona" data-source="hx_gi" data-field="zona">—</span></div></div>
+          <div class="ss-tile"><div class="ss-tile-label">Section</div><div class="ss-big"><span class="hx-gi-n" data-f="section" data-source="hx_gi" data-field="section">—</span></div></div>
+          <div class="ss-tile"><div class="ss-tile-label">Segment</div><div class="ss-big"><span class="hx-gi-n" data-f="segment" data-source="hx_gi" data-field="segment">—</span></div></div>
+          <div class="ss-tile"><div class="ss-tile-label">Lateral</div><div class="ss-big"><span class="hx-gi-n" data-f="lateral" data-source="hx_gi" data-field="lateral">—</span></div></div>
+          <div class="ss-tile"><div class="ss-tile-label">Gardu</div><div class="ss-big"><span class="hx-gi-n" data-f="gardu" data-source="hx_gi" data-field="gardu">—</span></div></div>
+          <div class="ss-tile"><div class="ss-tile-label">Trafo</div><div class="ss-big"><span class="hx-gi-n" data-f="trafo" data-source="hx_gi" data-field="trafo">—</span></div></div>
+        </div>
+        <h3>Daftar feeder</h3>
+        <p class="ss-note">Klik baris untuk melihat hirarki di bawah feeder tersebut.</p>
+        <div class="ss-tablewrap"><table class="ss-table hx-click" id="hx-feeders" data-source="hx_feeder" data-row-key="id">
+          <thead><tr><th data-field="kode">Kode feeder</th><th data-field="nama">Nama</th><th data-field="status">Status</th><th data-field="ulp">ULP</th><th data-field="jaringan">Kode jaringan</th><th data-field="zona">Zona</th><th data-field="section">Section</th><th data-field="segment">Segment</th><th data-field="lateral">Lateral</th><th data-field="gardu">Gardu</th><th data-field="trafo">Trafo</th></tr></thead>
+          <tbody id="hx-t-feeder"></tbody></table></div>
+      </div>
+
+      <p class="ss-note" id="hx-need-fd" hidden>Klik salah satu feeder di tabel atas (atau pilih di kolom Feeder) untuk melihat Zona, Section, Segment, Lateral, Gardu dan Trafo-nya.</p>
+      <div class="ss-card" id="hx-fd-card">
+        <h3>Feeder <span id="hx-fd-nama" data-source="hx_feeder" data-field="nama">—</span></h3>
+        <p class="ss-note">Kode <span id="hx-fd-kode" data-source="hx_feeder" data-field="kode">—</span> · kode jaringan <span id="hx-fd-jar" data-source="hx_feeder" data-field="jaringan">—</span></p>
+        <div class="ss-tiles hx-tiles">
+          <div class="ss-tile"><div class="ss-tile-label">Zona</div><div class="ss-big"><span class="hx-fd-n" data-f="zona" data-source="hx_feeder" data-field="zona">—</span></div></div>
+          <div class="ss-tile"><div class="ss-tile-label">Section</div><div class="ss-big"><span class="hx-fd-n" data-f="section" data-source="hx_feeder" data-field="section">—</span></div></div>
+          <div class="ss-tile"><div class="ss-tile-label">Segment</div><div class="ss-big"><span class="hx-fd-n" data-f="segment" data-source="hx_feeder" data-field="segment">—</span></div></div>
+          <div class="ss-tile"><div class="ss-tile-label">Lateral</div><div class="ss-big"><span class="hx-fd-n" data-f="lateral" data-source="hx_feeder" data-field="lateral">—</span></div></div>
+          <div class="ss-tile"><div class="ss-tile-label">Gardu</div><div class="ss-big"><span class="hx-fd-n" data-f="gardu" data-source="hx_feeder" data-field="gardu">—</span></div></div>
+          <div class="ss-tile"><div class="ss-tile-label">Trafo</div><div class="ss-big"><span class="hx-fd-n" data-f="trafo" data-source="hx_feeder" data-field="trafo">—</span></div></div>
+        </div>
+        <div class="ss-chips ss-strong hx-tabs" role="group" aria-label="Tampilan hirarki">
+          <button type="button" class="ss-chip" data-hx-tab="pohon" aria-pressed="true">Pohon hirarki</button>
+          <button type="button" class="ss-chip" data-hx-tab="zona" aria-pressed="false">Zona</button>
+          <button type="button" class="ss-chip" data-hx-tab="section" aria-pressed="false">Section</button>
+          <button type="button" class="ss-chip" data-hx-tab="segment" aria-pressed="false">Segment</button>
+          <button type="button" class="ss-chip" data-hx-tab="lateral" aria-pressed="false">Lateral</button>
+          <button type="button" class="ss-chip" data-hx-tab="gardu" aria-pressed="false">Gardu &amp; Trafo</button>
+        </div>
+        <input class="ss-search" id="hx-q" type="search" placeholder="Cari kode, nama, alamat…" aria-label="Cari aset">
+        <div class="hx-legend ss-legend" id="hx-legend">
+          <span><i class="hx-lv hx-c2">ZO</i>Zona</span><span><i class="hx-lv hx-c3">SE</i>Section</span><span><i class="hx-lv hx-c4">SG</i>Segment</span><span><i class="hx-lv hx-c5">LT</i>Lateral</span><span><i class="hx-lv hx-c6">GD</i>Gardu (+ trafo)</span>
+        </div>
+        <div id="hx-panel"></div>
+        <template data-hx="pohon-gardu_1"><div class="ss-tablewrap hx-tree" data-source="hx_zona hx_section hx_segment hx_lateral hx_gardu_1"></div></template>
+        <template data-hx="pohon-gardu_2"><div class="ss-tablewrap hx-tree" data-source="hx_zona hx_section hx_segment hx_lateral hx_gardu_2"></div></template>
+        <template data-hx="pohon-gardu_3"><div class="ss-tablewrap hx-tree" data-source="hx_zona hx_section hx_segment hx_lateral hx_gardu_3"></div></template>
+        <template data-hx="zona"><div class="ss-tablewrap"><table class="ss-table" data-source="hx_zona" data-row-key="id"><thead><tr><th data-field="kode">Kode</th><th data-field="nama">Nama</th><th data-field="parent">Parent</th><th data-field="induk_atas">Induk level atas</th><th data-field="status">Status</th><th data-field="alamat">Alamat</th></tr></thead><tbody></tbody></table></div></template>
+        <template data-hx="section"><div class="ss-tablewrap"><table class="ss-table" data-source="hx_section" data-row-key="id"><thead><tr><th data-field="kode">Kode</th><th data-field="nama">Nama</th><th data-field="parent">Parent</th><th data-field="induk_atas">Induk level atas</th><th data-field="zona">Zona</th><th data-field="status">Status</th><th data-field="alamat">Alamat</th></tr></thead><tbody></tbody></table></div></template>
+        <template data-hx="segment"><div class="ss-tablewrap"><table class="ss-table" data-source="hx_segment" data-row-key="id"><thead><tr><th data-field="kode">Kode</th><th data-field="nama">Nama</th><th data-field="parent">Parent</th><th data-field="induk_atas">Induk level atas</th><th data-field="section">Section</th><th data-field="zona">Zona</th><th data-field="status">Status</th><th data-field="alamat">Alamat</th></tr></thead><tbody></tbody></table></div></template>
+        <template data-hx="lateral"><div class="ss-tablewrap"><table class="ss-table" data-source="hx_lateral" data-row-key="id"><thead><tr><th data-field="kode">Kode</th><th data-field="nama">Nama</th><th data-field="parent">Parent</th><th data-field="induk_atas">Induk level atas</th><th data-field="segment">Segment</th><th data-field="section">Section</th><th data-field="zona">Zona</th><th data-field="status">Status</th><th data-field="alamat">Alamat</th></tr></thead><tbody></tbody></table></div></template>
+        <template data-hx="gardu-gardu_1"><div class="ss-tablewrap"><table class="ss-table" data-source="hx_gardu_1" data-row-key="id"><thead><tr><th data-field="kode">Kode gardu</th><th data-field="nama">Nama gardu</th><th data-field="posisi">Posisi</th><th data-field="parent">Parent</th><th data-field="trafo">Trafo</th><th data-field="kva">kVA</th><th data-field="alamat">Alamat</th></tr></thead><tbody></tbody></table></div></template>
+        <template data-hx="gardu-gardu_2"><div class="ss-tablewrap"><table class="ss-table" data-source="hx_gardu_2" data-row-key="id"><thead><tr><th data-field="kode">Kode gardu</th><th data-field="nama">Nama gardu</th><th data-field="posisi">Posisi</th><th data-field="parent">Parent</th><th data-field="trafo">Trafo</th><th data-field="kva">kVA</th><th data-field="alamat">Alamat</th></tr></thead><tbody></tbody></table></div></template>
+        <template data-hx="gardu-gardu_3"><div class="ss-tablewrap"><table class="ss-table" data-source="hx_gardu_3" data-row-key="id"><thead><tr><th data-field="kode">Kode gardu</th><th data-field="nama">Nama gardu</th><th data-field="posisi">Posisi</th><th data-field="parent">Parent</th><th data-field="trafo">Trafo</th><th data-field="kva">kVA</th><th data-field="alamat">Alamat</th></tr></thead><tbody></tbody></table></div></template>
+        <p class="ss-note" id="hx-panel-note"></p>
+      </div>
+
+      <div class="ss-card" id="hx-an-card">
+        <h3>Aset bermasalah</h3>
+        <p class="ss-note">Aset yang rantainya putus (parent kosong, parent tidak ada di data, atau siklus), kode_asset ganda, atau parent dari level yang lebih rendah. Ikut filter Wilayah dan UP3 di atas. Untuk trafo, kolom Parent berisi KODE_GARDU-nya. Kolom Baris = nomor baris di sheet aslinya.</p>
+        <div class="ss-frow"><span class="ss-flabel">Level</span>
+          <select id="hx-an-lv" aria-label="Level anomali"><option value="">Semua level</option><option value="FEEDER">Feeder</option><option value="ZONA">Zona</option><option value="SECTION">Section</option><option value="SEGMENT">Segment</option><option value="LATERAL">Lateral</option><option value="GARDU">Gardu</option><option value="TRAFO">Trafo</option></select>
+          <input class="ss-search" id="hx-an-q" type="search" placeholder="Cari kode, nama, catatan…" aria-label="Cari anomali"></div>
+        <p class="ss-note" id="hx-an-count"></p>
+        <div class="ss-tablewrap"><table class="ss-table" data-source="hx_anomali" data-row-key="id">
+          <thead><tr><th data-field="level">Level</th><th data-field="kode">Kode</th><th data-field="nama">Nama</th><th data-field="parent">Parent</th><th data-field="status_hirarki">Status hirarki</th><th data-field="catatan">Catatan</th><th data-field="up3">UP3</th><th data-field="baris">Baris</th></tr></thead>
+          <tbody id="hx-t-anomali"></tbody></table></div>
+      </div>
+    </template>
+  </section>
   <section class="ss-sec" id="harian" data-tab="harian" hidden>
     <div class="h-actions" id="h-actions"><div class="ss-dbinfo ss-dbinfo-inline" data-dbinfo="harian" data-source="info_update"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span class="ss-dbinfo-t">Memuat info update database…</span></div><span class="h-act-msg" id="h-act-msg"></span><button type="button" class="h-act" id="h-btn-update" aria-expanded="false" aria-controls="h-upload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/></svg>Update laporan harian</button><button type="button" class="h-act h-act-primary" id="h-btn-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download infografis (PNG)</button></div>
     <div class="h-upload ss-card" id="h-upload" hidden>
@@ -1354,7 +1459,7 @@ window.SSD = (() => {
 </script>
 <script>
 (() => {
-  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'penyulang', 'update', 'harian', 'kondisi', 'slides'];
+  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'penyulang', 'hirarki', 'update', 'harian', 'kondisi', 'slides'];
   window.SSC = ['var(--x-c0)', 'var(--x-c1)', 'var(--x-c2)', 'var(--x-c3)', 'var(--x-c4)', 'var(--x-c5)', 'var(--x-c6)', 'var(--x-c7)'];
   const show = (tab) => {
     if (!TABS.includes(tab)) tab = 'saidi';
@@ -2765,6 +2870,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="kondisi_data.js"></script>
 <script src="kondisi_update.js"></script>
 <script src="kondisi-tab.js?v=20261028h"></script>
+<script src="hirarki-tab.js"></script>
 
 </div>
 </body>

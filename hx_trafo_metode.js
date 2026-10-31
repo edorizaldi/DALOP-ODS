@@ -1,0 +1,1 @@
+window.__D=window.__D||{};window.__D["hx_trafo_metode"]=(function(c,r){return r.map(function(a){var o={};for(var i=0;i<c.length;i++)o[c[i]]=a[i];return o;});})(["metode", "jumlah"],[["NAMA (cadangan)","144852"],["TIDAK COCOK","28563"],["KODE_GARDU","14618"]]);

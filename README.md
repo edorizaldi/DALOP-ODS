@@ -31,6 +31,13 @@ Isian form menimpa data file untuk sistem dan tanggal yang sama.
 
 Untuk memperbarui laporan harian, klik **Update laporan harian** di tab Kondisi Sistem, lalu unggah file Excel seperti `Database_Sistem_SUMKAL.xlsx` (sheet **NERDA HARIAN** dan **Monit Defisit**). File dibaca di browser; periksa ringkasannya lalu klik **Terapkan ke dashboard**. Bila admin sudah login, `kondisi_data.js` dan tanggal update di `info_update.js` ikut tersimpan ke repo. Tanpa login, data baru hanya tampil di layar sendiri.
 
+## Tab Hirarki Aset
+Menu **Database → Hirarki Aset**: pilih GI, lalu feeder, untuk melihat Zona, Section, Segment, Lateral, Gardu dan Trafo di bawahnya (pohon hirarki dan tabel per level), plus ringkasan dan daftar aset bermasalah.
+
+- Sumber: `ALL_DATA_ASET_JARINGAN.xlsx` (sheet GI, FEEDER, ZONA, SECTION, SEGMENT, LATERAL, GARDU, TRAFO). Tiap aset ditelusuri ke atas lewat PARENT_ASSET, termasuk rantai selevel (LT→LT, SG→SG, SE→SE, ZO→ZO). Gardu dipasang lewat PARENT_ASSET-nya (kode aset atau SSOTNUMBER). Trafo dipasang lewat KODE_GARDU; bila kodenya tidak ada di sheet GARDU, dicocokkan lewat nama gardu di ULP yang sama.
+- `hx_*.js`: dataset hirarki. File ini besar (±33 MB total), jadi **tidak** dimuat di `<head>`; `hirarki-tab.js` baru memuatnya saat tab Hirarki Aset dibuka, dan data gardu hanya untuk kelompok wilayah GI yang dipilih (`hx_gardu_1` Sumut+Aceh, `hx_gardu_2` S2JB+Lampung+Babel, `hx_gardu_3` Kalimantan+Riau+Sumbar).
+- `hirarki-tab.js`, `hirarki-tab.css`: tampilan dan logika tab.
+
 ## Update data dari dashboard (admin)
 Pembaca biasa hanya bisa melihat dan mengunduh PNG. Untuk menyimpan unggahan (tab Update Data Bulanan dan tombol Update laporan harian), admin login dengan nama dan password.
 
