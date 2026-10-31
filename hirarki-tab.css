@@ -1,0 +1,22 @@
+/* Tab Hirarki Aset */
+#hirarki { gap: var(--cds-gap-xl); }
+#hx-mount { display: grid; gap: var(--cds-gap-lg); }
+#hirarki .ss-card h3 { margin: 0; }
+#hirarki .hx-filters .ss-filters { gap: 10px; }
+#hirarki .hx-filters select { min-width: min(100%, 22rem); max-width: 100%; }
+#hirarki .hx-tiles { grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr)); }
+#hirarki .hx-tiles .ss-tile { padding: var(--cds-pad-md); }
+#hirarki .ss-table th, #hirarki .ss-table td { text-align: left; }
+#hirarki .hx-click tbody tr { cursor: pointer; }
+#hirarki tr.hx-on td { background: color-mix(in srgb, var(--x-lime, #C3EE52) 35%, transparent); font-weight: 600; color: var(--color-fg); }
+#hirarki .hx-tabs { justify-self: start; }
+#hirarki .ss-search { width: min(100%, 22rem); }
+#hirarki #hx-an-card .ss-frow { gap: 10px; }
+.hx-tree { max-height: 32rem; padding: 6px 4px; }
+.hx-tree ul { list-style: none; margin: 0; padding-left: 1.1rem; border-left: 1px dashed var(--x-line, var(--color-border-line)); }
+.hx-tree > ul { border-left: none; padding-left: 0; }
+.hx-tree li { margin: 3px 0; font-size: var(--cds-font-size-caption); }
+.hx-tree summary { cursor: pointer; }
+.hx-lv { display: inline-block; min-width: 1.9rem; text-align: center; border-radius: 5px; padding: 0 4px; margin-right: 6px; font-size: 10.5px; font-style: normal; font-weight: 700; color: #fff; }
+.hx-c2 { background: #2563A6; } .hx-c3 { background: #3C8D2F; } .hx-c4 { background: #E07B00; } .hx-c5 { background: #7B4FB0; } .hx-c6 { background: #0F2A4A; }
+.hx-tree .hx-kode { color: var(--color-fg-muted); margin-left: 6px; }
