@@ -266,6 +266,7 @@
 #kondisi .ks-filt{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end}
 #kondisi .ks-filt .fg>span{font-size:11px}
 #kondisi .ks-filt .dinfo{flex-basis:100%;padding-left:0;max-width:none;font-size:12px}
+#kondisi .dnote{flex-basis:100%;margin:0;font-size:12.5px;line-height:1.5;color:var(--ink)}
 #kondisi .ks-filt .ss-chip{padding:5px 12px;font-size:13px}
 #kondisi .ks-filt .datebar input{padding:5px 6px;font-size:13px}
 #kondisi .ks-hero .dinfo{padding-left:0}
