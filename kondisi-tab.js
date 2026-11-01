@@ -248,7 +248,7 @@ mp.addEventListener('mousemove',e=>{const p=e.target.closest('[data-u],[data-g]'
     const T=totals(ISO.filter(r=>r.u===u));
     h=`<b>${esc(uN(u))}</b><br>${s.t} sistem isolated<br>Status: <b>${SLBL(q.st)}</b> (${q.n[0]} normal · ${q.n[1]} siaga · ${q.n[2]} defisit${q.ne?` · ${q.ne} tanpa data`:''})<br>${T.n?`Total DMP ${mw(T.dmp)} MW · BP ${mw(T.bp)} MW<br>Cadangan ${mw(T.cad)} MW`:'Tidak ada data DMP/BP'}`+ISO.filter(r=>r.u===u&&r.st==='DEFISIT').map(whyTip).join('')+(q.n[2]?'<span class="tw">Klik wilayah untuk rincian.</span>':'');}
   else{const r=D.find(x=>x.s==='GRID'&&x.n===p.dataset.g);const g=GLAYER.find(x=>x.n===p.dataset.g);
-    h=`<b>${esc(g.t)}</b>${g.subs.length?' ('+g.subs.map(x=>x[0]).join(', ')+')':''}${r.asof?` · data ${esc(fd(r.asof))}`:''}<br>${r.has?`DMP ${mw(r.dmp)} MW · BP ${mw(r.bp)} MW<br>Cadangan ${mw(r.cad)} MW<br>`:'Tidak ada data DMP/BP<br>'}Status: <b>${SLBL(r.st)}</b>`+(r.st==='DEFISIT'?whyTip(r):'');}
+    h=`<b>${esc(g.t)}</b>${g.subs.length?' ('+g.subs.map(x=>x[0]).join(', ')+')':''}${r.asof?` · data ${esc(fd(r.asof))}`:''}<br>${r.has?`DMP ${mw(r.dmp)} MW · BP ${mw(r.bp)} MW<br>Cadangan ${mw(r.cad)} MW<br>`:'Tidak ada data DMP/BP<br>'}Status: <b>${SLBL(r.st)}</b>`+(r.st==='DEFISIT'?whyTip(r):'')+eskTip(g);}
   tip.innerHTML=h;tip.hidden=false;tip.style.left=Math.min(e.clientX+14,innerWidth-270)+'px';tip.style.top=(e.clientY+14)+'px';});
 mp.addEventListener('mouseleave',()=>tip.hidden=true);
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderMap,150);});
@@ -305,6 +305,15 @@ const NZ=x=>String(x==null?'':x).toUpperCase().replace(/[^A-Z0-9]/g,'');
 function sysTitle(n){const s=String(n||'').trim();const m=/^-\s*(.+)$/.exec(s);
   if(m){const k=m[1].trim();const p=GLAYER.find(g=>g.subs.some(x=>NZ(x[0])===NZ(k)));return (p?p.t+' · ':'')+(k.length<=3?k.toUpperCase():k.charAt(0).toUpperCase()+k.slice(1).toLowerCase());}
   const g=GLAYER.find(x=>NZ(x.n)===NZ(s));return g?g.t:s;}
+// jumlah kejadian padam meluas yang tereskalasi ke publik per sistem grid (dan per subsistem untuk Sumatra)
+function eskCount(g){const self=RIWAYAT.filter(r=>NZ(r.sis)===NZ(g.n));
+  const subs=g.subs.map(([sb])=>[sb,RIWAYAT.filter(r=>/^\s*-/.test(r.sis)&&NZ(r.sis)===NZ(sb))]);
+  return{self,subs,all:self.length+subs.reduce((x,[,a])=>x+a.length,0)};}
+function eskTip(g){if(!RIWAYAT.length)return '';const c=eskCount(g);const last=a=>a.length?a[a.length-1].tgl:'';
+  let h=`<span class="tw"><b>Tereskalasi ke publik: ${c.all} kali</b>`;
+  if(g.subs.length){h+=`<br>Seluruh sistem ${esc(g.t)}: ${c.self.length} kali`+c.subs.map(([sb,a])=>`<br>Subsistem ${esc(sb)}: ${a.length} kali${a.length?` (terakhir ${esc(last(a))})`:''}`).join('');}
+  else if(c.self.length)h+=`<br>Terakhir: ${esc(last(c.self))}`;
+  return h+'</span>';}
 const isLive=t=>/\b(now|sekarang|berlangsung)\b/i.test(String(t||''));
 function renderEval(){
   const sec=document.getElementById('ks-sec-eval');sec.hidden=mv.l!==1;if(sec.hidden)return;
