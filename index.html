@@ -1230,22 +1230,30 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <div class="ss-hero-main">
         <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v5M12 8l-6 5M12 8l6 5M6 13v4M18 13v4M4 17h4v4H4zM16 17h4v4h-4z"/></svg>Hirarki aset jaringan · GI sampai trafo</span>
         <h1 class="ss-title" id="hirarki-h">Hirarki Aset Jaringan</h1>
-        <p class="ss-take">Pilih GI untuk melihat feeder-nya, lalu klik feeder untuk melihat Zona, Section, Segment, Lateral, serta Gardu dan Trafo di bawahnya. Urutan: GI → Feeder → Zona → Section → Segment → Lateral, lalu Gardu (lewat PARENT_ASSET gardu) dan Trafo (lewat KODE_GARDU trafo). Hanya aset yang rantai parent-nya tersambung sampai GI yang ditampilkan.</p>
+        <p class="ss-take">Ringkasan di bawah menunjukkan berapa aset tiap level yang tersambung sampai GI. Pilih GI untuk melihat feeder-nya, lalu klik feeder untuk melihat Zona, Section, Segment, Lateral, serta Gardu dan Trafo di bawahnya. Urutan: GI → Feeder → Zona → Section → Segment → Lateral, lalu Gardu (lewat PARENT_ASSET gardu) dan Trafo (lewat KODE_GARDU trafo). Hanya aset yang rantai parent-nya tersambung sampai GI yang ditampilkan.</p>
       </div>
     </header>
     <div id="hx-mount"></div>
     <template id="hx-tpl">
-      <div class="ss-card" id="hx-sum-card">
-        <h3>Ringkasan seluruh data</h3>
-        <p class="ss-note">Per level: berapa aset yang rantai parent_asset-nya tersambung sampai GI, berapa yang putus, berapa yang parent-nya selevel, dan berapa yang berstatus PADAM. Kolom selevel dan PADAM tidak berlaku untuk Gardu dan Trafo.</p>
-        <div class="ss-tablewrap"><table class="ss-table" data-source="hx_ringkasan" data-row-key="level">
-          <thead><tr><th data-field="level">Level</th><th data-field="total">Total aset</th><th data-field="terhubung">Tersambung ke GI</th><th data-field="putus">Rantai putus</th><th data-field="parent_selevel">Parent selevel</th><th data-field="padam">PADAM</th></tr></thead>
-          <tbody id="hx-t-ringkasan"></tbody></table></div>
+      <div class="ss-card hx-sum" id="hx-sum-card">
+        <div class="hx-sum-head"><h3>Ringkasan seluruh data</h3><p class="ss-note">Pilih aset di sepanjang jaringan, dari Gardu Induk sampai trafo, untuk melihat profilnya.</p></div>
+        <div class="hx-net" id="hx-net" role="radiogroup" aria-label="Pilih level aset" data-source="hx_ringkasan"></div>
+        <div class="hx-prof" data-source="hx_ringkasan">
+          <div class="hx-big"><b id="hx-p-total">—</b><span id="hx-p-lbl">aset di data</span></div>
+          <div class="hx-goal">
+            <p class="hx-goal-t"><b id="hx-p-pct">—</b><span>tersambung ke GI</span></p>
+            <div class="hx-bar" role="img" id="hx-p-bar-wrap" aria-label="Porsi aset tersambung ke GI"><div class="hx-bar-f" id="hx-p-bar"><span id="hx-p-barl"></span></div><i class="hx-bar-m" id="hx-p-mark"></i></div>
+          </div>
+        </div>
+        <div class="hx-probs" id="hx-probs" data-source="hx_ringkasan hx_masalah"></div>
+        <div class="hx-metode" id="hx-metode" hidden>
         <h3>Cara trafo dicocokkan ke gardu</h3>
-        <p class="ss-note">KODE_GARDU = kode gardu di sheet TRAFO ada di KODE_ASSET sheet GARDU. NAMA (cadangan) = kodenya tidak ada, tapi nama trafo (tanpa awalan TRAFO/GD/nomor) sama persis dengan satu NAMA_GARDU di ULP yang sama. TIDAK COCOK = keduanya gagal, trafo tidak bisa diletakkan.</p>
-        <div class="ss-tablewrap"><table class="ss-table" data-source="hx_trafo_metode" data-row-key="metode">
-          <thead><tr><th data-field="metode">Metode</th><th data-field="jumlah">Jumlah trafo</th></tr></thead>
-          <tbody id="hx-t-metode"></tbody></table></div>
+          <p class="ss-note">KODE_GARDU = kode gardu di sheet TRAFO ada di KODE_ASSET sheet GARDU. NAMA (cadangan) = kodenya tidak ada, tapi nama trafo (tanpa awalan TRAFO/GD/nomor) sama persis dengan satu NAMA_GARDU di ULP yang sama. TIDAK COCOK = keduanya gagal, trafo tidak bisa diletakkan.</p>
+          <div class="ss-tablewrap"><table class="ss-table" data-source="hx_trafo_metode" data-row-key="metode">
+            <thead><tr><th data-field="metode">Metode</th><th data-field="jumlah">Jumlah trafo</th></tr></thead>
+            <tbody id="hx-t-metode"></tbody></table></div>
+        </div>
+        <dialog class="hx-dlg" id="hx-dlg" aria-labelledby="hx-dlg-h"><div class="hx-dlg-in" id="hx-dlg-in"></div></dialog>
       </div>
 
       <div class="ss-card hx-filters">
