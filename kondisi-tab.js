@@ -254,12 +254,6 @@ mp.addEventListener('mouseleave',()=>tip.hidden=true);
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderMap,150);});
 // gambar ulang saat peta baru terlihat (tab dibuka) atau lebarnya berubah
 let lastW=-1;if(window.ResizeObserver)new ResizeObserver(()=>{const w=document.getElementById('ks-map').clientWidth;if(w&&w!==lastW){lastW=w;clearTimeout(rz);rz=setTimeout(renderMap,60);}}).observe(document.getElementById('ks-map'));
-// ---------- tabs ----------
-function showTab(t){const u=t==='upd';document.getElementById('ks-tab-dash').hidden=u;document.getElementById('ks-tab-upd').hidden=!u;
-  document.getElementById('ks-t-dash').setAttribute('aria-selected',String(!u));document.getElementById('ks-t-upd').setAttribute('aria-selected',String(u));
-  if(!u)renderMap();}
-document.getElementById('ks-t-dash').addEventListener('click',()=>showTab('dash'));
-document.getElementById('ks-t-upd').addEventListener('click',()=>showTab('upd'));
 // ---------- update data ----------
 const mkey=r=>r.s+'|'+r.u+'|'+r.n;
 let MONLAST={};function calcMonLast(){const lim=isoOf(SELD);MONLAST={};MON.forEach(m=>{if(m.key&&m.t<=lim&&(!MONLAST[m.key]||m.t>=MONLAST[m.key].t))MONLAST[m.key]=m;});}
@@ -346,73 +340,10 @@ function renderRawan(){
       <div class="rw-cols">${col('Pembangkit',x.pk,x.pm)}${col('Transmisi',x.tk,x.tm)}${col('Distribusi',x.dk,x.dm)}</div></article>`;}).join('');
 }
 const offOf=iso=>Math.round((new Date(iso+'T00:00:00')-BASED())/864e5);
-const todayIso=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
-let LOG=[],cadTouched=false;
-function applyOv(){applyDay();renderGrid();all();fillCur();}
-const fu=id=>document.getElementById(id);
-function sysPool(){return fu('ks-u-jenis').value==='GRID'?GSYS:ISO.filter(r=>r.u===fu('ks-u-unit').value);}
-function fillSys(){
-  fu('ks-w-unit').hidden=fu('ks-u-jenis').value==='GRID';
-  const pool=[...sysPool()].sort((a,b)=>a.n.localeCompare(b.n));
-  fu('ks-u-sys').innerHTML=pool.map(r=>`<option value="${esc(sid(r))}">${esc(r.s==='GRID'?gName(r.n):r.n)} (${r.j} jam)</option>`).join('');
-  fillCur();
-}
-function curSys(){const k=fu('ks-u-sys').value;return D.find(r=>sid(r)===k);}
-function fillCur(){const r=curSys();if(!r){fu('ks-u-cur').textContent='';return;}
-  const k=fu('ks-u-date').value?offOf(fu('ks-u-date').value):SELD;const v=valAt(r,k);
-  fu('ks-u-cur').innerHTML=v.has?`Data tersimpan untuk <b>${fd(k,1)}</b>: DMP <b>${nf(v.dmp,2)}</b> · BP <b>${nf(v.bp,2)}</b> · Cad <b>${nf(v.cad,2)}</b> MW · ${chip(v.st)}${v.upd?' (dari form update)':' (dari file)'}. Menyimpan akan menimpa data tanggal ini.`:`Belum ada data untuk <b>${fd(k,1)}</b>.`;}
-function setErr(w,m){const el=fu(w),e=el.querySelector('.err');el.classList.toggle('bad',!!m);e.hidden=!m;e.textContent=m||'';}
-function autoCad(){if(cadTouched)return;const a=parseFloat(fu('ks-u-dmp').value),b=parseFloat(fu('ks-u-bp').value);
-  if(Number.isFinite(a)&&Number.isFinite(b)){const c=Math.round((a-b)*1000)/1000;fu('ks-u-cad').value=c;if(c<0)fu('ks-u-st-d').checked=true;}}
-function fillUnits(){fu('ks-u-unit').innerHTML=UNITS.map(u=>`<option value="${esc(u)}">${esc(uN(u))}</option>`).join('');}
-fillUnits();
-fu('ks-u-date').value=todayIso;
-fu('ks-u-jenis').addEventListener('change',fillSys);fu('ks-u-unit').addEventListener('change',fillSys);fu('ks-u-sys').addEventListener('change',fillCur);fu('ks-u-date').addEventListener('change',fillCur);
-fu('ks-u-dmp').addEventListener('input',autoCad);fu('ks-u-bp').addEventListener('input',autoCad);
-fu('ks-u-cad').addEventListener('input',()=>{cadTouched=fu('ks-u-cad').value!=='';});
-fu('ks-u-reset').addEventListener('click',()=>{['ks-u-dmp','ks-u-bp','ks-u-cad'].forEach(i=>fu(i).value='');KS.querySelectorAll('input[name="u-st"]').forEach(x=>x.checked=false);cadTouched=false;['ks-w-dmp','ks-w-bp','ks-w-cad','ks-w-st'].forEach(w=>setErr(w,''));fu('ks-u-msg').textContent='';fu('ks-u-date').value=todayIso;});
-fillSys();
-fu('ks-fupd').addEventListener('submit',async e=>{
-  e.preventDefault();const msg=fu('ks-u-msg');msg.className='msg';msg.textContent='';
-  const r=curSys();const dmp=parseFloat(fu('ks-u-dmp').value),bp=parseFloat(fu('ks-u-bp').value),cad=parseFloat(fu('ks-u-cad').value);
-  const stv=(KS.querySelector('input[name="u-st"]:checked')||{}).value;const dt=fu('ks-u-date').value;
-  let ok=true;
-  setErr('ks-w-dmp',Number.isFinite(dmp)&&dmp>=0?'':'Isi DMP dalam MW (angka 0 atau lebih).');if(!(Number.isFinite(dmp)&&dmp>=0))ok=false;
-  setErr('ks-w-bp',Number.isFinite(bp)&&bp>=0?'':'Isi beban puncak dalam MW (angka 0 atau lebih).');if(!(Number.isFinite(bp)&&bp>=0))ok=false;
-  setErr('ks-w-cad',Number.isFinite(cad)?'':'Isi cadangan daya dalam MW.');if(!Number.isFinite(cad))ok=false;
-  setErr('ks-w-st',stv?'':'Pilih status.');if(!stv)ok=false;
-  if(!dt||!r){msg.className='msg no';msg.textContent='Pilih sistem dan tanggal data.';ok=false;}
-  if(!ok)return;
-  const A=window.SSAdmin;
-  if(!A||!A.isAdmin()){msg.className='msg no';msg.textContent='Login admin dulu (tombol Login admin di kanan bawah) untuk menyimpan update.';return;}
-  const off=offOf(dt);const k=sid(r);const nm=r.s==='GRID'?gName(r.n):r.n;
-  const body={key:k,s:r.s,u:r.u,n:r.n,tanggal:dt,off,dmp,bp,cad,st:stv,by:A.name()||'Admin',at:new Date().toISOString()};
-  fu('ks-u-save').disabled=true;msg.textContent='Menyimpan ke repo…';
-  try{
-    const cur=await A.get(UPD_FILE);let arr=cur?parseUpd(cur):[];
-    arr=arr.filter(x=>!(x.key===k&&x.off===off));arr.push(body);
-    await A.put(UPD_FILE,updJs(arr),`Update kondisi sistem ${nm} ${dt} dari dashboard`);
-    window.__D.kondisi_update=arr;loadUpd(arr);
-    msg.className='msg ok';msg.textContent=`Tersimpan: ${nm}, ${fd(off,1)}. Pembaca lain melihatnya setelah GitHub Pages diperbarui (1–2 menit).`+(off!==SELD?` Pilih tanggal ${fd(off)} di dashboard untuk melihatnya.`:'');
-    ['ks-u-dmp','ks-u-bp','ks-u-cad'].forEach(i=>fu(i).value='');KS.querySelectorAll('input[name="u-st"]').forEach(x=>x.checked=false);cadTouched=false;
-  }catch(err){
-    msg.className='msg no';
-    msg.textContent=err&&err.code==='gh-403'?'Token admin belum punya izin menulis ke repo ini. Hubungi pemilik repo.':err&&(err.code==='gh-401')?'Login admin sudah tidak berlaku. Keluar lalu login lagi.':'Gagal menyimpan: '+((err&&err.message)||'coba lagi sebentar lagi')+'.';
-  }finally{fu('ks-u-save').disabled=false;}
-});
-function lockForm(t){const g=fu('ks-u-gate');g.textContent=t;g.hidden=false;fu('ks-fupd').querySelectorAll('input,select,button').forEach(x=>x.disabled=true);}
-function renderLog(){
-  const el=fu('ks-u-log');
-  if(!LOG.length){el.innerHTML='<li class="empty">Belum ada update yang disimpan.</li>';return;}
-  el.innerHTML=LOG.map(x=>{const nm=x.s==='GRID'?gName(x.n):x.n;const who=x.by||'Admin';
-    const at=x.at?new Date(x.at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-    return `<li><span class="nm">${esc(nm)} <span class="mut" style="font-weight:400">· ${esc(uN(x.u))}</span></span>${chip(x.st)}<span class="d">Data ${fd(x.off)} · DMP ${nf(x.dmp,2)} · BP ${nf(x.bp,2)} · Cad ${nf(x.cad,2)} MW<br>${esc(who)} · ${esc(at)}</span></li>`;}).join('');
-}
-const UPD_FILE='kondisi_update.js';
-const parseUpd=t=>{const m=String(t).match(/=\s*(\[[\s\S]*\])\s*;?\s*$/);try{return m?JSON.parse(m[1]):[];}catch(e){return [];}};
-const updJs=a=>'window.__D=window.__D||{};window.__D["kondisi_update"]='+JSON.stringify(a)+';\n';
+// Halaman Update Data (form per sistem) sudah dihapus; isian lama di kondisi_update.js tetap dipakai.
+function applyOv(){applyDay();renderGrid();all();}
 function loadUpd(arr){const o={};(arr||[]).forEach(v=>{if(!v||!v.key)return;const off=typeof v.tanggal==='string'&&/^\d{4}-\d\d-\d\d$/.test(v.tanggal)?offOf(v.tanggal):v.off;if(typeof off==='number')(o[v.key]=o[v.key]||{})[off]={...v,off};});DOV=o;
-  LOG=[...(arr||[])].sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,20);applyOv();renderLog();}
+  applyOv();}
 document.getElementById('ks-d-prev').addEventListener('click',()=>setDay(SELD-1));
 document.getElementById('ks-d-next').addEventListener('click',()=>setDay(SELD+1));
 document.getElementById('ks-d-sel').addEventListener('change',e=>{if(e.target.value)setDay(offOf(e.target.value));});
@@ -532,7 +463,7 @@ async function upApply(){
   if(!upPending)return;const p=upPending,msg=KSu('ks-up-msg'),btn=KSu('ks-up-apply');
   const mon=p.noMonit?MON:p.mon,rawan=p.rawan||RAWAN,riwayat=p.riwayat||RIWAYAT;
   window.__D.kondisi_meta=p.meta;window.__D.kondisi_day=p.day;window.__D.kondisi_mon=mon;window.__D.kondisi_rawan=rawan;window.__D.kondisi_riwayat=riwayat;
-  loadData({meta:p.meta,day:p.day,mon,rawan,riwayat});sel=null;fillUnits();fillSys();renderAgg();loadUpd(window.__D.kondisi_update||[]);
+  loadData({meta:p.meta,day:p.day,mon,rawan,riwayat});sel=null;renderAgg();loadUpd(window.__D.kondisi_update||[]);
   const last=FILEMAX;const periode=`1–${last} ${BLNF[KM-1]} ${KY}`;const now=new Date().toISOString();
   const sumber=`${p.file} (sheet ${['NERDA HARIAN',p.noMonit?'':'Monit Defisit',p.riwayat?'Riwayat Padam Meluas Tereskalasi':'',p.rawan?'Kerawanan Sistem':''].filter(Boolean).join(', ')})`;
   const A=window.SSAdmin;let saved=false,why='';
@@ -562,5 +493,4 @@ async function upApply(){
 })();
 window.SSKondisi={parseNerda,parseMonit,parseRawan,parseRiwayat,dataJs};
 renderAgg();loadUpd((window.__D&&window.__D.kondisi_update)||[]);fitLayerDay();
-if(!window.SSAdmin||!window.SSAdmin.isAdmin())lockForm('Hanya admin yang bisa menyimpan update. Klik Login admin di kanan bawah, lalu buka tab ini lagi.');
 })();

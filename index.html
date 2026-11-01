@@ -1105,12 +1105,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <p class="ss-note" id="ks-up-msg" role="status"></p>
     </div>
 <div class="wrap">
-<div class="tabs" role="tablist" aria-label="Halaman">
-  <button type="button" role="tab" id="ks-t-dash" aria-selected="true" aria-controls="ks-tab-dash">Dashboard</button>
-  <button type="button" role="tab" id="ks-t-upd" aria-selected="false" aria-controls="ks-tab-upd">Update data</button>
-</div>
-
-<div id="ks-tab-dash" role="tabpanel" aria-labelledby="ks-t-dash">
+<div id="ks-tab-dash">
 
 <div class="ss-hero ks-hero" id="ks-ringkasan">
   <div class="ss-hero-main">
@@ -1182,44 +1177,6 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <div class="dhead"><p id="ks-lsub"></p><input type="search" id="ks-q" placeholder="Cari nama sistem atau UID" aria-label="Cari nama sistem atau UID"></div>
 <div class="tbl tall"><table id="ks-list"></table></div>
 </section>
-</div>
-
-<div id="ks-tab-upd" role="tabpanel" aria-labelledby="ks-t-upd" hidden>
-<div class="upd">
-  <div class="card">
-    <h2>Update data sistem</h2>
-    <p>Isi kondisi terbaru satu sistem. Data yang disimpan langsung dipakai di peta, kartu grid dan daftar sistem untuk semua yang membuka dashboard ini.</p>
-    <div class="gate" id="ks-u-gate" hidden></div>
-    <form id="ks-fupd" novalidate>
-      <div class="fgrid">
-        <div class="fld"><label for="ks-u-jenis">Jenis sistem</label><select id="ks-u-jenis"><option value="ISOLATED">Sistem isolated</option><option value="GRID">Sistem grid</option></select></div>
-        <div class="fld" id="ks-w-unit"><label for="ks-u-unit">Unit induk</label><select id="ks-u-unit"></select></div>
-        <div class="fld full"><label for="ks-u-sys">Sistem</label><select id="ks-u-sys"></select></div>
-        <div class="cur" id="ks-u-cur"></div>
-        <div class="fld"><label for="ks-u-date">Tanggal data</label><input type="date" id="ks-u-date" required></div>
-        <div class="fld"></div>
-        <div class="fld" id="ks-w-dmp"><label for="ks-u-dmp">Daya mampu pasok (MW)</label><input type="number" id="ks-u-dmp" step="0.001" min="0" inputmode="decimal" required><span class="err" hidden></span></div>
-        <div class="fld" id="ks-w-bp"><label for="ks-u-bp">Beban puncak (MW)</label><input type="number" id="ks-u-bp" step="0.001" min="0" inputmode="decimal" required><span class="err" hidden></span></div>
-        <div class="fld" id="ks-w-cad"><label for="ks-u-cad">Cadangan daya (MW)</label><input type="number" id="ks-u-cad" step="0.001" inputmode="decimal" required><small id="ks-u-cadhint">Terisi otomatis dari DMP − BP, bisa diubah.</small><span class="err" hidden></span></div>
-        <div class="fld" id="ks-w-st"><span class="lb" id="ks-lb-st">Status</span>
-          <div class="radios" role="radiogroup" aria-labelledby="ks-lb-st">
-            <label style="--c:var(--ok)"><input type="radio" name="u-st" id="ks-u-st-n" value="NORMAL">Normal</label>
-            <label style="--c:var(--warn)"><input type="radio" name="u-st" id="ks-u-st-s" value="SIAGA">Siaga</label>
-            <label style="--c:var(--bad)"><input type="radio" name="u-st" id="ks-u-st-d" value="DEFISIT">Defisit</label>
-          </div><span class="err" hidden></span></div>
-      </div>
-      <div class="actions">
-        <button type="submit" class="btn pri" id="ks-u-save">Simpan update</button>
-        <button type="button" class="btn sec" id="ks-u-reset">Kosongkan</button>
-        <span class="msg" id="ks-u-msg" role="status" aria-live="polite"></span>
-      </div>
-    </form>
-  </div>
-  <div class="card">
-    <h3>Update terbaru</h3>
-    <ul class="log" id="ks-u-log"><li class="empty">Belum ada update yang disimpan.</li></ul>
-  </div>
-</div>
 </div>
 
 </div>
