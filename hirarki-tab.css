@@ -23,7 +23,12 @@
 
 /* Ringkasan seluruh data: jaringan GI → trafo, profil level, masalah dalam pop up */
 #hirarki .hx-sum { display: grid; gap: 22px; }
-.hx-sum-head { display: grid; gap: 4px; }
+.hx-sum-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px 24px; }
+.hx-sum-tt { display: grid; gap: 4px; min-width: min(100%, 18rem); flex: 1 1 18rem; }
+.hx-sum-unitpick { display: flex; flex-wrap: wrap; gap: 10px; }
+.hx-sum-unitpick label { display: grid; gap: 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--color-fg-muted); }
+.hx-sum-unitpick select { min-width: 13rem; max-width: 100%; font: inherit; font-size: 14px; letter-spacing: 0; text-transform: none; font-weight: 600; color: var(--color-fg); }
+@media (max-width: 52rem) { .hx-sum-unitpick { width: 100%; } .hx-sum-unitpick label { flex: 1 1 10rem; } .hx-sum-unitpick select { min-width: 0; width: 100%; } }
 .hx-net { position: relative; display: grid; grid-template-columns: 1.25fr repeat(7, minmax(0, 1fr)); align-items: start; gap: 4px; padding: 12px 0 2px; overflow-x: auto; scrollbar-width: thin; }
 .hx-net::before { content: ''; position: absolute; left: 6%; right: 5%; top: 37px; height: 3px; border-radius: 3px; background: repeating-linear-gradient(90deg, #0F2A4A 0 10px, transparent 10px 16px); opacity: .35; }
 .hx-node { all: unset; box-sizing: border-box; position: relative; display: grid; justify-items: center; gap: 4px; padding: 0 4px 8px; cursor: pointer; border-radius: 12px; min-width: 4.6rem; text-align: center; }

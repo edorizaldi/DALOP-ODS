@@ -323,7 +323,7 @@
     if (AN) {
       const rows = AN.filter((r) => (!p.hx_wilayah || r.wilayah === p.hx_wilayah) && (!p.hx_up3 || r.up3 === p.hx_up3) && (!anLv || r.level === anLv) && match(r, anQ));
       drawRows($('hx-t-anomali'), rows.slice(0, MAXAN), ['level', 'kode', 'nama', 'parent', 'status_hirarki', 'catatan', 'up3', 'baris'], new Set(['baris']));
-      $('hx-an-count').textContent = rows.length > MAXAN ? `${fmt(rows.length)} aset cocok; ditampilkan ${fmt(MAXAN)} pertama. Persempit dengan filter Unit, UP3, Level atau pencarian. Daftar lengkap ada di sheet ANOMALI dan ANOMALI_GARDU_TRAFO file Excel hirarki.` : `${fmt(rows.length)} aset.`;
+      $('hx-an-count').textContent = rows.length > MAXAN ? `${fmt(rows.length)} aset cocok; ditampilkan ${fmt(MAXAN)} pertama. Persempit dengan pilihan Unit, UP3, Level atau pencarian. Daftar lengkap ada di sheet ANOMALI dan ANOMALI_GARDU_TRAFO file Excel hirarki.` : `${fmt(rows.length)} aset.`;
     }
   }
   SSD.onData(render);
