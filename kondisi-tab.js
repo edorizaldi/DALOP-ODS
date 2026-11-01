@@ -1,5 +1,5 @@
 // Tab Kondisi Sistem: peta dan status sistem grid/isolated SUMKAL per tanggal, monitoring defisit, dan form update (admin).
-// Data: kondisi_data.js (NERDA HARIAN + Monit Defisit), kondisi_update.js (isian form, disimpan ke repo oleh admin).
+// Data: kondisi_data.js (NERDA HARIAN, Monit Defisit, Riwayat Padam Meluas Tereskalasi, Kerawanan Sistem), kondisi_update.js (isian form, disimpan ke repo oleh admin).
 (() => {
 'use strict';
 const KS=document.getElementById('kondisi');
@@ -16,7 +16,10 @@ function valAt(r,k){const o=(DOV[sid(r)]||{})[k];
   const i=k-1;if(i<0||i>=r.a.dmp.length||r.a.dmp[i]==null)return{has:false,dmp:null,bp:null,cad:null,st:'',upd:false};
   return{has:true,dmp:r.a.dmp[i],bp:r.a.bp[i],cad:r.a.cad[i],st:SCODE[r.a.sc[i]]||'',upd:false};}
 function applyDay(){
-  D.forEach(r=>{Object.assign(r,valAt(r,SELD));r.last=r.has?SELD:null;let n=0,s=0,d=0;
+  D.forEach(r=>{Object.assign(r,valAt(r,SELD));r.last=r.has?SELD:null;r.asof=null;
+    // sistem grid utama yang belum melapor pada tanggal ini memakai data terakhirnya (maks. 7 hari ke belakang)
+    if(!r.has&&r.s==='GRID'&&GRIDMAIN.includes(r.n))for(let k=SELD-1;k>=Math.max(1,SELD-7);k--){const v=valAt(r,k);if(v.has){Object.assign(r,v);r.last=k;r.asof=k;break;}}
+    let n=0,s=0,d=0;
     for(let k=1;k<=SELD;k++){const t=valAt(r,k).st;if(t==='NORMAL')n++;else if(t==='SIAGA')s++;else if(t==='DEFISIT')d++;}
     r.cN=n;r.cS=s;r.cD=d;});
 }
@@ -25,7 +28,7 @@ function renderDate(){
   document.getElementById('ks-d-prev').disabled=SELD<=DMIN;document.getElementById('ks-d-next').disabled=SELD>=DMAX;
   const nh=D.filter(r=>r.has&&r.n!=='TOTAL SISTEM GRID').length;
   const tag=SELD===TODAYOFF-1?' (H-1)':SELD===TODAYOFF?' (hari ini)':'';
-  document.getElementById('ks-d-info').innerHTML=nh?`${nh} sistem punya data pada tanggal ini.`:`Belum ada data untuk tanggal ini. Data file terisi sampai ${fd(FILEMAX,1)}. <button type="button" class="linkbtn" id="ks-d-last">Lihat ${fd(FILEMAX)}</button>`;
+  document.getElementById('ks-d-info').innerHTML=(jumpNote?`<b>${esc(jumpNote)}</b> `:'')+(nh?`${nh} sistem punya data pada tanggal ini.`:`Belum ada data untuk tanggal ini. Data file terisi sampai ${fd(FILEMAX,1)}. <button type="button" class="linkbtn" id="ks-d-last">Lihat ${fd(FILEMAX)}</button>`);
   renderTake(tag);
 }
 // ringkasan singkat di kotak atas (ikut lapisan dan tanggal)
@@ -38,7 +41,7 @@ function renderTake(tag){
   if(!has.length)t=`Belum ada data ${LT} pada ${b(fd(SELD,1)+tag)}. Data terakhir terisi ${b(fd(FILEMAX,1))}.`;
   else{t=`Pada ${b(fd(SELD,1)+tag)}, ${b(nd.length)} ${LT} defisit dan ${b(ns.length)} siaga dari ${has.length} yang punya data.`;
     if(nd.length)t+=` Defisit: <span class="neg">${nd.slice(0,4).map(r=>esc(nm(r))).join(', ')}${nd.length>4?`, dan ${nd.length-4} lainnya`:''}</span>.`;
-    if(mv.l===1){const tot=D.find(r=>r.n==='TOTAL SISTEM GRID');if(tot&&tot.has)t+=` Cadangan grid SUMKAL ${b(nf(tot.cad,1)+' MW')}.`;}
+    if(mv.l===1){const tot=gridTotal();if(tot.has)t+=` Cadangan grid SUMKAL ${b(nf(tot.cad,1)+' MW')}${tot.full?'':' (tanpa Batam–Bintan, sebagian dari data terakhir)'}.`;t+=esc(asofTxt());}
     if(has.length<pool.length)t+=` ${pool.length-has.length} ${LT} belum punya data.`;}
   document.getElementById('ks-take').innerHTML=t;
   // ringkasan cepat: total DMP dan BP sistem yang punya data pada tanggal itu (lapisan aktif)
@@ -52,7 +55,12 @@ function renderTake(tag){
   const gv=document.getElementById('ks-gauge-v');gv.textContent=has.length?String(nd.length):'–';gv.className='ss-gauge-val'+(nd.length?' neg':'');
   document.getElementById('ks-gauge-c').innerHTML=has.length?`${LT} defisit<br>${fd(SELD)}`:`belum ada data<br>${fd(SELD)}`;
 }
-function setDay(k){SELD=Math.min(DMAX,Math.max(DMIN,k));sel=null;applyDay();renderGrid();all();}
+function setDay(k){jumpNote='';SELD=Math.min(DMAX,Math.max(DMIN,k));sel=null;applyDay();renderGrid();all();}
+// Lapisan yang dipilih belum punya data pada tanggal terpilih: pindah ke tanggal terakhir yang punya data untuk lapisan itu.
+let jumpNote='';
+function lastLayerDay(upto){const pool=mv.l===1?GSYS:ISO;for(let k=Math.min(upto,DMAX);k>=DMIN;k--)if(pool.some(r=>valAt(r,k).has))return k;return 0;}
+function fitLayerDay(){const pool=mv.l===1?GSYS:ISO;if(pool.some(r=>r.has))return false;const k=lastLayerDay(SELD);if(!k||k===SELD)return false;
+  const from=SELD;setDay(k);jumpNote=`Data ${mv.l===1?'sistem grid':'sistem isolated'} pada ${fd(from,1)} belum ada, jadi ditampilkan data terakhirnya (${fd(k,1)}).`;renderDate();return true;}
 const fd=(n,long)=>n?new Date(KY,KM-1,n).toLocaleDateString('id-ID',long?{day:'numeric',month:'long',year:'numeric'}:{day:'numeric',month:'short'}):'–';
 const JAM=[24,12,6], JC=['--h24','--h12','--h6'];
 const STS=['NORMAL','SIAGA','DEFISIT'];
@@ -74,7 +82,7 @@ const GSUB={'SUMATRA':['SBU','SBT','SBS'],'INTERKONEKSI KALIMANTAN':['Barito','M
 function loadData(src){
   const m=src.meta||{tahun:2026,bulan:10};KY=+m.tahun;KM=+m.bulan;
   D=(src.day||[]).map(r=>({s:r.s,u:r.u,n:r.n,j:r.j,a:{dmp:r.dmp,bp:r.bp,cad:r.cad,sc:r.sc}}));
-  MON=src.mon||[];
+  MON=src.mon||[];RAWAN=src.rawan||[];RIWAYAT=src.riwayat||[];
   ISO=D.filter(r=>r.s==='ISOLATED');UNITS=[...new Set(ISO.map(r=>r.u))];
   GSYS=D.filter(r=>r.s==='GRID'&&GRIDMAIN.includes(r.n));
   FILEMAX=Math.max(0,...D.map(r=>{let m=0;r.a.dmp.forEach((v,i)=>{if(v!=null)m=i+1;});return m;}));
@@ -82,7 +90,8 @@ function loadData(src){
   DMAX=Math.max(new Date(KY,KM,0).getDate(),TODAYOFF);
   SELD=Math.min(DMAX,Math.max(DMIN,TODAYOFF-1));
 }
-loadData({meta:window.__D.kondisi_meta,day:window.__D.kondisi_day,mon:window.__D.kondisi_mon});
+let RAWAN=[],RIWAYAT=[];
+loadData({meta:window.__D.kondisi_meta,day:window.__D.kondisi_day,mon:window.__D.kondisi_mon,rawan:window.__D.kondisi_rawan,riwayat:window.__D.kondisi_riwayat});
 function renderAgg(){
   const h=document.getElementById('ks-h1');if(h)h.textContent='Kondisi Sistem SUMKAL';const eb=document.getElementById('ks-eb-m');if(eb)eb.textContent=`${BLNF[KM-1]} ${KY}`;
   const lt=ISO.filter(r=>r.j<24).length;
@@ -92,13 +101,19 @@ function renderAgg(){
     .map(([a,b,c])=>`<div><b class="${c}">${a}</b><span>${b}</span></div>`).join('');
 }
 // ---------- grid ----------
+// total grid SUMKAL dari sistem grid utama (tanpa Batam–Bintan), ikut data terakhir bila ada yang belum melapor
+function gridTotal(){const rs=GSYS.filter(r=>r.n!=='BATAM-BINTAN');const h=rs.filter(r=>r.has);
+  const dmp=h.reduce((x,r)=>x+(r.dmp||0),0),bp=h.reduce((x,r)=>x+(r.bp||0),0);const cad=h.reduce((x,r)=>x+(r.cad!=null?r.cad:(r.dmp||0)-(r.bp||0)),0);
+  const t=D.find(r=>r.n==='TOTAL SISTEM GRID');const full=h.length===rs.length&&!h.some(r=>r.asof);
+  return{has:h.length>0,n:h.length,of:rs.length,dmp,bp,cad,st:full&&t&&t.has?t.st:(cad<0?'DEFISIT':''),full};}
+const asofTxt=()=>{const st=GSYS.filter(r=>r.asof);return st.length?` ${st.map(r=>gName(r.n)).join(', ')} belum melapor pada tanggal ini; dipakai data terakhirnya (${[...new Set(st.map(r=>fd(r.asof)))].join(', ')}).`:'';};
 function renderGrid(){
-  const tot=D.find(r=>r.n==='TOTAL SISTEM GRID');
-  document.getElementById('ks-gsub').innerHTML=!tot.has?`Tidak ada data sistem grid pada ${fd(SELD,1)}.`:`Kondisi per ${fd(SELD,1)}. Total grid SUMKAL: DMP ${nf(tot.dmp,1)} MW, BP ${nf(tot.bp,1)} MW, cadangan ${nf(tot.cad,1)} MW ${chip(tot.st)}. Total ini tidak memasukkan Batam–Bintan.`;
+  const tot=gridTotal();
+  document.getElementById('ks-gsub').innerHTML=!tot.has?`Tidak ada data sistem grid pada ${fd(SELD,1)}.`:`Kondisi per ${fd(SELD,1)}. Total grid SUMKAL: DMP ${nf(tot.dmp,1)} MW, BP ${nf(tot.bp,1)} MW, cadangan ${nf(tot.cad,1)} MW ${tot.st?chip(tot.st):''}. Total ini tidak memasukkan Batam–Bintan.${esc(asofTxt())}`;
   document.getElementById('ks-grid').innerHTML=GRIDMAIN.map(n=>{
     const r=D.find(x=>x.s==='GRID'&&x.n===n);const T=r.cN+r.cS+r.cD||1;
     return `<div class="gc"><h3>${esc(n==='BATAM-BINTAN'?'Batam–Bintan':n.charAt(0)+n.slice(1).toLowerCase().replace(/ (\w)/g,(m,c)=>' '+c.toUpperCase()))}${chip(r.st)}</h3>
-    <div class="u">${esc(r.u)} · 24 jam</div>
+    <div class="u">${esc(r.u)} · 24 jam${r.asof?` · <b class="asof">data ${esc(fd(r.asof))}</b>`:''}</div>
     <div class="k"><div><b>${nf(r.dmp,1)}</b><span>DMP MW</span></div><div><b>${nf(r.bp,1)}</b><span>BP MW</span></div><div><b class="${r.cad<0?'neg':''}">${nf(r.cad,1)}</b><span>Cad MW</span></div></div>
     <div class="days" aria-label="Hari status"><i class="d-n" style="width:${r.cN/T*100}%"></i><i class="d-s" style="width:${r.cS/T*100}%"></i><i class="d-d" style="width:${r.cD/T*100}%"></i></div>
     <div class="dl">${r.cN} hari normal · ${r.cS} siaga · ${r.cD} defisit (1 Okt–${fd(SELD)})</div>
@@ -217,11 +232,11 @@ function renderPop(){
   el.innerHTML=`<header><div><h3>${esc(head.t)}</h3><div class="meta">${esc(head.m)}</div></div><button type="button" class="x" id="ks-mpop-x" aria-label="Tutup">×</button></header>${cnt?`<div class="cnt">${cnt}</div>`:''}<ul>${items}</ul>${hint?`<div class="hint">${hint}</div>`:''}`;
   el.hidden=false;
 }
-function all(){calcMonLast();renderDate();renderFilters();renderMap();renderDetail();renderList();renderMon();}
+function all(){calcMonLast();renderDate();renderFilters();renderMap();renderDetail();renderList();renderMon();renderEval();renderRawan();}
 
 document.getElementById('ks-q').addEventListener('input',e=>{st.q=e.target.value;renderList();});
 const tip=document.getElementById('ks-tip');
-document.getElementById('ks-m-l').addEventListener('click',e=>{const b=e.target.closest('button[data-ml]');if(!b)return;mv.l=+b.dataset.ml;sel=null;renderMon();saveM();renderMap();});
+document.getElementById('ks-m-l').addEventListener('click',e=>{const b=e.target.closest('button[data-ml]');if(!b)return;mv.l=+b.dataset.ml;sel=null;saveM();jumpNote='';if(!fitLayerDay())all();});
 const mp=document.getElementById('ks-map');
 mp.addEventListener('click',e=>{const p=e.target.closest('[data-u],[data-g]');const k=p?(p.dataset.u||p.dataset.g):null;sel=(k&&sel!==k)?k:null;tip.hidden=true;renderMap();});
 document.getElementById('ks-mpop').addEventListener('click',e=>{if(e.target.closest('#ks-mpop-x')){sel=null;renderMap();}});
@@ -233,7 +248,7 @@ mp.addEventListener('mousemove',e=>{const p=e.target.closest('[data-u],[data-g]'
     const T=totals(ISO.filter(r=>r.u===u));
     h=`<b>${esc(uN(u))}</b><br>${s.t} sistem isolated<br>Status: <b>${SLBL(q.st)}</b> (${q.n[0]} normal · ${q.n[1]} siaga · ${q.n[2]} defisit${q.ne?` · ${q.ne} tanpa data`:''})<br>${T.n?`Total DMP ${mw(T.dmp)} MW · BP ${mw(T.bp)} MW<br>Cadangan ${mw(T.cad)} MW`:'Tidak ada data DMP/BP'}`+ISO.filter(r=>r.u===u&&r.st==='DEFISIT').map(whyTip).join('')+(q.n[2]?'<span class="tw">Klik wilayah untuk rincian.</span>':'');}
   else{const r=D.find(x=>x.s==='GRID'&&x.n===p.dataset.g);const g=GLAYER.find(x=>x.n===p.dataset.g);
-    h=`<b>${esc(g.t)}</b>${g.subs.length?' ('+g.subs.map(x=>x[0]).join(', ')+')':''}<br>${r.has?`DMP ${mw(r.dmp)} MW · BP ${mw(r.bp)} MW<br>Cadangan ${mw(r.cad)} MW<br>`:'Tidak ada data DMP/BP<br>'}Status: <b>${SLBL(r.st)}</b>`+(r.st==='DEFISIT'?whyTip(r):'');}
+    h=`<b>${esc(g.t)}</b>${g.subs.length?' ('+g.subs.map(x=>x[0]).join(', ')+')':''}${r.asof?` · data ${esc(fd(r.asof))}`:''}<br>${r.has?`DMP ${mw(r.dmp)} MW · BP ${mw(r.bp)} MW<br>Cadangan ${mw(r.cad)} MW<br>`:'Tidak ada data DMP/BP<br>'}Status: <b>${SLBL(r.st)}</b>`+(r.st==='DEFISIT'?whyTip(r):'');}
   tip.innerHTML=h;tip.hidden=false;tip.style.left=Math.min(e.clientX+14,innerWidth-270)+'px';tip.style.top=(e.clientY+14)+'px';});
 mp.addEventListener('mouseleave',()=>tip.hidden=true);
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderMap,150);});
@@ -284,6 +299,43 @@ document.getElementById('ks-mon-v').addEventListener('click',e=>{const b=e.targe
   KS.querySelectorAll('#ks-mon-v button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderMon();});
 document.getElementById('ks-mon-q').addEventListener('input',e=>{monQ=e.target.value;renderMon();});
 const gName=n=>(GLAYER.find(g=>g.n===n)||{t:n}).t;
+// ---------- evaluasi sistem: riwayat padam meluas yang tereskalasi ke publik (sistem grid) ----------
+const NZ=x=>String(x==null?'':x).toUpperCase().replace(/[^A-Z0-9]/g,'');
+// nama sistem di sheet riwayat/kerawanan: "-SBU" = subsistem Sumatra, "SUMATRA" = grid Sumatra
+function sysTitle(n){const s=String(n||'').trim();const m=/^-\s*(.+)$/.exec(s);
+  if(m){const k=m[1].trim();const p=GLAYER.find(g=>g.subs.some(x=>NZ(x[0])===NZ(k)));return (p?p.t+' · ':'')+(k.length<=3?k.toUpperCase():k.charAt(0).toUpperCase()+k.slice(1).toLowerCase());}
+  const g=GLAYER.find(x=>NZ(x.n)===NZ(s));return g?g.t:s;}
+const isLive=t=>/\b(now|sekarang|berlangsung)\b/i.test(String(t||''));
+function renderEval(){
+  const sec=document.getElementById('ks-sec-eval');sec.hidden=mv.l!==1;if(sec.hidden)return;
+  const rs=[...RIWAYAT].reverse();const live=rs.filter(r=>isLive(r.tgl)).length;
+  const cnt={};rs.forEach(r=>{const k=sysTitle(r.sis);cnt[k]=(cnt[k]||0)+1;});const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('ks-evsub').textContent=rs.length?`${rs.length} kejadian padam meluas sistem grid yang tereskalasi ke publik, terbaru di atas (sheet Riwayat Padam Meluas Tereskalasi).${top&&top[1]>1?` Paling sering di ${top[0]} (${top[1]} kejadian).`:''}${live?` ${live} kejadian masih berlangsung.`:''}`
+    :'Belum ada data riwayat padam meluas. Unggah file pemantauan sistem yang memuat sheet Riwayat Padam Meluas Tereskalasi.';
+  let h=`<thead><tr><th class="l">No</th><th class="l">Tanggal kejadian</th><th class="l">Sistem</th><th class="l">Dampak padam</th><th class="l">Penyebab padam</th><th class="l">Keterangan</th></tr></thead><tbody>`;
+  h+=rs.map(r=>{const lv=isLive(r.tgl);const k=String(r.ket||'').trim();
+    const dampak=esc(r.dampak||'–').replace(/([\d.]+)\s*(Pelanggan)/i,'<b>$1</b> $2');
+    const ket=/^https?:\/\/\S+$/i.test(k)?`<a href="${esc(k)}" target="_blank" rel="noopener noreferrer">Buka materi</a>`:k?esc(k):'<span class="mut">–</span>';
+    return `<tr class="${lv?'now':''}"><td class="l nw">${esc(r.no||'')}</td><td class="l nw">${esc(r.tgl||'–')}${lv?'<br><span class="live">Masih berlangsung</span>':''}</td><td class="l nw"><b>${esc(sysTitle(r.sis))}</b></td><td class="l">${dampak}</td><td class="l">${esc(r.sebab||'–')}</td><td class="l">${ket}</td></tr>`;}).join('');
+  if(!rs.length)h+=`<tr><td class="l mut" colspan="6">Belum ada data.</td></tr>`;
+  document.getElementById('ks-ev').innerHTML=h+'</tbody>';
+}
+// ---------- kerawanan sistem: per sistem, kerawanan dan mitigasi di pembangkit, transmisi, distribusi ----------
+const rwGrid=n=>{const k=NZ(n);return D.some(r=>r.s==='GRID'&&r.n!=='TOTAL SISTEM GRID'&&NZ(r.n)===k);};
+function rwSys(n){const k=NZ(n),k2=NZ(String(n).replace(/\(.*?\)/g,''));
+  return D.find(r=>r.n!=='TOTAL SISTEM GRID'&&NZ(r.n)===k)||ISO.find(r=>NZ(r.n.replace(/\(.*?\)/g,''))===k2)||null;}
+const rwList=t=>{const L=String(t==null?'':t).split(/\n+/).map(x=>x.replace(/^\s*(\d+\s*[.,)]|[a-z][.)])\s*/i,'').trim()).filter(x=>x&&x!=='-');
+  return !L.length?'<p class="mut">Tidak ada catatan</p>':L.length>1?`<ol>${L.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:`<p>${esc(L[0])}</p>`;};
+function renderRawan(){
+  const LT=mv.l===1?'sistem grid':'sistem isolated';
+  const rs=RAWAN.filter(x=>rwGrid(x.sis)===(mv.l===1));
+  document.getElementById('ks-rwsub').textContent=rs.length?`${rs.length} ${LT} dengan catatan kerawanan dan mitigasi di pembangkit, transmisi dan distribusi (sheet Kerawanan Sistem). Status mengikuti kondisi ${fd(SELD,1)}.`
+    :RAWAN.length?`Belum ada catatan kerawanan untuk ${LT}.`:'Belum ada data kerawanan sistem. Unggah file pemantauan sistem yang memuat sheet Kerawanan Sistem.';
+  document.getElementById('ks-rw').innerHTML=rs.map(x=>{const r=rwSys(x.sis);const nm=r&&r.s==='GRID'?gName(r.n):x.sis;
+    const col=(t,k,m)=>`<div class="rw-c"><h4>${t}</h4>${k!==undefined?`<div class="rw-b k"><span>Kerawanan</span>${rwList(k)}</div>`:''}${m!==undefined?`<div class="rw-b m"><span>Mitigasi</span>${rwList(m)}</div>`:''}</div>`;
+    return `<article class="rw"><h3><span>${esc(nm)}</span>${r?chip(r.has?r.st:''):''}</h3><div class="u">${r?esc(r.s==='GRID'?'Sistem grid · '+r.u:'Sistem isolated · '+uN(r.u)):'Tidak ditemukan di NERDA HARIAN'}${r&&r.has?` · cadangan ${nf(r.cad,1)} MW`:''}</div>
+      <div class="rw-cols">${col('Pembangkit',x.pk,x.pm)}${col('Transmisi',x.tk,x.tm)}${col('Distribusi',x.dk,x.dm)}</div></article>`;}).join('');
+}
 const offOf=iso=>Math.round((new Date(iso+'T00:00:00')-BASED())/864e5);
 const todayIso=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
 let LOG=[],cadTouched=false;
@@ -412,6 +464,29 @@ function parseMonit(rows,day){
     mon.push({t,s:String(r[cS]||'').trim(),uid:String(r[cU]||'').trim(),sub:String(sub).trim(),key:m?m.s+'|'+m.u+'|'+m.n:null,pen:clean(r[cP]),est});}
   return{mon,miss:[...miss]};
 }
+// Sheet Kerawanan Sistem: dua baris judul (Sistem | Pembangkit, Transmisi, Distribusi | Kerawanan, Mitigasi)
+function parseRawan(rows){
+  let hr=-1;for(let i=0;i<Math.min(rows.length,30);i++){const t=(rows[i]||[]).map(NORM);if(t.includes('SISTEM')&&t.some(x=>x.startsWith('PEMBANGKIT'))){hr=i;break;}}
+  if(hr<0)throw new Error('Sheet Kerawanan Sistem: baris judul (Sistem, Pembangkit, Transmisi, Distribusi) tidak ditemukan.');
+  const H=(rows[hr]||[]).map(NORM),S=(rows[hr+1]||[]).map(NORM);const cS=H.indexOf('SISTEM');const W=Math.max(H.length,S.length);
+  const grp=[];for(let c=0;c<W;c++){const h=H[c]||'';const g=h.startsWith('PEMBANGKIT')?'p':/^TRANS?MISI/.test(h)?'t':h.startsWith('DISTRIBUSI')?'d':null;if(g)grp.push({g,c});}
+  const cols={};grp.forEach((x,i)=>{const end=i+1<grp.length?grp[i+1].c:W;for(let c=x.c;c<end;c++){if(S[c]==='KERAWANAN')cols[x.g+'k']=c;else if(S[c]==='MITIGASI')cols[x.g+'m']=c;}
+    if(cols[x.g+'k']==null&&cols[x.g+'m']==null)cols[x.g+'k']=x.c;});
+  const out=[];for(let i=hr+2;i<rows.length;i++){const r=rows[i]||[];const sis=String(r[cS]==null?'':r[cS]).trim();if(!sis)continue;
+    const o={sis};['pk','pm','tk','tm','dk','dm'].forEach(k=>{if(cols[k]!=null)o[k]=clean(r[cols[k]]);});out.push(o);}
+  return out;
+}
+// Sheet Riwayat Padam Meluas Tereskalasi: No, Tanggal Kejadian, Nama Sistem, Dampak Padam, Penyebab Padam, Keterangan
+function parseRiwayat(rows){
+  let hr=-1;for(let i=0;i<Math.min(rows.length,30);i++){const t=(rows[i]||[]).map(NORM);if(t.includes('TANGGALKEJADIAN')&&t.includes('NAMASISTEM')){hr=i;break;}}
+  if(hr<0)throw new Error('Sheet Riwayat Padam Meluas: baris judul (Tanggal Kejadian, Nama Sistem) tidak ditemukan.');
+  const H=rows[hr].map(NORM);const ci=k=>H.indexOf(k);const cNo=ci('NO'),cT=ci('TANGGALKEJADIAN'),cS=ci('NAMASISTEM'),cD=ci('DAMPAKPADAM'),cP=ci('PENYEBABPADAM'),cK=ci('KETERANGAN');
+  const tx=v=>v==null?'':String(v).replace(/\s+/g,' ').trim();
+  const tgl=v=>{const iso=typeof v==='number'?cellISO(v):'';return iso?new Date(iso+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):tx(v);};
+  const out=[];for(let i=hr+1;i<rows.length;i++){const r=rows[i]||[];const sis=tx(r[cS]);if(!sis)continue;
+    out.push({no:cNo>=0?tx(r[cNo]):String(out.length+1),tgl:tgl(r[cT]),sis,dampak:cD>=0?tx(r[cD]):'',sebab:cP>=0?tx(r[cP]):'',ket:cK>=0?tx(r[cK]):''});}
+  return out;
+}
 let upPending=null;
 const KSu=id=>document.getElementById(id);
 function upErr(t){const e=KSu('ks-up-err');e.textContent=t||'';e.hidden=!t;}
@@ -426,7 +501,7 @@ function upReview(){
   const monLast=p.mon.reduce((a,m)=>m.t>a?m.t:a,'');
   KSu('ks-up-sum').textContent=`${p.file}: ${bl}, ${ng} sistem grid dan ${ni} sistem isolated, data terisi sampai ${lastD}; ${p.mon.length} laporan defisit${monLast?' sampai '+fdi(monLast):''}.`+(p.miss.length?` ${p.miss.length} nama di Monit Defisit tidak cocok dengan NERDA HARIAN: ${p.miss.slice(0,4).join(', ')}${p.miss.length>4?', …':''}.`:'')+' Periksa angkanya, lalu terapkan.';
   const box=(lab,val,cls)=>`<div><span>${esc(lab)}</span><b class="${cls||''}">${esc(val)}</b></div>`;
-  KSu('ks-up-kv').innerHTML=box('Periode',bl)+box('Data terisi s.d.',lastD)+box(`Sistem terisi pada tanggal itu`,`${filled} dari ${ng+ni}`)+box('Normal',String(at(0)),'ok')+box('Siaga',String(at(1)))+box('Defisit',String(at(2)),at(2)?'bad':'')+box('Laporan defisit',String(p.mon.length));
+  KSu('ks-up-kv').innerHTML=box('Periode',bl)+box('Data terisi s.d.',lastD)+box(`Sistem terisi pada tanggal itu`,`${filled} dari ${ng+ni}`)+box('Normal',String(at(0)),'ok')+box('Siaga',String(at(1)))+box('Defisit',String(at(2)),at(2)?'bad':'')+box('Laporan defisit',String(p.mon.length))+box('Riwayat padam meluas',p.riwayat?String(p.riwayat.length):'tidak diperbarui')+box('Kerawanan sistem',p.rawan?String(p.rawan.length)+' sistem':'tidak diperbarui');
 }
 async function upHandle(file){
   if(!file)return;upErr('');KSu('ks-up-msg').textContent='';
@@ -436,21 +511,24 @@ async function upHandle(file){
   try{const sheets=await window.APKT.readSheets(file);
     const sn=findSheet(sheets,'NERDA HARIAN');if(!sn)throw new Error('Sheet "NERDA HARIAN" tidak ada di file ini.');
     const a=parseNerda(sn.rows);const sm=findSheet(sheets,'Monit Defisit');const b=sm?parseMonit(sm.rows,a.day):{mon:[],miss:[]};
-    upPending={file:file.name,meta:a.meta,day:a.day,mon:b.mon,miss:b.miss,noMonit:!sm};KSu('ks-up-msg').textContent=sm?'':'Sheet "Monit Defisit" tidak ada; penyebab defisit tidak diperbarui.';
+    const notes=[];if(!sm)notes.push('Sheet "Monit Defisit" tidak ada; penyebab defisit tidak diperbarui.');
+    const side=(name,fn,lab)=>{const sh=findSheet(sheets,name);if(!sh){notes.push(`Sheet "${lab}" tidak ada; bagian ${lab} tidak diperbarui.`);return null;}try{return fn(sh.rows);}catch(e){notes.push((e&&e.message?e.message:e)+` Bagian ${lab} tidak diperbarui.`);return null;}};
+    const rw=side('Kerawanan Sistem',parseRawan,'Kerawanan Sistem'),rv=side('Riwayat padam meluas',parseRiwayat,'Riwayat Padam Meluas');
+    upPending={file:file.name,meta:a.meta,day:a.day,mon:b.mon,miss:b.miss,noMonit:!sm,rawan:rw,riwayat:rv};KSu('ks-up-msg').textContent=notes.join(' ');
   }catch(e){upPending=null;KSu('ks-up-msg').textContent='';upErr('File tidak bisa dibaca: '+(e&&e.message?e.message:e));}
   upReview();
 }
-const dataJs=(meta,day,mon)=>'window.__D=window.__D||{};\nwindow.__D["kondisi_meta"]='+JSON.stringify(meta)+';\nwindow.__D["kondisi_day"]='+JSON.stringify(day)+';\nwindow.__D["kondisi_mon"]='+JSON.stringify(mon)+';\nwindow.__D["kondisi_map"]='+JSON.stringify(window.__D.kondisi_map)+';\n';
+const dataJs=(meta,day,mon,rawan,riwayat)=>'window.__D=window.__D||{};\nwindow.__D["kondisi_meta"]='+JSON.stringify(meta)+';\nwindow.__D["kondisi_day"]='+JSON.stringify(day)+';\nwindow.__D["kondisi_mon"]='+JSON.stringify(mon)+';\nwindow.__D["kondisi_rawan"]='+JSON.stringify(rawan||[])+';\nwindow.__D["kondisi_riwayat"]='+JSON.stringify(riwayat||[])+';\nwindow.__D["kondisi_map"]='+JSON.stringify(window.__D.kondisi_map)+';\n';
 async function upApply(){
   if(!upPending)return;const p=upPending,msg=KSu('ks-up-msg'),btn=KSu('ks-up-apply');
-  const mon=p.noMonit?MON:p.mon;
-  window.__D.kondisi_meta=p.meta;window.__D.kondisi_day=p.day;window.__D.kondisi_mon=mon;
-  loadData({meta:p.meta,day:p.day,mon});sel=null;fillUnits();fillSys();renderAgg();loadUpd(window.__D.kondisi_update||[]);
+  const mon=p.noMonit?MON:p.mon,rawan=p.rawan||RAWAN,riwayat=p.riwayat||RIWAYAT;
+  window.__D.kondisi_meta=p.meta;window.__D.kondisi_day=p.day;window.__D.kondisi_mon=mon;window.__D.kondisi_rawan=rawan;window.__D.kondisi_riwayat=riwayat;
+  loadData({meta:p.meta,day:p.day,mon,rawan,riwayat});sel=null;fillUnits();fillSys();renderAgg();loadUpd(window.__D.kondisi_update||[]);
   const last=FILEMAX;const periode=`1–${last} ${BLNF[KM-1]} ${KY}`;const now=new Date().toISOString();
-  const sumber=`${p.file} (sheet NERDA HARIAN${p.noMonit?'':' dan Monit Defisit'})`;
+  const sumber=`${p.file} (sheet ${['NERDA HARIAN',p.noMonit?'':'Monit Defisit',p.riwayat?'Riwayat Padam Meluas Tereskalasi':'',p.rawan?'Kerawanan Sistem':''].filter(Boolean).join(', ')})`;
   const A=window.SSAdmin;let saved=false,why='';
   if(A&&A.isAdmin()){btn.disabled=true;msg.textContent='Menyimpan ke repo…';
-    try{await A.put('kondisi_data.js',dataJs(p.meta,p.day,mon),`Update laporan harian kondisi sistem s.d. ${last} ${BLNF[KM-1]} ${KY} dari dashboard`);saved=true;
+    try{await A.put('kondisi_data.js',dataJs(p.meta,p.day,mon,rawan,riwayat),`Update laporan harian kondisi sistem s.d. ${last} ${BLNF[KM-1]} ${KY} dari dashboard`);saved=true;
       try{const cur=await A.get('info_update.js');const m=cur&&/=\s*(\[[\s\S]*\])\s*;?\s*$/.exec(cur);const arr=m?JSON.parse(m[1]):[];
         const ent={tab:'kondisi',diperbarui:now,periode,sumber:sumber+' (diunggah di dashboard)'};const i=arr.findIndex(x=>x.tab==='kondisi');if(i>=0)arr[i]=ent;else arr.push(ent);
         await A.put('info_update.js','window.__D=window.__D||{};window.__D["info_update"]='+JSON.stringify(arr)+';\n','Update info database kondisi sistem');window.__D.info_update=arr;}catch(e){/* info tanggal update tidak tersimpan; data tetap tersimpan */}
@@ -473,7 +551,7 @@ async function upApply(){
   KSu('ks-up-apply').addEventListener('click',upApply);
   KSu('ks-up-cancel').addEventListener('click',()=>{upPending=null;upReview();KSu('ks-up-msg').textContent='';upErr('');});
 })();
-window.SSKondisi={parseNerda,parseMonit};
-renderAgg();loadUpd((window.__D&&window.__D.kondisi_update)||[]);
+window.SSKondisi={parseNerda,parseMonit,parseRawan,parseRiwayat,dataJs};
+renderAgg();loadUpd((window.__D&&window.__D.kondisi_update)||[]);fitLayerDay();
 if(!window.SSAdmin||!window.SSAdmin.isAdmin())lockForm('Hanya admin yang bisa menyimpan update. Klik Login admin di kanan bawah, lalu buka tab ini lagi.');
 })();

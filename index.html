@@ -1090,7 +1090,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <label class="h-drop" id="ks-drop" tabindex="0">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
         <b>Tarik file Excel database sistem ke sini, atau klik untuk memilih</b>
-        <span class="ss-note">Format .xlsx seperti Database_Sistem_SUMKAL.xlsx, sheet "NERDA HARIAN" dan "Monit Defisit"</span>
+        <span class="ss-note">Format .xlsx seperti Pemantauan_SISTEM_SUMKAL.xlsx: sheet "NERDA HARIAN", "Monit Defisit", "Riwayat Padam Meluas Tereskalasi" dan "Kerawanan Sistem"</span>
         <input type="file" id="ks-file" accept=".xlsx" hidden>
       </label>
       <p class="h-up-err" id="ks-up-err" hidden></p>
@@ -1163,6 +1163,18 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
   <input type="search" id="ks-mon-q" placeholder="Cari sistem, UID atau penyebab" aria-label="Cari di monitoring defisit">
 </div>
 <div class="tbl tall"><table id="ks-mon" class="mon"></table></div>
+</section>
+
+<section id="ks-sec-eval" hidden>
+<h2>Evaluasi sistem</h2>
+<div class="dhead"><p id="ks-evsub"></p></div>
+<div class="tbl"><table id="ks-ev" class="ev"></table></div>
+</section>
+
+<section id="ks-sec-rawan">
+<h2>Kerawanan sistem</h2>
+<div class="dhead"><p id="ks-rwsub"></p></div>
+<div class="rw-list" id="ks-rw"></div>
 </section>
 
 <section id="ks-sec-iso-list">
