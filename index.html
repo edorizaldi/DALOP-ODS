@@ -1230,13 +1230,22 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <div class="ss-hero-main">
         <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v5M12 8l-6 5M12 8l6 5M6 13v4M18 13v4M4 17h4v4H4zM16 17h4v4h-4z"/></svg>Hirarki aset jaringan · GI sampai trafo</span>
         <h1 class="ss-title" id="hirarki-h">Hirarki Aset Jaringan</h1>
-        <p class="ss-take">Ringkasan di bawah menunjukkan berapa aset tiap level yang tersambung sampai GI. Pilih GI untuk melihat feeder-nya, lalu klik feeder untuk melihat Zona, Section, Segment, Lateral, serta Gardu dan Trafo di bawahnya. Urutan: GI → Feeder → Zona → Section → Segment → Lateral, lalu Gardu (lewat PARENT_ASSET gardu) dan Trafo (lewat KODE_GARDU trafo). Hanya aset yang rantai parent-nya tersambung sampai GI yang ditampilkan.</p>
+        <p class="ss-take">Aset jaringan dari GI sampai trafo. Pilih unit dan level aset untuk melihat berapa yang tersambung ke GI, lalu telusuri per GI dan feeder.</p>
       </div>
     </header>
     <div id="hx-mount"></div>
     <template id="hx-tpl">
+      <div class="ss-card hx-filters">
+        <div class="ss-filters">
+          <div class="ss-frow"><span class="ss-flabel">Unit</span><select id="hx-f-wil" aria-label="Unit (UID)" data-source="hx_gi"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">UP3</span><select id="hx-f-up3" aria-label="UP3" data-source="hx_gi"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">Gardu Induk</span><select id="hx-f-gi" aria-label="Gardu Induk" data-source="hx_gi"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">Feeder</span><select id="hx-f-fd" aria-label="Feeder" data-source="hx_feeder"></select></div>
+        </div>
+      </div>
+
       <div class="ss-card hx-sum" id="hx-sum-card">
-        <div class="hx-sum-head"><h3>Ringkasan seluruh data</h3><p class="ss-note">Pilih aset di sepanjang jaringan, dari Gardu Induk sampai trafo, untuk melihat profilnya.</p></div>
+        <div class="hx-sum-head"><h3>Ringkasan seluruh data · <span id="hx-sum-unit" class="hx-sum-unit">Sumkal</span></h3><p class="ss-note">Mengikuti pilihan Unit dan UP3 di atas. Pilih aset di sepanjang jaringan, dari Gardu Induk sampai trafo, untuk melihat profilnya.</p></div>
         <div class="hx-net" id="hx-net" role="radiogroup" aria-label="Pilih level aset" data-source="hx_ringkasan"></div>
         <div class="hx-prof" data-source="hx_ringkasan">
           <div class="hx-big"><b id="hx-p-total">—</b><span id="hx-p-lbl">aset di data</span></div>
@@ -1254,15 +1263,6 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
             <tbody id="hx-t-metode"></tbody></table></div>
         </div>
         <dialog class="hx-dlg" id="hx-dlg" aria-labelledby="hx-dlg-h"><div class="hx-dlg-in" id="hx-dlg-in"></div></dialog>
-      </div>
-
-      <div class="ss-card hx-filters">
-        <div class="ss-filters">
-          <div class="ss-frow"><span class="ss-flabel">Wilayah</span><select id="hx-f-wil" aria-label="Wilayah" data-source="hx_gi"></select></div>
-          <div class="ss-frow"><span class="ss-flabel">UP3</span><select id="hx-f-up3" aria-label="UP3" data-source="hx_gi"></select></div>
-          <div class="ss-frow"><span class="ss-flabel">Gardu Induk</span><select id="hx-f-gi" aria-label="Gardu Induk" data-source="hx_gi"></select></div>
-          <div class="ss-frow"><span class="ss-flabel">Feeder</span><select id="hx-f-fd" aria-label="Feeder" data-source="hx_feeder"></select></div>
-        </div>
       </div>
 
       <p class="ss-note" id="hx-need-gi" hidden>Pilih Gardu Induk di atas untuk menampilkan daftar feeder.</p>
@@ -1325,7 +1325,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 
       <div class="ss-card" id="hx-an-card">
         <h3>Aset bermasalah</h3>
-        <p class="ss-note">Aset yang rantainya putus (parent kosong, parent tidak ada di data, atau siklus), kode_asset ganda, atau parent dari level yang lebih rendah. Ikut filter Wilayah dan UP3 di atas. Untuk trafo, kolom Parent berisi KODE_GARDU-nya. Kolom Baris = nomor baris di sheet aslinya.</p>
+        <p class="ss-note">Aset yang rantainya putus (parent kosong, parent tidak ada di data, atau siklus), kode_asset ganda, atau parent dari level yang lebih rendah. Ikut filter Unit dan UP3 di atas. Untuk trafo, kolom Parent berisi KODE_GARDU-nya. Kolom Baris = nomor baris di sheet aslinya.</p>
         <div class="ss-frow"><span class="ss-flabel">Level</span>
           <select id="hx-an-lv" aria-label="Level anomali"><option value="">Semua level</option><option value="FEEDER">Feeder</option><option value="ZONA">Zona</option><option value="SECTION">Section</option><option value="SEGMENT">Segment</option><option value="LATERAL">Lateral</option><option value="GARDU">Gardu</option><option value="TRAFO">Trafo</option></select>
           <input class="ss-search" id="hx-an-q" type="search" placeholder="Cari kode, nama, catatan…" aria-label="Cari anomali"></div>

@@ -23,8 +23,8 @@
   const fmt = (v) => { if (v === '' || v == null) return ''; const n = Number(v); return Number.isFinite(n) ? nf.format(n) : String(v); };
   const enc = (s) => String(s ?? '').replace(/%/g, '%25').replace(/&/g, '%26').replace(/=/g, '%3D').replace(/,/g, '%2C');
   const uniq = (a) => Array.from(new Set(a.filter(Boolean))).sort();
-  // Pilihan awal (bila pembaca belum pernah memilih): GI Pematangsiantar, feeder CAKALANG.
-  const DEF = { hx_wilayah: 'WILAYAH SUMATERA UTARA', hx_up3: null, hx_gi: 'GI121120009', hx_feeder: 'FD121010011' };
+  // Pilihan awal (bila pembaca belum pernah memilih): unit Sumkal, GI Pematangsiantar, feeder CAKALANG.
+  const DEF = { hx_wilayah: null, hx_up3: null, hx_gi: 'GI121120009', hx_feeder: 'FD121010011' };
   const P = () => { const p = dash.params(); const o = {}; Object.keys(DEF).forEach((k) => { o[k] = k in p ? p[k] : DEF[k]; }); return o; };
   // Versi web (GitHub Pages): dataset hirarki besar, jadi file hx_*.js baru dimuat saat dibutuhkan.
   // Versi artifact: dash.data memuat dataset sendiri.
@@ -148,12 +148,39 @@
     selevel: SV('<rect x="3" y="4" width="7" height="6" rx="1"/><rect x="14" y="4" width="7" height="6" rx="1"/><path d="M10 7h4M6.5 10v5h11v-5"/><rect x="9" y="15" width="6" height="5" rx="1"/>'),
     padam: SV('<path d="M13 2 4 14h7l-1 8 4.5-5.8M17 12l3-4h-6M3 3l18 18"/>'),
   };
-  const wShort = (w) => String(w || '').replace(/^(WILAYAH|DISTRIBUSI)\s+/i, '').toLowerCase().replace(/[a-z0-9]+/g, (x) => (x === 'dan' ? x : /\d/.test(x) ? x.toUpperCase() : x.charAt(0).toUpperCase() + x.slice(1)));
+  // nama unit sama dengan halaman lain (UID …); nilai filter tetap nama wilayah di data aset
+  const UIDL = { 'WILAYAH ACEH': 'UID Aceh', 'WILAYAH SUMATERA UTARA': 'UID Sumut', 'WILAYAH SUMATERA BARAT': 'UID Sumbar', 'WILAYAH RIAU DAN KEPULAUAN RIAU': 'UID Riau Kepri',
+    'WILAYAH SUMATERA SELATAN, JAMBI & BENGKULU (S2JB)': 'UID S2JB', 'WILAYAH BANGKA BELITUNG': 'UID Babel', 'DISTRIBUSI LAMPUNG': 'UID Lampung', 'WILAYAH KALIMANTAN BARAT': 'UID Kalbar',
+    'WILAYAH KALIMANTAN SELATAN DAN TENGAH': 'UID Kalselteng', 'WILAYAH KALIMANTAN TIMUR': 'UID Kaltimra' };
+  const UORD = Object.keys(UIDL);
+  const wShort = (w) => UIDL[w] || String(w || '');
+  const u3Short = (u) => String(u || '').replace(/^UP3\s+/i, 'UP3 ').toLowerCase().replace(/(^|\s)(\S)/g, (m, a, c) => a + c.toUpperCase()).replace(/^Up3/, 'UP3');
   const pctTxt = (a, b) => (b ? (a / b * 100).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%' : '–');
   let sumLv = 'FEEDER';
+  // angka ringkasan untuk unit terpilih: Sumkal = hx_ringkasan (resmi); UID/UP3 = jumlah dari hx_ringkasan_unit
+  function unitData() {
+    const p = P(), RG = rowsOf('hx_ringkasan'), RU = rowsOf('hx_ringkasan_unit');
+    const all = !p.hx_wilayah && !p.hx_up3;
+    const rows = (RU || []).filter((r) => (!p.hx_wilayah || r.w === p.hx_wilayah) && (!p.hx_up3 || r.u === p.hx_up3));
+    const by = all ? 'w' : p.hx_up3 ? null : 'u';
+    const lv = {};
+    LEVELS.forEach((L) => {
+      const rs = rows.filter((r) => r.level === L.k); const sum = (f) => rs.reduce((x, r) => x + (+r[f] || 0), 0);
+      const sb = {}; rs.forEach((r) => Object.entries(r.sebab || {}).forEach(([k, n]) => { sb[k] = (sb[k] || 0) + n; }));
+      const grp = (f) => { if (!by) return null; const o = {}; rs.forEach((r) => { if (+r[f]) o[r[by]] = (o[r[by]] || 0) + (+r[f]); }); return o; };
+      const na = L.k === 'GARDU' || L.k === 'TRAFO';
+      let o = { total: sum('terhubung') + sum('putus'), terhubung: sum('terhubung'), putus: sum('putus'), parent_selevel: na ? '' : sum('selevel'), padam: na ? '' : sum('padam') };
+      if (all && RG) { const g = RG.find((r) => r.level === L.k); if (g) o = { total: +g.total, terhubung: +g.terhubung, putus: +g.putus, parent_selevel: g.parent_selevel === '' ? '' : +g.parent_selevel, padam: g.padam === '' ? '' : +g.padam, rowsSelevel: sum('selevel'), rowsPadam: sum('padam') }; }
+      o.sebab = sb; o.grp = { putus: grp('putus'), selevel: grp('selevel'), padam: grp('padam') };
+      lv[L.k] = o;
+    });
+    const name = p.hx_up3 ? u3Short(p.hx_up3) + (p.hx_wilayah ? ' · ' + wShort(p.hx_wilayah) : '') : p.hx_wilayah ? wShort(p.hx_wilayah) : 'Sumkal';
+    return { ok: !!(RU && RG), all, by, lv, name };
+  }
   function renderSum() {
-    const RG = rowsOf('hx_ringkasan'); rowsOf('hx_masalah'); const net = $('hx-net');
-    const row = (k) => (RG || []).find((r) => r.level === k);
+    const U = unitData(); const net = $('hx-net');
+    const row = (k) => (U.ok ? U.lv[k] : null);
+    $('hx-sum-unit').textContent = U.name;
     if (!net.childElementCount) {
       net.replaceChildren(...LEVELS.map((L, i) => {
         const b = mk('button', null, 'hx-node' + (i === 0 ? ' hx-gi' : '')); b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.lv = L.k;
@@ -198,23 +225,31 @@
   const bars = (title, obj, total) => {
     const ent = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]); if (!ent.length) return '';
     const mx = ent[0][1];
-    return `<h4>${title}</h4><ul class="hx-dl">${ent.slice(0, 10).map(([k, n]) => `<li><span class="k"></span><span class="b"><i style="width:${(n / mx * 100).toFixed(1)}%"></i></span><span class="n">${fmt(n)}</span></li>`).join('')}</ul>` + (ent.length > 10 ? `<p class="ss-note">dan ${ent.length - 10} lainnya.</p>` : '');
+    return `<h4>${title}</h4><ul class="hx-dl">${ent.slice(0, 12).map(([k, n]) => `<li><span class="k"></span><span class="b"><i style="width:${(n / mx * 100).toFixed(1)}%"></i></span><span class="n">${fmt(n)}</span></li>`).join('')}</ul>` + (ent.length > 12 ? `<p class="ss-note">dan ${ent.length - 12} lainnya.</p>` : '');
   };
   function openProb(k) {
-    const P = PROB[k], L = LEVELS.find((x) => x.k === sumLv), r = (rowsOf('hx_ringkasan') || []).find((x) => x.level === sumLv); if (!r) return;
-    const n = +r[P.f], tot = +r.total; const M = (rowsOf('hx_masalah') || [])[0] || null;
+    const P = PROB[k], L = LEVELS.find((x) => x.k === sumLv), U = unitData(), r = U.ok ? U.lv[sumLv] : null; if (!r) return;
+    const n = +r[P.f], tot = +r.total;
+    const lbl = (x) => (U.by === 'w' ? wShort(x) : u3Short(x));
+    const gtitle = U.by === 'w' ? 'Per UID' : 'Per UP3';
+    const gk = k === 'selevel' ? 'selevel' : k;
     let body = '', labels = [];
-    if (k === 'putus' && M && M.putus[sumLv]) { const pu = M.putus[sumLv]; body += bars('Penyebab', pu.sebab); labels = labels.concat(Object.entries(pu.sebab).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([x]) => x.charAt(0).toUpperCase() + x.slice(1))); body += bars('Per wilayah', pu.wil); labels = labels.concat(Object.entries(pu.wil).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([x]) => wShort(x))); }
-    if (k === 'padam' && M && M.padam[sumLv]) { const w = { ...M.padam[sumLv] }; const sum = Object.values(w).reduce((a, b) => a + b, 0); if (n > sum) w['Rantai putus (wilayah tidak terbaca)'] = n - sum; body += bars('Per wilayah', w); labels = Object.entries(w).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([x]) => (/^Rantai/.test(x) ? x : wShort(x))); }
-    if ((k === 'putus' || k === 'padam') && !M) body += '<p class="ss-note hx-wait">Memuat rincian…</p>';
-    if (k === 'selevel') body += '<p class="ss-note">Rincian per aset untuk parent selevel belum tersedia di data ringkasan.</p>';
+    const addBars = (title, obj, lab) => { const ent = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]); if (!ent.length) return; body += bars(title, obj); labels = labels.concat(ent.slice(0, 12).map(([x]) => lab(x))); };
+    if (k === 'putus') addBars('Penyebab', r.sebab, (x) => x.charAt(0).toUpperCase() + x.slice(1));
+    const g = { ...(r.grp[gk] || {}) };
+    if (U.by) {
+      // di Sumkal, angka resmi bisa sedikit lebih besar dari jumlah per UID: selisihnya aset yang rantainya putus
+      if (U.all && (k === 'padam' || k === 'selevel')) { const sum = Object.values(g).reduce((a, b) => a + b, 0); if (n > sum) g['~'] = n - sum; }
+      addBars(gtitle, g, (x) => (x === '~' ? 'Aset dengan rantai putus' : lbl(x)));
+    }
+    if (!U.all && (k === 'padam' || k === 'selevel')) body += '<p class="ss-note">Di tingkat unit, angka ini dihitung dari aset yang rantainya tersambung ke GI.</p>';
     const dlg = $('hx-dlg'), box = $('hx-dlg-in');
     box.innerHTML = `<div class="hx-dlg-h"><h3 id="hx-dlg-h"></h3><button type="button" class="hx-dlg-x" data-close aria-label="Tutup">×</button></div>
       <div class="hx-dlg-big"><b></b><span></span></div><p class="hx-dlg-d"></p>${body}
-      ${k === 'putus' ? `<div class="hx-dlg-act"><button type="button" class="ss-u-btn" data-go-an="${sumLv}">Lihat daftar aset di Aset bermasalah</button><p class="ss-note">Daftar mengikuti filter Wilayah dan UP3 yang sedang dipilih.</p></div>` : ''}`;
+      ${k === 'putus' ? `<div class="hx-dlg-act"><button type="button" class="ss-u-btn" data-go-an="${sumLv}">Lihat daftar aset di Aset bermasalah</button><p class="ss-note">Daftar mengikuti filter Unit dan UP3 yang sedang dipilih.</p></div>` : ''}`;
     box.querySelector('h3').textContent = `${P.t} · ${L.t}`;
     box.querySelector('.hx-dlg-big b').textContent = fmt(n);
-    box.querySelector('.hx-dlg-big span').textContent = `${L.u}, ${pctTxt(n, tot)} dari ${fmt(tot)}`;
+    box.querySelector('.hx-dlg-big span').textContent = `${L.u} di ${U.name}, ${pctTxt(n, tot)} dari ${fmt(tot)}`;
     box.querySelector('.hx-dlg-d').textContent = P.d;
     box.querySelectorAll('.hx-dl .k').forEach((el, i) => { el.textContent = labels[i] || ''; });
     if (!dlg.open) { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); }
@@ -233,14 +268,13 @@
 
     // ringkasan
     renderSum();
-    const dl = $('hx-dlg'); if (dl.open && dl.dataset.prob && $('hx-dlg-in').querySelector('.hx-wait') && rowsOf('hx_masalah')) openProb(dl.dataset.prob);
     const TM = rowsOf('hx_trafo_metode');
     if (TM) drawRows($('hx-t-metode'), TM, ['metode', 'jumlah'], new Set(['jumlah']), null, (r) => r.metode);
 
     // filter
-    fill($('hx-f-wil'), 'Semua wilayah', uniq(gi.map((r) => r.wilayah)).map((w) => [w, w]), p.hx_wilayah);
+    fill($('hx-f-wil'), 'Sumkal (semua UID)', uniq(gi.map((r) => r.wilayah)).sort((a, b) => UORD.indexOf(a) - UORD.indexOf(b)).map((w) => [w, wShort(w)]), p.hx_wilayah);
     const g1 = gi.filter((r) => !p.hx_wilayah || r.wilayah === p.hx_wilayah);
-    fill($('hx-f-up3'), 'Semua UP3', uniq(g1.map((r) => r.up3)).map((u) => [u, u]), p.hx_up3);
+    fill($('hx-f-up3'), 'Semua UP3', uniq(g1.map((r) => r.up3)).map((u) => [u, u3Short(u)]), p.hx_up3);
     const g2 = g1.filter((r) => !p.hx_up3 || r.up3 === p.hx_up3).slice().sort((a, b) => String(a.nama).localeCompare(String(b.nama)));
     fill($('hx-f-gi'), '— Pilih GI —', g2.map((r) => [r.kode, `${r.nama} (${fmt(r.feeder)} feeder)`]), p.hx_gi);
     const fds = fdAll.filter((r) => r.gi === p.hx_gi);
@@ -289,7 +323,7 @@
     if (AN) {
       const rows = AN.filter((r) => (!p.hx_wilayah || r.wilayah === p.hx_wilayah) && (!p.hx_up3 || r.up3 === p.hx_up3) && (!anLv || r.level === anLv) && match(r, anQ));
       drawRows($('hx-t-anomali'), rows.slice(0, MAXAN), ['level', 'kode', 'nama', 'parent', 'status_hirarki', 'catatan', 'up3', 'baris'], new Set(['baris']));
-      $('hx-an-count').textContent = rows.length > MAXAN ? `${fmt(rows.length)} aset cocok; ditampilkan ${fmt(MAXAN)} pertama. Persempit dengan filter Wilayah, UP3, Level atau pencarian. Daftar lengkap ada di sheet ANOMALI dan ANOMALI_GARDU_TRAFO file Excel hirarki.` : `${fmt(rows.length)} aset.`;
+      $('hx-an-count').textContent = rows.length > MAXAN ? `${fmt(rows.length)} aset cocok; ditampilkan ${fmt(MAXAN)} pertama. Persempit dengan filter Unit, UP3, Level atau pencarian. Daftar lengkap ada di sheet ANOMALI dan ANOMALI_GARDU_TRAFO file Excel hirarki.` : `${fmt(rows.length)} aset.`;
     }
   }
   SSD.onData(render);

@@ -93,3 +93,4 @@ button.hx-prob:hover .hx-prob-s { text-decoration: underline; }
 }
 @media (prefers-reduced-motion: reduce) { .hx-bar-f, .hx-bar-m, .hx-ic { transition: none; } }
 @media (max-width: 52rem) { #hirarki .hx-filters .ss-frow { min-width: 0; flex-wrap: wrap; } #hirarki .hx-filters select { min-width: 0; width: 100%; } }
+.hx-sum-unit { color: var(--x-olive, #4D7C0F); }
