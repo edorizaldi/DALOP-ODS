@@ -358,6 +358,13 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 
 /* Update Data */
 #update { gap: var(--cds-gap-xl); }
+.ss-u-cluster { display: grid; gap: var(--cds-gap-md); }
+.ss-u-cluster + .ss-u-cluster { margin-top: 10px; }
+.ss-u-cl-head { display: flex; gap: 12px; align-items: center; padding: 6px 0 2px; border-bottom: 2px solid #0F2A4A; }
+.ss-u-cl-head h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+.ss-u-cl-head .ss-note { margin: 2px 0 8px; }
+.ss-u-cl-ic { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #0F2A4A; color: #fff; flex: none; margin-bottom: 6px; }
+.ss-u-cl-ic svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .ss-u-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--cds-gap-md); }
 .ss-u-card { display: grid; gap: 12px; align-content: start; }
 .ss-u-head { display: flex; align-items: center; gap: 10px; }
@@ -967,6 +974,8 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <p class="ss-take dash-skeleton" id="u-take" data-source="kumulatif gangguan peny_profil peny_bulanan kc_bulanan">—</p>
       </div>
     </header>
+    <section class="ss-u-cluster" aria-labelledby="u-cl-bulanan">
+    <div class="ss-u-cl-head"><span class="ss-u-cl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span><div><h2 id="u-cl-bulanan">Data Bulanan</h2><p class="ss-note">Laporan yang diperbarui setiap bulan: SAIDI SAIFI ENS, gangguan APKT dan koreksi cleansing.</p></div></div>
     <div class="ss-u-grid">
       <div class="ss-card ss-u-card" id="u-saidi" data-source="kumulatif">
         <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.2"/></svg></span><h3>SAIDI SAIFI ENS</h3></div>
@@ -977,11 +986,6 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13h6l-1 8 8-10h-6z"/></svg></span><h3>Event Padam Penyulang</h3></div>
         <dl class="ss-u-dl"><dt>File sumber</dt><dd>Detail gangguan APKT (.xlsx), satu bulan atau banyak bulan</dd><dt>Data di dashboard</dt><dd id="u-g-per">—</dd><dt>Update terakhir</dt><dd data-dbinfo-when="gangguan">—</dd><dt>Isi</dt><dd id="u-g-isi">—</dd></dl>
         <div class="ss-u-acts"><button type="button" class="ss-u-btn" data-up-open="gangguan" aria-expanded="false" aria-controls="up-gangguan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Unggah &amp; update langsung</button></div>
-      </div>
-      <div class="ss-card ss-u-card" id="u-penyulang" data-source="peny_profil peny_bulanan">
-        <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12h10M7 12l10-7M7 12l10 7"/></svg></span><h3>Database Penyulang</h3></div>
-        <dl class="ss-u-dl"><dt>File sumber</dt><dd>Database penyulang (.xlsx) dan detail gangguan APKT yang sama dengan tab Event Padam Penyulang</dd><dt>Data di dashboard</dt><dd id="u-p-per">—</dd><dt>Update terakhir</dt><dd data-dbinfo-when="penyulang">—</dd><dt>Isi</dt><dd id="u-p-isi">—</dd></dl>
-        <div class="ss-u-acts"><button type="button" class="ss-u-btn" data-up-open="penyulang" aria-expanded="false" aria-controls="up-penyulang"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Unggah &amp; update langsung</button></div>
       </div>
       <div class="ss-card ss-u-card" id="u-kc" data-source="kc_bulanan">
         <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span><h3>Koreksi Cleansing</h3></div>
@@ -1010,16 +1014,6 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       </div>
       <p class="ss-up-msg" id="up-g-msg" role="status"></p>
     </div>
-    <div class="ss-card ss-up-panel" id="up-penyulang" hidden>
-      <div class="ss-up-head"><h3>Update Database Penyulang</h3><p class="ss-note">Database penyulang (.xlsx) seperti Penyulang.xlsx: kolom Nama Unit Parent, Description, Nama Unit, Assetattrid, Alnvaluedesc, Status, Tahunbuat, Latitudey dan Longitudex. Data gangguan per penyulang tetap dari file APKT terakhir.</p></div>
-      <label class="h-drop" id="up-p-drop" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><b>Tarik file database penyulang ke sini, atau klik untuk memilih</b><span class="ss-note">Format .xlsx · sheet pertama berisi daftar penyulang</span><input type="file" id="up-p-file" accept=".xlsx" hidden></label>
-      <div id="up-p-review" class="ss-up-review" hidden>
-        <p class="ss-note" id="up-p-sum"></p>
-        <div class="h-kv" id="up-p-kv"></div>
-        <div class="ss-up-row"><button type="button" class="h-act h-act-primary" id="up-p-go" disabled>Update dashboard sekarang</button><button type="button" class="h-act" id="up-p-cancel">Batal</button></div>
-      </div>
-      <p class="ss-up-msg" id="up-p-msg" role="status"></p>
-    </div>
     <div class="ss-card ss-up-panel" id="up-kc" hidden>
       <div class="ss-up-head"><h3>Update Koreksi Cleansing</h3><p class="ss-note">Master KC (.xlsx) dengan kolom Jenis Transaksi, Distribusi, Area, Tahun Bulan, Tanggal Approval 2 dan KODE J. Hanya event dengan Tanggal Approval 2 terisi yang dihitung; seluruh data tab Koreksi Cleansing diganti dengan isi file.</p></div>
       <label class="h-drop" id="up-k-drop" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><b>Tarik file Master KC ke sini, atau klik untuk memilih</b><span class="ss-note">Format .xlsx · sheet pertama berisi database koreksi dan cleansing</span><input type="file" id="up-k-file" accept=".xlsx" hidden></label>
@@ -1030,6 +1024,43 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       </div>
       <p class="ss-up-msg" id="up-k-msg" role="status"></p>
     </div>
+    </section>
+    <section class="ss-u-cluster" aria-labelledby="u-cl-db">
+    <div class="ss-u-cl-head"><span class="ss-u-cl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg></span><div><h2 id="u-cl-db">Database</h2><p class="ss-note">Data aset yang diperbarui bila ada perubahan: database penyulang dan database aset jaringan untuk Hirarki Aset.</p></div></div>
+    <div class="ss-u-grid">
+      <div class="ss-card ss-u-card" id="u-penyulang" data-source="peny_profil peny_bulanan">
+        <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12h10M7 12l10-7M7 12l10 7"/></svg></span><h3>Database Penyulang</h3></div>
+        <dl class="ss-u-dl"><dt>File sumber</dt><dd>Database penyulang (.xlsx) dan detail gangguan APKT yang sama dengan tab Event Padam Penyulang</dd><dt>Data di dashboard</dt><dd id="u-p-per">—</dd><dt>Update terakhir</dt><dd data-dbinfo-when="penyulang">—</dd><dt>Isi</dt><dd id="u-p-isi">—</dd></dl>
+        <div class="ss-u-acts"><button type="button" class="ss-u-btn" data-up-open="penyulang" aria-expanded="false" aria-controls="up-penyulang"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Unggah &amp; update langsung</button></div>
+      </div>
+      <div class="ss-card ss-u-card" id="u-aset" data-source="hx_ringkasan">
+        <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v5M12 8l-6 5M12 8l6 5M6 13v4M18 13v4M4 17h4v4H4zM16 17h4v4h-4z"/></svg></span><h3>Database Aset Jaringan</h3></div>
+        <dl class="ss-u-dl"><dt>File sumber</dt><dd>ALL_DATA_ASET_JARINGAN.xlsx (sheet GI, FEEDER, ZONA, SECTION, SEGMENT, LATERAL, GARDU, TRAFO)</dd><dt>Dipakai di</dt><dd>Tab Hirarki Aset</dd><dt>Update terakhir</dt><dd data-dbinfo-when="hirarki">—</dd><dt>Isi</dt><dd id="u-a-isi">—</dd></dl>
+        <div class="ss-u-acts"><button type="button" class="ss-u-btn" data-up-open="aset" aria-expanded="false" aria-controls="up-aset"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Unggah &amp; update langsung</button></div>
+      </div>
+    </div>
+    <div class="ss-card ss-up-panel" id="up-penyulang" hidden>
+      <div class="ss-up-head"><h3>Update Database Penyulang</h3><p class="ss-note">Database penyulang (.xlsx) seperti Penyulang.xlsx: kolom Nama Unit Parent, Description, Nama Unit, Assetattrid, Alnvaluedesc, Status, Tahunbuat, Latitudey dan Longitudex. Data gangguan per penyulang tetap dari file APKT terakhir.</p></div>
+      <label class="h-drop" id="up-p-drop" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><b>Tarik file database penyulang ke sini, atau klik untuk memilih</b><span class="ss-note">Format .xlsx · sheet pertama berisi daftar penyulang</span><input type="file" id="up-p-file" accept=".xlsx" hidden></label>
+      <div id="up-p-review" class="ss-up-review" hidden>
+        <p class="ss-note" id="up-p-sum"></p>
+        <div class="h-kv" id="up-p-kv"></div>
+        <div class="ss-up-row"><button type="button" class="h-act h-act-primary" id="up-p-go" disabled>Update dashboard sekarang</button><button type="button" class="h-act" id="up-p-cancel">Batal</button></div>
+      </div>
+      <p class="ss-up-msg" id="up-p-msg" role="status"></p>
+    </div>
+    <div class="ss-card ss-up-panel" id="up-aset" hidden>
+      <div class="ss-up-head"><h3>Update Database Aset Jaringan</h3><p class="ss-note">File ALL_DATA_ASET_JARINGAN.xlsx dengan sheet GI, FEEDER, ZONA, SECTION, SEGMENT, LATERAL, GARDU dan TRAFO. Seluruh data tab Hirarki Aset disusun ulang dari file ini: rantai PARENT_ASSET sampai GI, gardu lewat PARENT_ASSET-nya, trafo lewat KODE_GARDU (atau nama gardu di ULP yang sama), kapasitas dari kolom KVA sheet GARDU, serta daftar aset bermasalah. File sekitar 60 MB butuh sekitar satu menit untuk dibaca.</p></div>
+      <label class="h-drop" id="up-a-drop" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><b>Tarik file database aset ke sini, atau klik untuk memilih</b><span class="ss-note">Format .xlsx · contoh: ALL_DATA_ASET_JARINGAN.xlsx</span><input type="file" id="up-a-file" accept=".xlsx" hidden></label>
+      <div class="ss-up-prog"><progress id="up-a-bar" max="100" value="0" hidden></progress><span class="ss-note" id="up-a-barlabel"></span></div>
+      <div id="up-a-review" class="ss-up-review" hidden>
+        <p class="ss-note" id="up-a-sum"></p>
+        <div class="ss-tablewrap"><table class="ss-table ss-up-table"><thead><tr><th>Level</th><th class="num">Total aset</th><th class="num">Tersambung ke GI</th><th class="num">Rantai putus</th><th class="num">Tersambung saat ini</th><th class="num">Selisih</th></tr></thead><tbody id="up-a-body"></tbody></table></div>
+        <div class="ss-up-row"><button type="button" class="h-act h-act-primary" id="up-a-go" disabled>Update dashboard sekarang</button><button type="button" class="h-act" id="up-a-cancel">Batal</button></div>
+      </div>
+      <p class="ss-up-msg" id="up-a-msg" role="status"></p>
+    </div>
+    </section>
     <div class="ss-card" id="u-langkah">
       <h3>Cara memperbarui</h3>
       <ol class="ss-u-steps">
@@ -2850,6 +2881,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="dp-tab.js"></script>
 <script src="upd-core.js"></script>
 <script src="upd-bulanan.js"></script>
+<script src="upd-aset.js"></script>
 <script src="slides-tab.js"></script>
 <script src="kondisi_data.js"></script>
 <script src="kondisi_update.js"></script>

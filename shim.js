@@ -212,5 +212,29 @@
     if (!r.ok) throw Object.assign(new Error('GitHub ' + r.status), { code: 'gh-' + r.status });
     return r.text();
   }
-  window.SSAdmin = { isAdmin: () => !!token(), name: () => ss.get(whoKey), get: ghGet, put: ghPut };
+  // simpan banyak file sekaligus dalam satu commit (Git Data API): blob per file, tree baru, commit, lalu geser branch
+  async function ghPutMany(files, message, onStep) {
+    if (!GH.owner || !GH.repo) throw Object.assign(new Error('repo GitHub belum diatur'), { code: 'no-repo' });
+    const base = `https://api.github.com/repos/${GH.owner}/${GH.repo}/git`;
+    const hd = { Authorization: 'Bearer ' + token(), Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    const call = async (url, opt) => {
+      const r = await fetch(url, { ...opt, headers: hd, cache: 'no-store' });
+      if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch (e) { /* abaikan */ } if (r.status === 403) m = 'token admin belum punya izin Contents: Read and write untuk repo ini'; throw Object.assign(new Error('GitHub ' + r.status + (m ? ': ' + m : '')), { code: 'gh-' + r.status }); }
+      return r.json();
+    };
+    const ref = await call(`${base}/ref/heads/${encodeURIComponent(GH.branch)}`);
+    const head = await call(`${base}/commits/${ref.object.sha}`);
+    const tree = [];
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i]; if (onStep) onStep(`Mengunggah ${f.path} (${i + 1} dari ${files.length})`, i / files.length);
+      const b = await call(`${base}/blobs`, { method: 'POST', body: JSON.stringify({ content: f.text, encoding: 'utf-8' }) });
+      tree.push({ path: f.path, mode: '100644', type: 'blob', sha: b.sha });
+    }
+    if (onStep) onStep('Membuat commit', 1);
+    const t = await call(`${base}/trees`, { method: 'POST', body: JSON.stringify({ base_tree: head.tree.sha, tree }) });
+    const c = await call(`${base}/commits`, { method: 'POST', body: JSON.stringify({ message, tree: t.sha, parents: [ref.object.sha] }) });
+    await call(`${base}/refs/heads/${encodeURIComponent(GH.branch)}`, { method: 'PATCH', body: JSON.stringify({ sha: c.sha }) });
+    return c.sha;
+  }
+  window.SSAdmin = { isAdmin: () => !!token(), name: () => ss.get(whoKey), get: ghGet, put: ghPut, putMany: ghPutMany };
 })();
