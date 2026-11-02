@@ -34,7 +34,7 @@ Untuk memperbarui laporan harian, klik **Update laporan harian** di tab Kondisi 
 ## Tab Hirarki Aset
 Menu **Database → Hirarki Aset**: pilih GI, lalu feeder, untuk melihat Zona, Section, Segment, Lateral, Gardu dan Trafo di bawahnya (pohon hirarki dan tabel per level), plus ringkasan dan daftar aset bermasalah.
 
-- Sumber: `ALL_DATA_ASET_JARINGAN.xlsx` (sheet GI, FEEDER, ZONA, SECTION, SEGMENT, LATERAL, GARDU, TRAFO). Tiap aset ditelusuri ke atas lewat PARENT_ASSET, termasuk rantai selevel (LT→LT, SG→SG, SE→SE, ZO→ZO). Gardu dipasang lewat PARENT_ASSET-nya (kode aset atau SSOTNUMBER). Trafo dipasang lewat KODE_GARDU; bila kodenya tidak ada di sheet GARDU, dicocokkan lewat nama gardu di ULP yang sama.
+- Sumber: `ALL_DATA_ASET_JARINGAN.xlsx` (sheet GI, FEEDER, ZONA, SECTION, SEGMENT, LATERAL, GARDU, TRAFO). Tiap aset ditelusuri ke atas lewat PARENT_ASSET, termasuk rantai selevel (LT→LT, SG→SG, SE→SE, ZO→ZO). Gardu dipasang lewat PARENT_ASSET-nya (kode aset atau SSOTNUMBER). Trafo dipasang lewat KODE_GARDU; bila kodenya tidak ada di sheet GARDU, dicocokkan lewat nama gardu di ULP yang sama. Kapasitas (kVA) diambil dari kolom KVA sheet GARDU; bila kolom KVA sheet TRAFO berbeda, angkanya disimpan di kolom kva_trafo.
 - `hx_*.js`: dataset hirarki. File ini besar (±33 MB total), jadi **tidak** dimuat di `<head>`; `hirarki-tab.js` baru memuatnya saat tab Hirarki Aset dibuka, dan data gardu hanya untuk kelompok wilayah GI yang dipilih (`hx_gardu_1` Sumut+Aceh, `hx_gardu_2` S2JB+Lampung+Babel, `hx_gardu_3` Kalimantan+Riau+Sumbar).
 - `hirarki-tab.js`, `hirarki-tab.css`: tampilan dan logika tab.
 

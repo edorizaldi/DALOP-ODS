@@ -15,7 +15,7 @@
     section: ['kode', 'nama', 'parent', 'induk_atas', 'zona', 'status', 'alamat'],
     segment: ['kode', 'nama', 'parent', 'induk_atas', 'section', 'zona', 'status', 'alamat'],
     lateral: ['kode', 'nama', 'parent', 'induk_atas', 'segment', 'section', 'zona', 'status', 'alamat'],
-    gardu: ['kode', 'nama', 'posisi', 'parent', 'trafo', 'kva', 'alamat'],
+    gardu: ['kode', 'nama', 'posisi', 'parent', 'trafo', 'kva', 'kva_trafo', 'alamat'],
   };
   const LV = [['hx_zona', 'ZO', 'hx-c2'], ['hx_section', 'SE', 'hx-c3'], ['hx_segment', 'SG', 'hx-c4'], ['hx_lateral', 'LT', 'hx-c5']];
   const MAXAN = 500;
@@ -107,7 +107,7 @@
       const s = mk('span'); const b = mk('i', n.tag, 'hx-lv ' + n.c);
       const nm = mk('span', n.r.nama || '(tanpa nama)'); if (String(n.r.status).trim() === 'PADAM') nm.className = 'ss-bad';
       s.append(b, nm, mk('span', n.r.kode, 'hx-kode'));
-      if (n.tag === 'GD') s.append(mk('span', n.r.trafo ? `· trafo ${n.r.trafo}${n.r.kva ? ' (' + fmt(n.r.kva) + ' kVA)' : ''}` : '· tanpa trafo terhubung', 'hx-kode'));
+      if (n.tag === 'GD') { s.append(mk('span', n.r.trafo ? `· trafo ${n.r.trafo}${n.r.kva ? ' (' + fmt(n.r.kva) + ' kVA)' : ''}` : '· tanpa trafo terhubung', 'hx-kode')); if (n.r.trafo && n.r.kva_trafo) s.append(mk('span', `di sheet TRAFO tercatat ${fmt(n.r.kva_trafo)} kVA`, 'hx-kva-beda')); }
       return s;
     };
     const build = (list, depth, guard) => {
@@ -312,8 +312,8 @@
         const all = rowsOf(src);
         if (tb && all) {
           const rows = all.filter((r) => r.feeder === p.hx_feeder && match(r, q));
-          drawRows(tb, rows, COLS[tab], new Set(['kva']));
-          note.textContent = `${fmt(rows.length)} baris.` + (tab === 'gardu' ? ' Posisi = level parent gardu: FD Feeder, ZO Zona, SE Section, SG Segment, LT Lateral. Trafo = trafo yang menunjuk ke gardu ini; kVA = total kVA-nya.' : '');
+          drawRows(tb, rows, COLS[tab], new Set(['kva', 'kva_trafo']));
+          note.textContent = `${fmt(rows.length)} baris.` + (tab === 'gardu' ? ' Posisi = level parent gardu: FD Feeder, ZO Zona, SE Section, SG Segment, LT Lateral. Trafo = trafo yang menunjuk ke gardu ini; kVA = kapasitas di sheet GARDU; kVA di sheet TRAFO diisi bila angka di sheet TRAFO berbeda (sering berisi daya pelanggan seperti 900 atau 1.300, perlu dikoreksi di data aset).' : '');
         } else if (tb) tb.replaceChildren();
       }
     }

@@ -100,3 +100,4 @@ button.hx-prob:hover .hx-prob-s { text-decoration: underline; }
 @media (max-width: 52rem) { #hirarki .hx-filters .ss-frow { min-width: 0; flex-wrap: wrap; } #hirarki .hx-filters select { min-width: 0; width: 100%; } }
 .hx-sum-unit { color: var(--x-olive, #4D7C0F); }
 #hirarki .hx-filters { display: grid; gap: 10px; }
+.hx-kva-beda { margin-left: 8px; font-size: 11px; font-weight: 600; color: #A15C00; background: color-mix(in srgb, #E6BE2E 22%, transparent); border-radius: 4px; padding: 0 5px; }
