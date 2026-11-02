@@ -139,7 +139,7 @@
     { k: 'TRAFO', t: 'Trafo', s: 'Trafo', u: 'trafo', ic: SV('<circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/><path d="M2 12h2M20 12h2"/>') },
   ];
   const PROB = {
-    putus: { t: 'Rantai putus', f: 'putus', d: 'Rantai parent_asset aset ini tidak sampai ke GI: parent kosong, parent tidak ditemukan di data, rantainya berhenti sebelum GI, atau berputar (siklus). Aset seperti ini tidak muncul di pohon hirarki.' },
+    putus: { t: 'Rantai putus', f: 'putus', d: 'Rantai parent_asset aset ini tidak sampai ke GI, sehingga tidak muncul di pohon hirarki. Penyebabnya bisa di aset itu sendiri (parent kosong, parent tidak ditemukan, siklus) atau di aset di atasnya: "rantai parent tidak sampai GI" berarti parent-nya ada, tetapi rantai di atasnya putus.' },
     selevel: { t: 'Parent selevel', f: 'parent_selevel', d: 'Parent aset ini adalah aset di level yang sama, misalnya Segment yang berinduk ke Segment lain. Aset tetap dihitung tersambung bila rantainya sampai GI, tetapi susunan hirarkinya perlu dicek di data aset.' },
     padam: { t: 'Padam', f: 'padam', d: 'Aset yang berstatus PADAM di data aset jaringan.' },
   };

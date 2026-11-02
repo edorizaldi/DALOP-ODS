@@ -1288,7 +1288,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 
       <div class="ss-card" id="hx-an-card">
         <h3>Aset bermasalah</h3>
-        <p class="ss-note">Aset yang rantainya putus (parent kosong, parent tidak ada di data, atau siklus), kode_asset ganda, atau parent dari level yang lebih rendah. Ikut pilihan Unit dan UP3 di Ringkasan seluruh data. Untuk trafo, kolom Parent berisi KODE_GARDU-nya. Kolom Baris = nomor baris di sheet aslinya.</p>
+        <p class="ss-note">Aset yang rantainya putus, kode_asset ganda, atau parent dari level yang lebih rendah. Status PUTUS menunjuk tempat putusnya: <b>parent kosong</b>, <b>parent tidak ditemukan</b> atau <b>siklus</b> berarti putus di aset itu sendiri; <b>rantai parent tidak sampai GI</b> berarti parent-nya ada, tetapi rantai di atasnya putus, dan Catatan menyebut di aset mana rantai itu putus beserta sebabnya. Ikut pilihan Unit dan UP3 di Ringkasan seluruh data. Untuk trafo, kolom Parent berisi KODE_GARDU-nya. Kolom Baris = nomor baris di sheet aslinya.</p>
         <div class="ss-frow"><span class="ss-flabel">Level</span>
           <select id="hx-an-lv" aria-label="Level anomali"><option value="">Semua level</option><option value="FEEDER">Feeder</option><option value="ZONA">Zona</option><option value="SECTION">Section</option><option value="SEGMENT">Segment</option><option value="LATERAL">Lateral</option><option value="GARDU">Gardu</option><option value="TRAFO">Trafo</option></select>
           <input class="ss-search" id="hx-an-q" type="search" placeholder="Cari kode, nama, catatan…" aria-label="Cari anomali"></div>
