@@ -1022,7 +1022,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       </div>
     </header>
     <section class="ss-u-cluster" aria-labelledby="u-cl-bulanan">
-    <div class="ss-u-cl-head"><span class="ss-u-cl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span><div><h2 id="u-cl-bulanan">Data Bulanan</h2><p class="ss-note">Laporan yang diperbarui setiap bulan: SAIDI SAIFI ENS, gangguan APKT dan koreksi cleansing.</p></div></div>
+    <div class="ss-u-cl-head"><span class="ss-u-cl-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span><div><h2 id="u-cl-bulanan">Data Bulanan</h2><p class="ss-note">Laporan yang diperbarui setiap bulan: SAIDI SAIFI ENS, gangguan APKT, koreksi cleansing dan workplan keandalan.</p></div></div>
     <div class="ss-u-grid">
       <div class="ss-card ss-u-card" id="u-saidi" data-source="kumulatif">
         <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/><circle cx="12" cy="18" r="1.2"/></svg></span><h3>SAIDI SAIFI ENS</h3></div>
@@ -1038,6 +1038,11 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span><h3>Koreksi Cleansing</h3></div>
         <dl class="ss-u-dl"><dt>File sumber</dt><dd>Master KC (.xlsx), database koreksi dan cleansing transaksi TM</dd><dt>Data di dashboard</dt><dd id="u-k-per">—</dd><dt>Update terakhir</dt><dd data-dbinfo-when="kc">—</dd><dt>Isi</dt><dd id="u-k-isi">—</dd></dl>
         <div class="ss-u-acts"><button type="button" class="ss-u-btn" data-up-open="kc" aria-expanded="false" aria-controls="up-kc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Unggah &amp; update langsung</button></div>
+      </div>
+      <div class="ss-card ss-u-card" id="u-workplan" data-source="workplan">
+        <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h11M9 12h11M9 19h11"/><path d="m3.5 5 1.5 1.5L7.5 4M3.5 12l1.5 1.5L7.5 11"/><circle cx="5.2" cy="19" r="1.6"/></svg></span><h3>Workplan Keandalan</h3></div>
+        <dl class="ss-u-dl"><dt>File sumber</dt><dd>Workpaper reliability (.xlsx), sheet Action Plan: target dan realisasi 5 program per unit induk</dd><dt>Data di dashboard</dt><dd id="u-w-per">—</dd><dt>Update terakhir</dt><dd data-dbinfo-when="workplan">—</dd><dt>Isi</dt><dd id="u-w-isi">—</dd></dl>
+        <div class="ss-u-acts"><button type="button" class="ss-u-btn" data-up-open="workplan" aria-expanded="false" aria-controls="up-workplan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Unggah &amp; update langsung</button></div>
       </div>
     </div>
     <div class="ss-card ss-up-panel" id="up-saidi" hidden>
@@ -1070,6 +1075,16 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="ss-up-row"><button type="button" class="h-act h-act-primary" id="up-k-go" disabled>Update dashboard sekarang</button><button type="button" class="h-act" id="up-k-cancel">Batal</button></div>
       </div>
       <p class="ss-up-msg" id="up-k-msg" role="status"></p>
+    </div>
+    <div class="ss-card ss-up-panel" id="up-workplan" hidden>
+      <div class="ss-up-head"><h3>Update Workplan Keandalan</h3><p class="ss-note">Workpaper (.xlsx) dengan sheet Action Plan, misalnya Workpaper_MECRV_Reliability.xlsx: kolom Unit Induk lalu Target, Realisasi dan % untuk PDKB, Program Tebang, Program Pangkas, Sistem Proteksi dan Penghalang Binatang, dengan baris subtotal SUMKAL, JAMALI, SULMAPANA dan DIT DIST. Periode dibaca dari judul "Realisasi Action Plan s.d &lt;bulan&gt; - &lt;tahun&gt;". Seluruh data tab Workplan Keandalan diganti dengan isi file.</p></div>
+      <label class="h-drop" id="up-w-drop" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><b>Tarik file workpaper ke sini, atau klik untuk memilih</b><span class="ss-note">Format .xlsx · sheet Action Plan</span><input type="file" id="up-w-file" accept=".xlsx" hidden></label>
+      <div id="up-w-review" class="ss-up-review" hidden>
+        <p class="ss-note" id="up-w-sum"></p>
+        <div class="ss-tablewrap"><table class="ss-table ss-up-table"><thead><tr><th>Program</th><th class="num">Target Sumkal</th><th class="num">Realisasi Sumkal</th><th class="num">Capaian</th><th class="num">Capaian saat ini</th></tr></thead><tbody id="up-w-body"></tbody></table></div>
+        <div class="ss-up-row"><button type="button" class="h-act h-act-primary" id="up-w-go" disabled>Update dashboard sekarang</button><button type="button" class="h-act" id="up-w-cancel">Batal</button></div>
+      </div>
+      <p class="ss-up-msg" id="up-w-msg" role="status"></p>
     </div>
     </section>
     <section class="ss-u-cluster" aria-labelledby="u-cl-db">
@@ -2929,6 +2944,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="upd-core.js"></script>
 <script src="upd-bulanan.js"></script>
 <script src="upd-aset.js"></script>
+<script src="upd-workplan.js"></script>
 <script src="slides-tab.js"></script>
 <script src="kondisi_data.js"></script>
 <script src="kondisi_update.js"></script>
