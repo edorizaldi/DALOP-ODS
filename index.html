@@ -404,6 +404,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 .ss-up-msg { margin: 0; font-size: var(--cds-font-size-body); line-height: 1.5; }
 .ss-up-msg:empty { display: none; }
 .ss-up-msg.ok { color: var(--color-ok); } .ss-up-msg.warn { color: var(--color-warn); } .ss-up-msg.bad { color: var(--color-bad); }
+#h-up-msg.bad { color: var(--color-bad); font-weight: 600; }
 .ss-up-prog { display: grid; gap: 4px; }
 .ss-up-prog progress { width: 100%; height: 8px; accent-color: var(--x-olive); }
 .ss-u-steps { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: var(--cds-gap-md); counter-reset: st; }
@@ -2722,7 +2723,15 @@ SSD.onData(draw);
 window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false; draw(); } };
 // data yang diunggah langsung lewat tombol Update disimpan di penyimpanan dashboard (harian/latest)
 (async()=>{ try{ const c=window.claude; if(!c||!c.use) return; const db=await c.use('db'); if(!db) return; window.SSHarianDB=db;
-  db.doc('harian/latest').onSnapshot((s)=>{ if(s&&s.exists){ const v=s.data(); if(v&&Array.isArray(v.rows)&&v.rows.some(r=>r.seri==='meta')){ window.SSHarianSaved=v; window.SSHarian.apply(v.rows); const e=document.getElementById('h-src-note'); if(e) e.textContent=`Data dari unggahan ${String(v.diunggah||'').slice(0,10)} (${v.file||'file'}).`; const mt=v.rows.find(r=>r.seri==='meta'); if(window.SSDbInfo&&v.diunggah) window.SSDbInfo.harian(v.diunggah, 'Realisasi s.d. '+(mt&&mt.realisasi_sd||''), (v.file||'file Excel')+' (diunggah di dashboard)'); } } },()=>{});
+  db.doc('harian/latest').onSnapshot((s)=>{ if(s&&s.exists){ const v=s.data(); if(v&&Array.isArray(v.rows)&&v.rows.some(r=>r.seri==='meta')){ if(window.SSHarianSaved&&String(window.SSHarianSaved.diunggah||'')>String(v.diunggah||'')) return; window.SSHarianSaved=v; window.SSHarian.apply(v.rows); const e=document.getElementById('h-src-note'); if(e) e.textContent=`Data dari unggahan ${String(v.diunggah||'').slice(0,10)} (${v.file||'file'}).`; const mt=v.rows.find(r=>r.seri==='meta'); if(window.SSDbInfo&&v.diunggah) window.SSDbInfo.harian(v.diunggah, 'Realisasi s.d. '+(mt&&mt.realisasi_sd||''), (v.file||'file Excel')+' (diunggah di dashboard)'); } } },()=>{});
+} catch(e){} })();
+// harian_latest.js di <head> bisa tersimpan di cache browser (sampai ±10 menit); ambil versi terbaru dari server lalu pakai bila lebih baru
+(async()=>{ try{ const r=await fetch('harian_latest.js?t='+Date.now(),{cache:'no-store'}); if(!r.ok) return; const t=await r.text(); const i=t.indexOf('=');
+  const v=JSON.parse(t.slice(i+1).trim().replace(/;\s*$/,'')); const cur=window.SSHarianSaved||window.__HARIAN;
+  if(!v||!Array.isArray(v.rows)||!v.rows.some(x=>x.seri==='meta')||(cur&&String(cur.diunggah||'')>=String(v.diunggah||''))) return;
+  window.__HARIAN=v; window.SSHarianSaved=v; window.SSHarian.apply(v.rows);
+  const e=document.getElementById('h-src-note'); if(e) e.textContent=`Data dari unggahan ${String(v.diunggah||'').slice(0,10)} (${v.file||'file'}).`;
+  const mt=v.rows.find(x=>x.seri==='meta'); if(window.SSDbInfo&&v.diunggah) window.SSDbInfo.harian(v.diunggah,'Realisasi s.d. '+(mt&&mt.realisasi_sd||''),(v.file||'file Excel')+' (diunggah di dashboard)');
 } catch(e){} })();
 
 })();
@@ -2871,15 +2880,19 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
     prev.filter((r) => r.seri === 'saidiLY' || r.seri === 'saifiLY').forEach((r) => rows.push({ ...r }));
     window.SSHarian.apply(rows);
     const btnA = $('h-up-apply'); btnA.disabled = true;
-    let saved = false;
-    const db = window.SSHarianDB;
+    let saved = false, why = '';
+    // ambil penyimpanan saat menyimpan (bukan saat halaman dibuka), supaya login admin sesudah halaman dibuka ikut terpakai
+    let db = null; try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
     if (db) {
-      try { await db.doc('harian/latest').set({ rows, tanggal: tgl, file: pending.file, diunggah: new Date().toISOString() }); saved = true; }
-      catch (e) { saved = false; }
-    }
+      msg.textContent = 'Menyimpan ke database dashboard…';
+      const doc = { rows, tanggal: tgl, file: pending.file, diunggah: new Date().toISOString() };
+      try { await db.doc('harian/latest').set(doc); saved = true; window.SSHarianDB = db; window.SSHarianSaved = doc; }
+      catch (e) { saved = false; why = e && e.code === 'no-token' ? 'belum login admin' : e && e.code === 'gh-401' ? 'login admin sudah tidak berlaku; keluar lalu login lagi' : ((e && e.message) || String(e)); }
+    } else why = 'belum login admin';
     msg.textContent = saved
-      ? `Infografis diperbarui ke realisasi s.d. ${da} ${BLN[mo - 1]} ${y} dan disimpan di dashboard. Semua yang membuka dashboard melihat data ini; tombol Download juga memakai data baru.`
-      : `Infografis di layar ini sudah memakai data baru (realisasi s.d. ${da} ${BLN[mo - 1]} ${y}) dan tombol Download memakai data ini. Data belum tersimpan untuk pembaca lain: klik "Login admin" (kanan bawah), lalu unggah ulang file yang sama.`;
+      ? `Infografis diperbarui ke realisasi s.d. ${da} ${BLN[mo - 1]} ${y} dan disimpan ke database dashboard. Semua yang membuka dashboard melihat data ini setelah GitHub Pages diperbarui (1–2 menit); tombol Download juga memakai data baru.`
+      : `Infografis di layar ini sudah memakai data baru (realisasi s.d. ${da} ${BLN[mo - 1]} ${y}), tetapi BELUM TERSIMPAN (${why}). Bila halaman ditutup, data kembali ke unggahan sebelumnya. Klik "Login admin" (kanan bawah), lalu klik Terapkan ke infografis lagi.`;
+    msg.classList.toggle('bad', !saved);
     $('h-src-note').textContent = `Data dari unggahan ${new Date().toISOString().slice(0, 10)} (${pending.file}).`;
     if (window.SSDbInfo) window.SSDbInfo.harian(new Date().toISOString(), `Realisasi s.d. ${da} ${BLN[mo - 1]} ${y}`, pending.file + (saved ? ' (diunggah di dashboard)' : ' (hanya di layar ini, belum tersimpan)'));
     btnA.disabled = false;
