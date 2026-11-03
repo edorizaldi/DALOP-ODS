@@ -51,7 +51,7 @@
   let path = []; // nilai terpilih per level (diisi otomatis dengan nilai terbesar)
   let fkey = '';
 
-  const BID = [['DISTRIBUSI', 'Distribusi'], ['TRANSMISI', 'Transmisi'], ['PEMBANGKIT', 'Pembangkit'], ['ALL', 'Semua']];
+  const BID = [['ALL', 'Semua'], ['DISTRIBUSI', 'Distribusi'], ['TRANSMISI', 'Transmisi'], ['PEMBANGKIT', 'Pembangkit']];
   $('dp-f-bidang').addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) { path = []; dash.setParams({ dp_bidang: b.dataset.v === 'DISTRIBUSI' ? null : b.dataset.v }); } });
   $('dp-f-unit').addEventListener('change', (e) => dash.setParams({ dp_unit: e.target.value || null, dp_up3: null }));
   $('dp-f-up3').addEventListener('change', (e) => dash.setParams({ dp_up3: e.target.value || null }));
