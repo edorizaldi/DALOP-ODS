@@ -185,8 +185,9 @@
       4: () => slide3(pres, ctx3, { key: 'saifi', name: 'SAIFI', unit: 'kali/pelanggan', unitS: 'kali/plg', raw: 'kali padam', md: 3, kd: 2 }),
       5: () => slide5(pres, ctx3),
       6: () => slide6(pres, ctx3),
+      7: () => slideWorkplan(pres, { C, HEX, D, A }),
     };
-    // plan: urutan slide paparan. {k:'core', n:1..6} slide data; {k:'img', data, w, h} slide gambar;
+    // plan: urutan slide paparan. {k:'core', n:1..7} slide data; {k:'img', data, w, h} slide gambar;
     // {k:'pptx'} slide kosong sebagai tempat slide dari file PowerPoint (diisi oleh SSPptxMerge).
     const P = plan || [1, 2, 3, 4, 5, 6].map((n) => ({ k: 'core', n }));
     return (async () => {
@@ -603,6 +604,86 @@
     });
   
     s.addNotes(`Sumber: database dashboard Sumkal, tab Dupont Gangguan: gangguan kode J, bidang Distribusi, No. Laporan unik, ${PER}. Kolom CAUSE kosong ditampilkan sebagai "Tidak ada keterangan". Dalam Investigasi per UID memakai kolom UNIT data APKT.`);
+  }
+
+  // ---------- slide Realisasi Action Plan (tab Workplan Keandalan) ----------
+  // Data: dataset workplan (sheet Action Plan) dan periode dari info_update tab workplan. Semua isi bisa diedit di PowerPoint.
+  async function slideWorkplan(pres, ctx) {
+    const { C, D, A } = ctx;
+    const rows = D.workplan || [];
+    const info = (D.info_update || []).find((r) => r.tab === 'workplan') || {};
+    const pm = /(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i.exec(info.periode || '') || [];
+    const BL = pm[1] || '', TH = pm[2] || '';
+    const PG = [
+      { k: 'pdkb', t: 'PDKB', h: 'PDKB', u: 'titik', c1: '0D47A1', c2: '1E88E5' },
+      { k: 'tebang', t: 'Program Tebang Tuntas', h: 'Tebang Tuntas', u: 'kms', c1: '1B5E20', c2: '43A047' },
+      { k: 'pangkas', t: 'Program Pangkas (ROW Management)', h: 'Program Pangkas (ROW Mgmt)', u: 'kms', c1: '0B4F9C', c2: '2D8BE0' },
+      { k: 'proteksi', t: 'Optimalisasi & Assesment Sistem Proteksi', h: 'Optimasi Proteksi', u: 'penyulang', c1: '7A6A06', c2: 'B39C1A' },
+      { k: 'binatang', t: 'Pemasangan Penghalang Proteksi Binatang', h: 'Penghalang Binatang', u: 'titik', c1: '00707A', c2: '13A3AE' },
+    ];
+    const ORD = ['ACEH', 'SUMUT', 'SUMBAR', 'RKR', 'S2JB', 'BABEL', 'LAMPUNG', 'KALBAR', 'KALSELTENG', 'KALTIMRA'];
+    const get = (u, p) => rows.find((r) => r.wil === 'SUMKAL' && r.unit === u && r.program === p);
+    const units = ORD.filter((u) => rows.some((r) => r.wil === 'SUMKAL' && r.unit === u));
+    const n0 = (v) => (v == null ? '-' : Number(v).toLocaleString('id-ID', { maximumFractionDigits: 0 }));
+    const n1 = (v, k) => (v == null ? '-' : Number(v).toLocaleString('id-ID', { maximumFractionDigits: (k === 'tebang' || k === 'pangkas') ? 1 : 0 }));
+    const rat = (x) => (x && x.target ? x.realisasi / x.target : null);
+    const pc = (x) => { const r = rat(x); return r == null ? '-' : (r * 100).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '%'; };
+    const fillOf = (r) => (r == null ? 'FFFFFF' : r >= 1 ? 'BDEFA8' : r >= 0.9 ? 'FFE45C' : 'F2554C');
+    const ringOf = (r) => (r == null ? 'B0BEC5' : r >= 1 ? '22A447' : r >= 0.9 ? 'E9B800' : 'E53935');
+    const W = 'Arial';
+    const s = pres.addSlide({ masterName: 'KINERJA_UID' });
+    const T = (text, o, name) => s.addText(text, { fontFace: W, margin: 0, isTextBox: true, ...o, objectName: name });
+    // judul (sama dengan slide lain)
+    T('REALISASI ACTION PLAN', { x: 2.6, y: 0.12, w: 8.1, h: 0.55, fontSize: 30, bold: true, color: C.text1, align: 'center', valign: 'middle' }, 'Judul');
+    T('PENINGKATAN KEANDALAN JARINGAN DISTRIBUSI', { x: 2.6, y: 0.64, w: 8.1, h: 0.32, fontSize: 16, bold: true, color: C.text1, align: 'center', valign: 'middle' }, 'Subjudul');
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 4.85, y: 1.0, w: 3.6, h: 0.36, rectRadius: 0.18, fill: { color: C.accent1 }, line: { color: C.accent1 }, objectName: 'Periode latar' });
+    T(`Realisasi Januari – ${BL} ${TH}`.trim(), { x: 4.85, y: 1.0, w: 3.6, h: 0.36, fontSize: 14, bold: true, color: C.background1, align: 'center', valign: 'middle' }, 'Periode');
+
+    // kartu program
+    const CY = 1.5, CH = 1.82, CW = 2.44, GAP = 0.13, X0 = 0.3, HH = 0.52;
+    PG.forEach((p, i) => {
+      const x = X0 + i * (CW + GAP), v = get('TOTAL', p.k), r = rat(v), nm = `Kartu ${i + 1} ${p.h}`;
+      s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y: CY, w: CW, h: CH, rectRadius: 0.1, fill: { color: 'FFFFFF' }, line: { color: '9FD4F2', width: 1.25 }, shadow: { type: 'outer', color: '0A3C78', opacity: 0.18, blur: 4, offset: 2, angle: 90 }, objectName: nm + ' latar' });
+      s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y: CY, w: CW, h: HH, rectRadius: 0.1, fill: { color: p.c1 }, line: { color: p.c1 }, objectName: nm + ' kepala' });
+      s.addShape(pres.shapes.RECTANGLE, { x, y: CY + HH - 0.12, w: CW, h: 0.12, fill: { color: p.c1 }, line: { color: p.c1 }, objectName: nm + ' kepala bawah' });
+      s.addShape(pres.shapes.OVAL, { x: x + 0.08, y: CY + 0.08, w: 0.36, h: 0.36, fill: { color: 'FFFFFF' }, line: { color: p.c2, width: 1.5 }, objectName: nm + ' nomor latar' });
+      T(String(i + 1), { x: x + 0.08, y: CY + 0.08, w: 0.36, h: 0.36, fontSize: 15, bold: true, color: p.c1, align: 'center', valign: 'middle' }, nm + ' nomor');
+      T([{ text: p.t, options: { bold: true, fontSize: 10.5, breakLine: true } }, { text: `(${p.u.charAt(0).toUpperCase() + p.u.slice(1)})`, options: { fontSize: 9 } }], { x: x + 0.5, y: CY + 0.02, w: CW - 0.56, h: HH - 0.04, color: 'FFFFFF', valign: 'middle' }, nm + ' judul');
+      const ill = A.wp && A.wp['i' + (i + 1)];
+      if (ill) s.addImage({ data: ill, x: x + 0.05, y: CY + HH + 0.12, w: 0.62, h: 1.0, sizing: { type: 'contain', w: 0.62, h: 1.0 }, altText: 'Ilustrasi ' + p.t, objectName: nm + ' ilustrasi' });
+      T([{ text: 'Target SUMKAL', options: { fontSize: 7.5, breakLine: true } }, { text: n0(v && v.target), options: { fontSize: 15, bold: true, breakLine: true } },
+        { text: ' ', options: { fontSize: 5, breakLine: true } },
+        { text: 'Realisasi SUMKAL', options: { fontSize: 7.5, breakLine: true } }, { text: n0(v && v.realisasi), options: { fontSize: 15, bold: true } }],
+      { x: x + 0.68, y: CY + HH + 0.1, w: 0.92, h: CH - HH - 0.2, color: '0A2A82', valign: 'middle' }, nm + ' angka');
+      const f = Math.max(0, Math.min(1, r || 0));
+      s.addChart(pres.charts.DOUGHNUT, [{ name: 'Capaian', labels: ['Capaian', 'Sisa'], values: [Math.max(f, 0.0001), Math.max(1 - f, 0.0001)] }], {
+        x: x + CW - 0.92, y: CY + HH + 0.18, w: 0.9, h: 0.9, holeSize: 74, chartColors: [ringOf(r), 'E3EEF5'], showLegend: false, showLabel: false, showValue: false, showPercent: false, dataBorder: { pt: 0, color: 'FFFFFF' }, objectName: nm + ' cincin',
+      });
+      T(pc(v), { x: x + CW - 0.92, y: CY + HH + 0.18, w: 0.9, h: 0.9, fontSize: 8.5, bold: true, color: '0A2A82', align: 'center', valign: 'middle' }, nm + ' persen');
+    });
+
+    // tabel per unit induk
+    const TY = 3.47;
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 0.3, y: TY, w: 12.73, h: 0.36, rectRadius: 0.06, fill: { color: '0D3A8C' }, line: { color: '0D3A8C' }, objectName: 'Tabel judul latar' });
+    T(`REALISASI ACTION PLAN PER UNIT INDUK s.d ${BL.toUpperCase()} ${TH}`.trim(), { x: 0.45, y: TY, w: 12.4, h: 0.36, fontSize: 14, bold: true, color: 'FFFFFF', valign: 'middle' }, 'Tabel judul');
+    const B = { type: 'solid', color: 'CFE0EE', pt: 0.5 };
+    const hd = { bold: true, color: '0A2A82', fill: { color: 'EAF5FC' }, align: 'center', valign: 'middle', fontSize: 9 };
+    const r1 = [{ text: 'No', options: { ...hd, rowspan: 2 } }, { text: 'Unit Induk', options: { ...hd, rowspan: 2 } },
+      ...PG.map((p) => ({ text: [{ text: p.h, options: { bold: true, breakLine: true } }, { text: `(${p.u.charAt(0).toUpperCase() + p.u.slice(1)})`, options: { fontSize: 7.5 } }], options: { colspan: 3, color: 'FFFFFF', fill: { color: p.c1 }, align: 'center', valign: 'middle', fontSize: 9 } }))];
+    const r2 = PG.flatMap(() => ['Target', 'Realisasi', '%'].map((t) => ({ text: t, options: { ...hd, fontSize: 8 } })));
+    const body = (u, i, tot) => {
+      const nm = tot ? 'SUMKAL' : ((get(u, 'pdkb') || {}).nama || u);
+      const base = tot ? { bold: true, color: 'FFFFFF', fill: { color: '0A2A6E' }, fontSize: 9 } : { color: '0B2246', fill: { color: i % 2 ? 'F6FAFE' : 'FFFFFF' }, fontSize: 8.5 };
+      return [{ text: tot ? '' : String(i + 1), options: { ...base, align: 'center' } }, { text: nm, options: { ...base, bold: true, align: 'left' } },
+        ...PG.flatMap((p) => { const x = get(u, p.k), r = rat(x), fc = fillOf(r);
+          return [{ text: n1(x && x.target, p.k), options: { ...base, align: 'center' } }, { text: n1(x && x.realisasi, p.k), options: { ...base, align: 'center' } },
+            { text: pc(x), options: { ...base, align: 'center', bold: !!tot, fill: { color: fc }, color: r != null && r < 0.9 ? 'FFFFFF' : '0B2246' } }]; })];
+    };
+    const tb = [r1, r2, ...units.map((u, i) => body(u, i, false)), body('TOTAL', 0, true)];
+    const cw = (12.73 - 0.35 - 1.3) / 15;
+    s.addTable(tb, { x: 0.3, y: TY + 0.4, w: 12.73, colW: [0.35, 1.3, ...Array(15).fill(cw)], rowH: [0.34, 0.2, ...Array(units.length).fill(0.235), 0.26], border: B, fontFace: W, margin: [0, 0.03, 0, 0.05], valign: 'middle', objectName: 'Tabel action plan per unit induk' });
+    T('% = realisasi ÷ target · hijau ≥ 100%, kuning 90–99,99%, merah < 90%', { x: 0.3, y: 7.22, w: 8, h: 0.2, fontSize: 7, color: '5B6B86' }, 'Keterangan');
+    s.addNotes(`Sumber: database dashboard Sumkal, tab Workplan Keandalan: ${info.sumber || 'sheet Action Plan'}, ${info.periode || ''}. % capaian = realisasi ÷ target.`);
   }
 
   const api = { build, compute, months };

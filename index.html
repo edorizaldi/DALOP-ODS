@@ -15,9 +15,10 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="slides-tab.css">
 <link rel="stylesheet" href="kondisi-tab.css?v=20261028h">
 <link rel="stylesheet" href="hirarki-tab.css">
+<link rel="stylesheet" href="workplan-tab.css">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
-<script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
+<script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
 <script src="admin-keys.js"></script>
 <script src="shim-auth.js"></script>
 <script src="shim.js"></script>
@@ -638,6 +639,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
           <button type="button" class="ss-tab" id="tab-gangguan" data-tab-to="gangguan" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 5 13h6l-1 8 8-10h-6z"/></svg><span class="ss-tab-t"><b>Event Padam Penyulang</b><small>Kali padam permanen dan sesaat</small></span></button>
           <button type="button" class="ss-tab" id="tab-kc" data-tab-to="kc" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg><span class="ss-tab-t"><b>Koreksi Cleansing</b><small>Event koreksi dan data cleansing</small></span></button>
           <button type="button" class="ss-tab" id="tab-dp" data-tab-to="dp" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="9" width="6" height="6" rx="1.5"/><rect x="16" y="3" width="6" height="5" rx="1.5"/><rect x="16" y="10" width="6" height="5" rx="1.5"/><rect x="16" y="17" width="6" height="5" rx="1.5"/><path d="M8 12h4M12 5.5v13M12 5.5h4M12 12.5h4M12 18.5h4"/></svg><span class="ss-tab-t"><b>Dupont Gangguan</b><small>Pohon penyebab gangguan</small></span></button>
+          <button type="button" class="ss-tab" id="tab-workplan" data-tab-to="workplan" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h11M9 12h11M9 19h11"/><path d="m3.5 5 1.5 1.5L7.5 4M3.5 12l1.5 1.5L7.5 11"/><circle cx="5.2" cy="19" r="1.6"/></svg><span class="ss-tab-t"><b>Workplan Keandalan</b><small>Target dan realisasi action plan per UID</small></span></button>
         </div></li>
       <li class="ss-mg" data-group="database"><button type="button" class="ss-mg-btn" id="mg-database-b" aria-haspopup="true" aria-expanded="false" aria-controls="mg-database"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span>Database</span><svg class="ss-mg-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         <div class="ss-mg-pop" id="mg-database" role="menu" aria-labelledby="mg-database-b" hidden>
@@ -871,6 +873,51 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <p class="ss-note" id="kc-unit-note"></p>
         <div class="ss-g-wrap" data-source="kc_bulanan gangguan_ps"><table class="ss-table" id="kc-unit"></table></div>
       </div>
+  </section>
+
+  <section class="ss-sec" id="workplan" data-tab="workplan" hidden>
+    <div class="ss-dbinfo" data-dbinfo="workplan" data-source="info_update"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span class="ss-dbinfo-t">Memuat info update database…</span></div>
+    <header class="ss-hero" id="wp-ringkasan">
+      <div class="ss-hero-main">
+        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h11M9 12h11M9 19h11"/><path d="m3.5 5 1.5 1.5L7.5 4M3.5 12l1.5 1.5L7.5 11"/><circle cx="5.2" cy="19" r="1.6"/></svg>Action plan keandalan · Sumatera &amp; Kalimantan</span>
+        <h1 class="ss-title">Workplan Keandalan</h1>
+        <p class="ss-take dash-skeleton" id="wp-take" data-source="workplan">—</p>
+        <div class="ss-filters">
+          <div class="ss-frow"><span class="ss-flabel">Program</span><div class="ss-chips" id="wp-f-prog" role="group" aria-label="Program"></div></div>
+          <div class="ss-frow"><span class="ss-flabel">Unit</span><select id="wp-f-unit" aria-label="Unit"></select>
+            <button type="button" class="ss-g-reset" id="wp-reset">Reset filter</button></div>
+          <div class="ss-frow"><span class="ss-flabel">Paparan</span>
+            <button type="button" class="wp-dl" data-fmt="png" id="wp-dl-png"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg>Unduh gambar (PNG)</button>
+            <span class="wp-dl-hint">Versi PowerPoint ada di tab Desain Paparan.</span></div>
+          <p class="wp-dl-msg" id="wp-dl-msg" aria-live="polite"></p>
+        </div>
+      </div>
+      <figure class="wp-reg" id="wp-reg-wrap">
+        <figcaption class="wp-reg-h"><b>Capaian dibanding regional lain</b><span>% realisasi terhadap target, garis tegak = 100%</span></figcaption>
+        <div class="wp-reg-legend" id="wp-reg-legend"></div>
+        <div id="wp-reg" class="dash-skeleton" data-source="workplan"></div>
+      </figure>
+    </header>
+    <div class="wp-tiles" id="wp-kpi" data-source="workplan"></div>
+    <div class="ss-card" id="wp-mx-card">
+      <div class="wp-card-h"><h3 id="wp-mx-h">Capaian per unit induk</h3>
+        <div class="wp-scale" aria-hidden="true"><span class="wp-sw wp-l0"></span>&lt; 90%<span class="wp-sw wp-l1"></span>90–99%<span class="wp-sw wp-l2"></span>100–149%<span class="wp-sw wp-l3"></span>&ge; 150%</div></div>
+      <p class="ss-note">Persen = realisasi ÷ target sampai bulan laporan. Klik baris untuk memilih unit, klik judul kolom untuk memilih program.</p>
+      <div class="ss-g-wrap" data-source="workplan"><table class="ss-table wp-mx" id="wp-mx"></table></div>
+    </div>
+    <div class="wp-row2">
+      <div class="ss-card" id="wp-bar-card">
+        <h3 id="wp-bar-h">Realisasi dan target per unit</h3>
+        <p class="ss-note" id="wp-bar-note"></p>
+        <div class="wp-bar-legend"><span><i class="wp-k-r"></i>Realisasi</span><span><i class="wp-k-t"></i>Target</span></div>
+        <div id="wp-bar" data-source="workplan"></div>
+      </div>
+      <div class="ss-card" id="wp-gap-card">
+        <h3>Perlu perhatian</h3>
+        <p class="ss-note" id="wp-gap-note"></p>
+        <ol class="wp-gap" id="wp-gap" data-source="workplan"></ol>
+      </div>
+    </div>
   </section>
 
   <section class="ss-sec" id="dp" data-tab="dp" hidden>
@@ -1474,7 +1521,7 @@ window.SSD = (() => {
 </script>
 <script>
 (() => {
-  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'penyulang', 'hirarki', 'update', 'harian', 'kondisi', 'slides'];
+  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'workplan', 'penyulang', 'hirarki', 'update', 'harian', 'kondisi', 'slides'];
   window.SSC = ['var(--x-c0)', 'var(--x-c1)', 'var(--x-c2)', 'var(--x-c3)', 'var(--x-c4)', 'var(--x-c5)', 'var(--x-c6)', 'var(--x-c7)'];
   const show = (tab) => {
     if (!TABS.includes(tab)) tab = 'saidi';
@@ -2887,6 +2934,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="kondisi_update.js"></script>
 <script src="kondisi-tab.js?v=20261028h"></script>
 <script src="hirarki-tab.js"></script>
+<script src="workplan-tab.js"></script>
 
 </div>
 </body>

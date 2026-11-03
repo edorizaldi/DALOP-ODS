@@ -7,7 +7,7 @@
   const PPTX_URL = 'https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js';
   const JSZIP_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
   const CFG = 'paparan.json', DIR = 'paparan/', MAX_MB = 15;
-  const SETS = ['kumulatif', 'bulanan', 'target', 'gangguan_ps', 'kc_bulanan', 'gangguan_dupont'];
+  const SETS = ['kumulatif', 'bulanan', 'target', 'gangguan_ps', 'kc_bulanan', 'gangguan_dupont', 'workplan', 'info_update'];
   const CORE = [
     ['Kinerja SAIDI per UID', 'Peta UID, target dan realisasi s.d. cutoff, rekap Sumkal, tren kumulatif.'],
     ['Kinerja SAIFI per UID', 'Sama seperti slide SAIDI, untuk SAIFI.'],
@@ -15,6 +15,7 @@
     ['SAIFI jaringan distribusi', 'Sama seperti slide SAIDI, untuk SAIFI.'],
     ['Jumlah kali gangguan penyulang', 'Permanen, sesaat, cleansing dan koreksi (kode J) per bulan dan per UID.'],
     ['Penyebab gangguan penyulang', 'Rincian penyebab, komposisi, Dalam Investigasi per UID, insight.'],
+    ['Realisasi Action Plan (Workplan Keandalan)', '5 program action plan Sumkal dan tabel target, realisasi, capaian per unit induk.'],
   ];
   const DEFAULT = () => CORE.map((_, i) => ({ k: 'core', n: i + 1 }));
   let cutoff = null, busy = false, cat = null, D0 = null;
@@ -137,7 +138,7 @@
   function renderState() {
     const dirty = sig(items) !== sig(saved) || pending.size > 0;
     const st = $('sl-state');
-    if (!dirty) st.textContent = savedInfo && savedInfo.at ? `Sama dengan susunan di database (disimpan ${savedInfo.by || 'admin'}, ${new Date(savedInfo.at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}). Tidak perlu input ulang.` : 'Memakai susunan bawaan database (6 slide data). Tidak perlu input ulang.';
+    if (!dirty) st.textContent = savedInfo && savedInfo.at ? `Sama dengan susunan di database (disimpan ${savedInfo.by || 'admin'}, ${new Date(savedInfo.at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}). Tidak perlu input ulang.` : `Memakai susunan bawaan database (${CORE.length} slide data). Tidak perlu input ulang.`;
     else st.textContent = isAdmin() ? 'Ada perubahan yang belum disimpan ke database.' : 'Ada perubahan. Susunan ini tetap bisa langsung diunduh; untuk menyimpannya ke database perlu login admin.';
     st.className = 'sl-state' + (dirty ? ' dirty' : '');
     $('sl-save').hidden = !dirty; $('sl-reset').hidden = !dirty;
@@ -302,6 +303,7 @@
       await load(PPTX_URL, () => !!window.PptxGenJS);
       await load('slides-core.js', () => !!window.SSSlides);
       await load('slides-assets.js', () => !!window.SS_SLIDE_ASSETS);
+      if (items.some((x) => x.k === 'core' && x.n === 7)) await load('workplan-assets.js', () => !!window.SS_WP_ASSETS);
       if (hasP) { await load(JSZIP_URL, () => !!window.JSZip); await load('slides-merge.js', () => !!window.SSPptxMerge); await load('slides-data.js', () => !!window.SSSlidesData); if (!cat || cat.m !== cutoff || cat.k !== !!kondisiData()) { cat = window.SSSlidesData.catalog(D0, cutoff, kondisiData()); cat.m = cutoff; cat.k = !!kondisiData(); } }
       msg('sl-msg', 'Menyiapkan slide unggahan…');
       const plan = []; const fills = [];
@@ -319,7 +321,7 @@
       }
       msg('sl-msg', `Menyusun ${items.length} slide…`);
       const D = {}; SETS.forEach((k) => { D[k] = SSD.data(k).data; });
-      const pres = await window.SSSlides.build(window.PptxGenJS, D, cutoff, window.SS_SLIDE_ASSETS, plan);
+      const pres = await window.SSSlides.build(window.PptxGenJS, D, cutoff, { ...window.SS_SLIDE_ASSETS, wp: window.SS_WP_ASSETS }, plan);
       let blob;
       if (fills.length) blob = await window.SSPptxMerge.merge(window.JSZip, await pres.write({ outputType: 'arraybuffer' }), fills);
       else blob = await pres.write({ outputType: 'blob' });
