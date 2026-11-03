@@ -55,3 +55,9 @@ Token disimpan di `admin-keys.js` dalam bentuk terenkripsi (PBKDF2-SHA256 + AES-
 3. Login berlaku sampai tab browser ditutup atau klik **Keluar**.
 
 Untuk mencabut semua akses admin, hapus token di pengaturan GitHub. Untuk mencabut satu admin, hapus namanya di `admin-setup.html`.
+
+## Tab Workplan Keandalan
+Menu **Bulanan → Workplan Keandalan**: target dan realisasi action plan keandalan (PDKB, Program Tebang, Program Pangkas, Sistem Proteksi, Penghalang Binatang) per UID Sumkal, dibanding Jamali, Sulmapana dan Nasional. Tombol **Unduh gambar (PNG)** membuat paparan Realisasi Action Plan; versi PowerPoint ada di **Desain Paparan** (slide data no. 7).
+
+- Sumber: workpaper reliability (.xlsx), sheet **Action Plan** (kolom Unit Induk, lalu Target/Realisasi/% per program, baris subtotal SUMKAL, JAMALI, SULMAPANA, DIT DIST). Periode dibaca dari judul "Realisasi Action Plan s.d &lt;bulan&gt; - &lt;tahun&gt;".
+- `workplan.js`: dataset workplan. Memperbarui data: tab **Update Data Bulanan**, cluster **Data Bulanan** → kartu **Workplan Keandalan** (`upd-workplan.js`). Bila admin sudah login, `workplan.js` dan `info_update.js` disimpan ke repo dalam satu commit.
