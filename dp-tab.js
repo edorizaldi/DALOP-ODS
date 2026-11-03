@@ -51,10 +51,12 @@
   let path = []; // nilai terpilih per level (diisi otomatis dengan nilai terbesar)
   let fkey = '';
 
+  const BID = [['ALL', 'Semua'], ['DISTRIBUSI', 'Distribusi'], ['TRANSMISI', 'Transmisi'], ['PEMBANGKIT', 'Pembangkit']];
+  $('dp-f-bidang').addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) { path = []; dash.setParams({ dp_bidang: b.dataset.v === 'DISTRIBUSI' ? null : b.dataset.v }); } });
   $('dp-f-unit').addEventListener('change', (e) => dash.setParams({ dp_unit: e.target.value || null, dp_up3: null }));
   $('dp-f-up3').addEventListener('change', (e) => dash.setParams({ dp_up3: e.target.value || null }));
   $('dp-f-bulan').addEventListener('change', (e) => dash.setParams({ dp_bulan: e.target.value ? Number(e.target.value) : null }));
-  $('dp-reset').addEventListener('click', () => { path = []; dash.setParams({ dp_unit: null, dp_up3: null, dp_bulan: null }); });
+  $('dp-reset').addEventListener('click', () => { path = []; dash.setParams({ dp_bidang: null, dp_unit: null, dp_up3: null, dp_bulan: null }); });
 
   const tree = $('dp-tree');
   $('dp-hide-inv').addEventListener('change', () => render());
@@ -93,7 +95,14 @@
       if (D.status === 'error') { tree.replaceChildren(mk('div', 'Failed to load', 'ss-fail')); tree.classList.remove('dash-skeleton'); }
       return;
     }
-    const all = D.data.map((r) => ({ u: r.UNIT, p: r.UP3, m: Number(r.BULAN_NO), v: LV.map((l) => r[l.f] == null ? '' : String(r[l.f])), s: r.PS ? String(r.PS) : '', n: Number(r.JUMLAH) }));
+    const all0 = D.data.map((r) => ({ u: r.UNIT, p: r.UP3, m: Number(r.BULAN_NO), v: LV.map((l) => r[l.f] == null ? '' : String(r[l.f])), s: r.PS ? String(r.PS) : '', n: Number(r.JUMLAH) }));
+    // bidang: bawaan Distribusi (sama dengan slide Penyebab gangguan penyulang di Desain Paparan); Semua = Distribusi + Transmisi + Pembangkit
+    const bids = BID.filter(([k]) => k === 'ALL' || all0.some((r) => r.v[0] === k));
+    const Pb = dash.params().dp_bidang;
+    const bid = bids.some(([k]) => k === Pb) ? Pb : 'DISTRIBUSI';
+    const bName = (BID.find(([k]) => k === bid) || [, ''])[1];
+    $('dp-f-bidang').replaceChildren(...bids.map(([k, l]) => { const c = mk('button', l, 'ss-chip'); c.type = 'button'; c.dataset.v = k; c.setAttribute('aria-pressed', String(k === bid)); return c; }));
+    const all = bid === 'ALL' ? all0 : all0.filter((r) => r.v[0] === bid);
     const hasPS = all.some((r) => r.s);
     const P = dash.params();
     const units = UORD.filter((u) => all.some((r) => r.u === u));
@@ -113,7 +122,7 @@
     sb.replaceChildren(new Option(`Semua bulan (${BS[months[0] - 1]}–${BS[months[months.length - 1] - 1]} 2026)`, ''), ...months.map((m) => new Option(BLN[m - 1] + ' 2026', m)));
     sb.value = sel.m ? String(sel.m) : '';
 
-    const nk = [sel.u, sel.p, sel.m].join('|'); if (nk !== fkey) { fkey = nk; path = []; }
+    const nk = [bid, sel.u, sel.p, sel.m].join('|'); if (nk !== fkey) { fkey = nk; path = []; }
     const rows = all.filter((r) => (!sel.u || r.u === sel.u) && (!sel.p || r.p === sel.p) && (!sel.m || r.m === sel.m));
     const T = rows.reduce((a, r) => a + r.n, 0);
     const where = sel.p ? 'UP3 ' + sel.p : sel.u ? uname(sel.u) : 'Sumkal';
@@ -133,23 +142,30 @@
     }
     path = path.slice(0, levels.length);
 
-    ctx = { where, per };
+    ctx = { where: bid === 'ALL' ? where : `${where} · Bidang ${bName}`, per };
     // ringkasan
     {
       const tk = $('dp-take'); tk.classList.remove('dash-skeleton'); tk.replaceChildren();
       const B = (s) => mk('b', s);
-      if (!T) tk.append(`Tidak ada gangguan kode J untuk ${where} pada ${per}.`);
+      if (!T) tk.append(`Tidak ada gangguan kode J${bid === 'ALL' ? '' : ' bidang ' + bName} untuk ${where} pada ${per}.`);
       else {
-        tk.append(`${per}, ${where} mencatat `, B(fmt(T) + ' gangguan kode J'), ' (No. Laporan unik). Jalur terbesar: ');
+        tk.append(`${per}, ${where} mencatat `, B(fmt(T) + ' gangguan kode J'), bid === 'ALL' ? ' semua bidang' : ` bidang ${bName}`, ' (No. Laporan unik). Jalur terbesar: ');
         let c2 = rows;
-        for (let i = 0; i < LV.length; i++) { const a = new Map(); c2.forEach((r) => a.set(r.v[i], (a.get(r.v[i]) || 0) + r.n)); const t0 = [...a].sort((x, y) => y[1] - x[1])[0]; if (!t0) break; if (i) tk.append(' → '); tk.append(B(`${nice(t0[0], i)} ${pc(t0[1] / T)}`)); c2 = c2.filter((r) => r.v[i] === t0[0]); }
+        for (let i = bid === 'ALL' ? 0 : 1, i0 = i; i < LV.length; i++) { const a = new Map(); c2.forEach((r) => a.set(r.v[i], (a.get(r.v[i]) || 0) + r.n)); const t0 = [...a].sort((x, y) => y[1] - x[1])[0]; if (!t0) break; if (i > i0) tk.append(' → '); tk.append(B(`${nice(t0[0], i)} ${pc(t0[1] / T)}`)); c2 = c2.filter((r) => r.v[i] === t0[0]); }
         tk.append('. Persentase dihitung terhadap total gangguan kode J.');
       }
     }
     // kotak angka
     done('dp-t1', fmt(T)); $('dp-t1-sub').textContent = `${where} · ${per}`;
     const top = (i) => { const a = new Map(); rows.forEach((r) => a.set(r.v[i], (a.get(r.v[i]) || 0) + r.n)); return [...a].sort((x, y) => y[1] - x[1])[0] || ['—', 0]; };
-    const [b0, b0n] = top(0); done('dp-t2', T ? pc(b0n / T) : '—'); $('dp-t2-sub').textContent = `${nice(b0, 0)} · ${fmt(b0n)} gangguan`;
+    if (bid === 'ALL') {
+      $('dp-t2-label').textContent = 'Porsi bidang terbesar';
+      const [b0, b0n] = top(0); done('dp-t2', T ? pc(b0n / T) : '—'); $('dp-t2-sub').textContent = `${nice(b0, 0)} · ${fmt(b0n)} gangguan`;
+    } else {
+      const TA = all0.filter((r) => (!sel.u || r.u === sel.u) && (!sel.p || r.p === sel.p) && (!sel.m || r.m === sel.m)).reduce((a, r) => a + r.n, 0);
+      $('dp-t2-label').textContent = `Porsi bidang ${bName}`;
+      done('dp-t2', TA ? pc(T / TA) : '—'); $('dp-t2-sub').textContent = `dari ${fmt(TA)} gangguan kode J semua bidang`;
+    }
     const [f0, f0n] = top(4); done('dp-t3', T ? nice(f0, 4) : '—'); $('dp-t3-sub').textContent = T ? `${fmt(f0n)} gangguan · ${pc(f0n / T)}` : '';
     const ca = new Map(); rows.forEach((r) => { if (r.v[5] && r.v[5] !== 'Dalam Investigasi') ca.set(r.v[5], (ca.get(r.v[5]) || 0) + r.n); });
     const c0 = [...ca].sort((x, y) => y[1] - x[1])[0] || ['—', 0];
@@ -207,7 +223,7 @@
       const ser = months.map((m) => { const o = { m, t: 0 }; keys.forEach((kk) => { o[kk] = 0; }); const byC = new Map();
         base.forEach((r) => { if (r.m !== m) return; const kk = topC.includes(r.v[5]) ? r.v[5] : '__lain'; o[kk] += r.n; o.t += r.n; byC.set(r.v[5], (byC.get(r.v[5]) || 0) + r.n); });
         const d = [...byC].sort((a, b) => b[1] - a[1])[0]; o.dom = d ? d[0] : null; o.domN = d ? d[1] : 0; return o; });
-      $('dp-cause-sel').replaceChildren('Unit dipilih: ', mk('b', sel.p ? 'UP3 ' + sel.p : sel.u ? uname(sel.u) : 'Sumkal'), ` · ${BS[months[0] - 1]}–${BS[months[months.length - 1] - 1]} 2026 · lima cause terbanyak ditumpuk per bulan, gambar di atas batang = cause paling dominan bulan itu${hideInv ? ' (tanpa Dalam Investigasi)' : ''}`);
+      $('dp-cause-sel').replaceChildren('Unit dipilih: ', mk('b', sel.p ? 'UP3 ' + sel.p : sel.u ? uname(sel.u) : 'Sumkal'), ' · bidang ', mk('b', bid === 'ALL' ? 'semua' : bName), ` · ${BS[months[0] - 1]}–${BS[months[months.length - 1] - 1]} 2026 · lima cause terbanyak ditumpuk per bulan, gambar di atas batang = cause paling dominan bulan itu${hideInv ? ' (tanpa Dalam Investigasi)' : ''}`);
       $('dp-cause-legend').replaceChildren(...keys.map((kk, i) => { const s = mk('span'); const sw = mk('i', null, 'ss-sw'); sw.style.background = i < topC.length ? COL[i] : OTH; s.append(sw, kk === '__lain' ? 'Lainnya' : nice(kk, 5)); return s; }));
       if (!base.length) { ch.append(mk('p', 'Tidak ada data untuk pilihan ini.', 'ss-note')); }
       else {
