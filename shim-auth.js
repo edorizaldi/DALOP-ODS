@@ -22,5 +22,17 @@
     if (!pt.startsWith('ssv1:')) throw new Error('format');
     return pt.slice(5);
   }
-  window.SSAuthCore = { sealToken, openToken };
+  // ---- password pembaca (gerbang dashboard): hanya hash PBKDF2 yang disimpan ----
+  async function bitsFrom(password, salt, iter) {
+    const base = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+    return new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, 256));
+  }
+  async function hashViewer(password) {
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iter = 210000;
+    return { salt: toB64(salt), iter, hash: toB64(await bitsFrom(password, salt, iter)) };
+  }
+  async function checkViewer(entry, password) {
+    return toB64(await bitsFrom(password, fromB64(entry.salt), entry.iter || 210000)) === entry.hash;
+  }
+  window.SSAuthCore = { sealToken, openToken, hashViewer, checkViewer };
 })();

@@ -49,6 +49,9 @@ Pembaca biasa hanya bisa melihat dan mengunduh PNG. Untuk menyimpan unggahan (ta
 
 Token disimpan di `admin-keys.js` dalam bentuk terenkripsi (PBKDF2-SHA256 + AES-GCM) dan hanya bisa dibuka dengan password admin. Karena file ini ada di repo public, gunakan password yang panjang dan unik.
 
+### Password pembaca (gerbang dashboard)
+Atur di `admin-setup.html` bagian **3. Password pembaca dashboard** (perlu token GitHub dari langkah 1). Setelah aktif, dashboard baru tampil setelah pembaca memasukkan password pembaca (bisa diingat 30 hari di perangkat itu); admin bisa langsung **Masuk sebagai admin** dari layar yang sama. Hanya hash PBKDF2 password yang disimpan di `viewer-key.js`. Gerbang ini membatasi tampilan saja: karena repo public, file data tetap bisa diunduh langsung oleh yang tahu alamatnya.
+
 ### Login dan unggah
 1. Di dashboard, klik **Login admin** (kanan bawah), pilih nama, lalu isi password.
 2. Unggah file seperti biasa. Dashboard menyimpan dataset baru ke repo. Pembaca lain melihat data baru setelah GitHub Pages diperbarui (sekitar 1–2 menit, bisa sampai 10 menit karena cache browser).

@@ -34,12 +34,13 @@ a { color:#2563A6; }
 </style>
 <script src="config.js"></script>
 <script src="admin-keys.js"></script>
+<script src="viewer-key.js"></script>
 </head>
 <body>
 <main>
   <div>
     <h1>Atur admin dashboard</h1>
-    <p>Halaman ini untuk pemilik repo. Di sini Anda membuat atau menghapus akun admin (nama dan password) yang boleh menyimpan unggahan data di dashboard.</p>
+    <p>Halaman ini untuk pemilik repo. Di sini Anda membuat atau menghapus akun admin (nama dan password) yang boleh menyimpan unggahan data di dashboard, serta mengatur password pembaca untuk membuka dashboard.</p>
   </div>
 
   <section class="card" aria-labelledby="t-token">
@@ -70,6 +71,18 @@ a { color:#2563A6; }
     <ul id="list"></ul>
     <div class="msg" id="msg-list" role="status"></div>
     <p>Menghapus admin juga memerlukan token di langkah 1. Perubahan aktif di dashboard setelah GitHub Pages diperbarui (1–2 menit).</p>
+  </section>
+
+  <section class="card" aria-labelledby="t-view">
+    <h2 id="t-view">3. Password pembaca dashboard</h2>
+    <p id="view-state">—</p>
+    <div class="grid2">
+      <label>Password pembaca<input id="vp1" type="password" autocomplete="new-password"></label>
+      <label>Ulangi password<input id="vp2" type="password" autocomplete="new-password"></label>
+    </div>
+    <p>Minimal 8 karakter. Bagikan password ini ke pembaca dashboard; admin tetap memakai password admin. Mengganti password membuat semua pembaca perlu memasukkan password baru. Gerbang ini hanya membatasi tampilan: file data tetap bisa diunduh langsung dari repo public.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pri" id="vset">Simpan password pembaca</button><button id="voff">Matikan password pembaca</button></div>
+    <div class="msg" id="msg-view" role="status"></div>
   </section>
 
   <p><a href="./">← Kembali ke dashboard</a></p>
@@ -146,6 +159,40 @@ a { color:#2563A6; }
       keys = list; render(); msg('msg-list', `Admin "${nama}" dihapus.`, 'ok');
     } catch (e) { msg('msg-list', e.message || String(e), 'bad'); btn.disabled = false; }
   }
+  // ---- password pembaca (viewer-key.js) ----
+  const vapi = `https://api.github.com/repos/${repoPath}/contents/viewer-key.js`;
+  const vstate = () => { $('view-state').textContent = window.SS_VIEWER_KEY && window.SS_VIEWER_KEY.hash ? 'Status: aktif. Pembaca harus memasukkan password sebelum dashboard tampil.' : 'Status: belum diatur. Dashboard terbuka untuk siapa pun yang punya link.'; };
+  async function saveViewer(tok, val, message) {
+    const cur = await fetch(vapi + '?ref=' + branch + '&t=' + Date.now(), { headers: hd(tok), cache: 'no-store' });
+    let sha; if (cur.ok) sha = (await cur.json()).sha; else if (cur.status !== 404) throw new Error('Gagal membaca viewer-key.js (GitHub ' + cur.status + ').');
+    const body = '// Password pembaca dashboard (hash PBKDF2). Dibuat otomatis oleh admin-setup.html — jangan diedit manual.\n// null = belum diatur: dashboard terbuka tanpa password pembaca.\nwindow.SS_VIEWER_KEY = ' + JSON.stringify(val) + ';\n';
+    const r = await fetch(vapi, { method: 'PUT', headers: hd(tok), body: JSON.stringify({ message, content: b64(body), sha, branch }) });
+    if (!r.ok) { let m = ''; try { m = (await r.json()).message; } catch (e) { /* abaikan */ } throw new Error(r.status === 403 ? 'Token belum boleh menulis ke repo ini (izin Contents: Read and write).' : 'Gagal menyimpan (GitHub ' + r.status + (m ? ': ' + m : '') + ').'); }
+    window.SS_VIEWER_KEY = val; vstate();
+  }
+  $('vset').onclick = async () => {
+    const tok = $('tok').value.trim(), p1 = $('vp1').value, p2 = $('vp2').value;
+    if (!tok) return msg('msg-view', 'Isi token GitHub di langkah 1.', 'bad');
+    if (p1.length < 8) return msg('msg-view', 'Password pembaca minimal 8 karakter.', 'bad');
+    if (p1 !== p2) return msg('msg-view', 'Kedua password tidak sama.', 'bad');
+    const btn = $('vset'); btn.disabled = true;
+    try {
+      msg('msg-view', 'Memeriksa token…'); await checkToken(tok);
+      msg('msg-view', 'Menyimpan…'); await saveViewer(tok, await window.SSAuthCore.hashViewer(p1), 'Atur password pembaca dashboard');
+      $('vp1').value = ''; $('vp2').value = '';
+      msg('msg-view', 'Password pembaca tersimpan. Gerbang aktif di dashboard setelah GitHub Pages diperbarui (1–2 menit).', 'ok');
+    } catch (e) { msg('msg-view', e.message || String(e), 'bad'); }
+    finally { btn.disabled = false; }
+  };
+  $('voff').onclick = async () => {
+    const tok = $('tok').value.trim(); if (!tok) return msg('msg-view', 'Isi token GitHub di langkah 1.', 'bad');
+    if (!confirm('Matikan password pembaca? Dashboard akan terbuka untuk siapa pun yang punya link.')) return;
+    const btn = $('voff'); btn.disabled = true;
+    try { await checkToken(tok); await saveViewer(tok, null, 'Matikan password pembaca dashboard'); msg('msg-view', 'Password pembaca dimatikan.', 'ok'); }
+    catch (e) { msg('msg-view', e.message || String(e), 'bad'); }
+    finally { btn.disabled = false; }
+  };
+  vstate();
   render();
 })();
 </script>
