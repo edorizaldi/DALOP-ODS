@@ -159,6 +159,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 .ss-table td.ss-g-down { color: var(--color-ok); }
 .ss-table tr.ss-g-on td { background: color-mix(in srgb, var(--ss-acc) 10%, transparent); font-weight: 600; color: var(--color-fg); }
 .ss-table tr.ss-g-tot td { font-weight: 600; color: var(--color-fg); border-top: 1.5px solid var(--color-fg-muted); border-bottom: 0; }
+.ss-g-bsel { background: color-mix(in srgb, var(--x-olive, #4D7C0F) 12%, transparent); font-weight: 700; }
 .ss-g-share { display: inline-block; width: 56px; height: 6px; border-radius: 3px; background: var(--cds-chart-grid); vertical-align: middle; margin-left: 8px; overflow: hidden; }
 .ss-g-share i { display: block; height: 100%; background: var(--ss-acc); }
 .ss-big-txt { font-size: calc(var(--cds-font-size-title) * .95); line-height: 1.2; }
@@ -2509,22 +2510,27 @@ SSD.calc('up3_yoy', {
       })
       .on('pointerleave', () => { tip.hidden = true; gBars.selectAll('rect').attr('opacity', 1); });
 
-    // rincian bulanan
+    // rincian bulanan: selalu menampilkan ketiga bidang (filter Bidang tidak dipakai di tabel ini; bidang terpilih disorot)
     const mk = (tag, t, cls) => { const e = document.createElement(tag); if (t != null) e.textContent = t; if (cls) e.className = cls; return e; };
+    const rb = {}; months.forEach((m) => { rb[m] = { m, DISTRIBUSI: 0, TRANSMISI: 0, PEMBANGKIT: 0 }; });
+    rows.forEach((r) => { if (Object.entries(sel).every(([c, v]) => !v || c === 'BIDANG' || r[key[c]] === v) && rb[r.m] && r.b in rb[r.m]) rb[r.m][r.b] += r.n; });
+    const serR = months.map((m) => ({ ...rb[m], t: BID.reduce((s2, [k]) => s2 + rb[m][k], 0) }));
+    const TR = sum(serR.map((d) => d.t)); const peakR = serR.reduce((a2, b2) => (b2.t > a2.t ? b2 : a2), serR[0]);
+    const hiB = (k) => (sel.BIDANG === k ? 'ss-g-bsel' : '');
     const thead = mk('thead'), hr = mk('tr');
-    ['Bulan', ...BID.map((b) => b[1]), 'Total', '% Distribusi', 'Perubahan', 'Porsi'].forEach((h, i) => { const th = mk('th', h); if (i >= 1 && i <= 3) th.style.boxShadow = `inset 0 3px 0 ${SSC[BID[i - 1][2]]}`; hr.append(th); });
+    ['Bulan', ...BID.map((b) => b[1]), 'Total', '% Distribusi', 'Perubahan', 'Porsi'].forEach((h, i) => { const th = mk('th', h, i >= 1 && i <= 3 ? hiB(BID[i - 1][0]) : ''); if (i >= 1 && i <= 3) th.style.boxShadow = `inset 0 3px 0 ${SSC[BID[i - 1][2]]}`; hr.append(th); });
     thead.append(hr);
     const tb = mk('tbody');
-    ser.forEach((d, i) => {
-      const tr = mk('tr', null, d.m === peak.m && T ? 'ss-g-on' : '');
-      const p = ser[i - 1]; let ch = '–', cls = '';
+    serR.forEach((d, i) => {
+      const tr = mk('tr', null, d.m === peakR.m && TR ? 'ss-g-on' : '');
+      const p = serR[i - 1]; let ch = '–', cls = '';
       if (p && p.t) { const v = (d.t - p.t) / p.t; ch = sgn(v); cls = v > 0 ? 'ss-g-up' : v < 0 ? 'ss-g-down' : ''; }
-      const share = mk('td', T ? pc(d.t / T) : '–'); const bar = mk('span', null, 'ss-g-share'); const bi = mk('i'); bi.style.width = (T ? d.t / T * 100 : 0) + '%'; bar.append(bi); share.append(bar);
-      tr.append(mk('td', BLN[d.m - 1]), ...BID.map(([k]) => mk('td', fmt(d[k]))), mk('td', fmt(d.t), 'ss-hl'), mk('td', d.t ? pc(d.DISTRIBUSI / d.t) : '–'), mk('td', ch, cls), share);
+      const share = mk('td', TR ? pc(d.t / TR) : '–'); const bar = mk('span', null, 'ss-g-share'); const bi = mk('i'); bi.style.width = (TR ? d.t / TR * 100 : 0) + '%'; bar.append(bi); share.append(bar);
+      tr.append(mk('td', BLN[d.m - 1]), ...BID.map(([k]) => mk('td', fmt(d[k]), hiB(k))), mk('td', fmt(d.t), 'ss-hl'), mk('td', d.t ? pc(d.DISTRIBUSI / d.t) : '–'), mk('td', ch, cls), share);
       tb.append(tr);
     });
     const ft = mk('tr', null, 'ss-g-tot');
-    ft.append(mk('td', 'Total'), ...BID.map(([k]) => mk('td', fmt(sum(ser.map((d) => d[k]))))), mk('td', fmt(T)), mk('td', T ? pc(sum(ser.map((d) => d.DISTRIBUSI)) / T) : '–'), mk('td', ''), mk('td', T ? pc(1) : '–'));
+    ft.append(mk('td', 'Total'), ...BID.map(([k]) => mk('td', fmt(sum(serR.map((d) => d[k]))), hiB(k))), mk('td', fmt(TR)), mk('td', TR ? pc(sum(serR.map((d) => d.DISTRIBUSI)) / TR) : '–'), mk('td', ''), mk('td', TR ? pc(1) : '–'));
     tb.append(ft);
     $('g-rincian').replaceChildren(thead, tb);
     window.SSGRc = { scope, per: `${BS[months[0] - 1]}–${BS[months[months.length - 1] - 1]} 2026` };
