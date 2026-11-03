@@ -1,0 +1,23 @@
+/* Tab Event Padam Penyulang: permanen vs sesaat per unit, penyulang sakit vs kronis */
+.gx-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.gx-h4 { margin: 0; font-size: var(--cds-font-size-body); font-weight: 600; }
+.gx-table td.num, .gx-table th.num, .gx-table td.num + td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gx-table tr.on td { background: var(--x-soft, color-mix(in srgb, #4A9BE0 14%, transparent)); font-weight: 600; }
+.gx-table tr.gx-click { cursor: pointer; }
+.gx-table tr.gx-click:hover td:first-child { text-decoration: underline; text-underline-offset: 3px; }
+#gps-table td:first-child { display: table-cell; min-width: 150px; }
+.gx-chart { height: 260px; position: relative; }
+.gx-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--cds-gap-lg, 20px); align-items: start; }
+@media (max-width: 60rem) { .gx-split { grid-template-columns: 1fr; } }
+.gx-split > div { display: grid; gap: 8px; min-width: 0; }
+.gx-scroll { max-height: 26rem; overflow: auto; }
+.gx-pill { display: inline-block; min-width: 2.2em; text-align: center; padding: 1px 7px; border-radius: 999px; font-weight: 700; font-size: 11.5px; color: #fff; }
+.gx-pill.k { background: #B3261E; } .gx-pill.s { background: #E9A23B; color: #2A1A00; }
+.gx-zero { color: var(--color-fg-muted); }
+.gx-mini { display: flex; height: 10px; border-radius: 3px; overflow: hidden; min-width: 2px; }
+.gx-mini i.s { background: #E9A23B; } .gx-mini i.k { background: #B3261E; }
+.gx-table td, .gx-table th { text-align: left; }
+.gx-table tr.dp-ps-tot td { font-weight: 700; border-top: 2px solid var(--color-border-line); }
+.gx-sub { display: block; font-size: 11px; color: var(--color-fg-muted); }
+#gsk-list td:first-child { font-weight: 600; white-space: nowrap; }
+#gsk-list td:nth-child(2), #gsk-list th:nth-child(2), #gsk-list td:nth-child(4), #gsk-list th:nth-child(4) { text-align: left; }
