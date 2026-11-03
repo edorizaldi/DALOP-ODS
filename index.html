@@ -17,13 +17,14 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="hirarki-tab.css">
 <link rel="stylesheet" href="workplan-tab.css">
 <link rel="stylesheet" href="gangguan-ps-tab.css">
+<link rel="stylesheet" href="acct.css">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
 <script src="admin-keys.js"></script>
 <script src="shim-auth.js?v=20261103"></script>
 <script src="viewer-key.js"></script>
-<script src="gate.js?v=20261103"></script>
+<script src="gate.js?v=20261103b"></script>
 <script src="shim.js?v=20261103"></script>
 </head>
 <body>
@@ -655,6 +656,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
     </ul>
     <span class="ss-crumb" id="ss-crumb" aria-live="polite"></span>
     <span class="ss-datechip" id="ss-datechip"><i></i><span id="ss-datechip-t"></span></span>
+    <div class="ss-acct" id="ss-acct"></div>
   </nav>
   </div>
 <div class="ss" id="ss">
@@ -2989,6 +2991,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="kondisi_update.js"></script>
 <script src="kondisi-tab.js?v=20261028h"></script>
 <script src="hirarki-tab.js"></script>
+<script src="acct.js"></script>
 <script src="workplan-tab.js"></script>
 
 </div>

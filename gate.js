@@ -16,16 +16,10 @@
     return false;
   }
   const viewerOnly = () => { const K = key(); return !!(K && K.hash) && !get(sessionStorage, ADMIN); };
-  window.SSGate = { passed, lock() { del(sessionStorage, OK); del(localStorage, OK); location.reload(); } };
+  // keluar penuh: hapus akses pembaca dan login admin di perangkat ini, lalu kembali ke layar masuk
+  window.SSGate = { passed, viewerOnly, hasKey: () => !!(key() && key().hash), lock() { del(sessionStorage, OK); del(localStorage, OK); del(sessionStorage, ADMIN); del(sessionStorage, 'ss-admin-name-s'); location.reload(); } };
   if (passed()) {
-    // tombol kecil "Kunci" untuk pembaca yang masuk dengan password pembaca
-    if (viewerOnly()) document.addEventListener('DOMContentLoaded', () => {
-      const b = document.createElement('button'); b.type = 'button'; b.id = 'ss-view-out'; b.textContent = 'Keluar';
-      b.title = 'Kunci dashboard di perangkat ini';
-      b.style.cssText = 'position:fixed;right:14px;bottom:52px;z-index:50;font:500 12px var(--font-anthropic-sans,system-ui);padding:6px 12px;border-radius:999px;border:1px solid var(--color-border-line,#ddd);background:#fff;color:var(--color-fg-muted,#667060);cursor:pointer;box-shadow:0 1px 3px #0001';
-      b.onclick = () => { if (confirm('Kunci dashboard di perangkat ini? Password pembaca perlu dimasukkan lagi.')) window.SSGate.lock(); };
-      document.body.appendChild(b);
-    });
+    // menu akun (acct.js) di bilah menu menyediakan Keluar
     return;
   }
 

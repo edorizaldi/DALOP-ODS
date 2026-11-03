@@ -1,0 +1,25 @@
+/* Menu akun (Keluar) di ujung kanan bilah menu */
+html.ss-has-acct #ss-admin { display: none !important; }
+.ss-acct { position: relative; flex: none; }
+.ss-acct-btn { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px 0 12px; border-radius: 999px; cursor: pointer; font-size: var(--cds-font-size-caption); font-weight: 600; color: #E6EEF8; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .16); white-space: nowrap; }
+.ss-acct-btn:hover, .ss-acct-btn[aria-expanded="true"] { background: rgba(255, 255, 255, .16); color: #fff; }
+.ss-acct-btn:focus-visible { outline: 2px solid var(--x-lime); outline-offset: 2px; }
+.ss-acct-btn.adm { border-color: var(--x-lime); }
+.ss-acct-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.ss-acct-btn.adm > svg:first-child { stroke: var(--x-lime); }
+.ss-acct-btn .ss-mg-chev { width: 13px; height: 13px; opacity: .8; }
+.ss-acct-pop { position: absolute; right: 0; top: calc(100% + 8px); min-width: 16rem; padding: 6px; display: grid; gap: 2px; background: var(--x-card); color: var(--color-fg); border: 1px solid var(--x-line); border-radius: 12px; box-shadow: 0 12px 32px rgba(15, 42, 74, .18); z-index: 30; }
+.ss-acct-pop[hidden] { display: none; }
+.ss-acct-who { display: grid; gap: 2px; padding: 8px 10px 10px; border-bottom: 1px solid var(--x-line); margin-bottom: 4px; }
+.ss-acct-who b { font-size: var(--cds-font-size-body); }
+.ss-acct-who small { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.ss-acct-it { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; cursor: pointer; font-size: var(--cds-font-size-body); color: var(--color-fg); }
+.ss-acct-it svg { width: 17px; height: 17px; fill: none; stroke: var(--x-olive); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.ss-acct-it:hover, .ss-acct-it:focus-visible { background: var(--x-bg); outline: none; }
+.ss-acct-it.out { color: var(--color-bad, #B3261E); font-weight: 600; }
+.ss-acct-it.out svg { stroke: currentColor; }
+@media (max-width: 52rem) {
+  .ss-acct { margin-left: auto; }
+  .ss-acct-n { display: none; }
+  .ss-acct-btn { padding: 0 8px; }
+}
