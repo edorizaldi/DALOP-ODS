@@ -178,7 +178,7 @@
         f.innerHTML = '<h2>Login admin</h2><p>Belum ada akun admin. Pemilik repo perlu membuatnya dulu lewat halaman <a href="admin-setup.html">admin-setup.html</a>.</p><div class="ss-lg-row"><button type="button" class="pri">Tutup</button></div>';
         f.querySelector('button').onclick = close;
       } else {
-        f.innerHTML = `<h2>Login admin</h2><p>Login untuk menyimpan unggahan data ke dashboard. Pembaca biasa tidak perlu login.</p>
+        f.innerHTML = `<h2>Login admin</h2><p>Login untuk menyimpan unggahan data ke dashboard. Pembaca cukup memakai password pembaca.</p>
 <label>Nama<select name="nama">${keys.map((k, i) => `<option value="${i}">${String(k.nama).replace(/[<&"]/g, '')}</option>`).join('')}</select></label>
 <label>Password<input name="pw" type="password" autocomplete="current-password" required></label>
 <div class="ss-lg-err" role="alert"></div>
