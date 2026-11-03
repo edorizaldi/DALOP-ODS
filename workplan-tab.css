@@ -121,7 +121,7 @@
 /* tombol unduh paparan */
 .wp-dl { font: inherit; font-size: var(--cds-font-size-caption); display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 999px; cursor: pointer; border: 1px solid var(--x-olive); background: var(--x-card); color: var(--color-fg); }
 .wp-dl svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.wp-dl[data-fmt="pptx"] { background: var(--x-olive); color: var(--x-card); }
+.wp-dl-hint { font-size: 11.5px; color: var(--color-fg-muted); }
 .wp-dl:hover { filter: brightness(1.08); }
 .wp-dl:disabled { opacity: .55; cursor: progress; }
 .wp-dl-msg { margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); min-height: 1em; }

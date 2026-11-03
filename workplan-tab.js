@@ -203,8 +203,7 @@
 // Unduh paparan (template "Realisasi Action Plan Peningkatan Keandalan Jaringan Distribusi")
 (() => {
   const $ = (id) => document.getElementById(id);
-  if (!$('wp-dl-pptx')) return;
-  const PPTX_URL = 'https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js';
+  if (!$('wp-dl-png')) return;
   const loaded = {};
   const load = (src, test) => {
     if (test()) return Promise.resolve();
@@ -213,7 +212,6 @@
   };
   const msg = (t, bad) => { const m = $('wp-dl-msg'); m.textContent = t || ''; m.className = 'wp-dl-msg' + (bad ? ' bad' : ''); };
   const save = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); };
-  const toData = (blob) => new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
 
   async function image() {
     await Promise.all([load('workplan-assets.js', () => !!window.SS_WP_ASSETS), load('workplan-paparan.js', () => !!window.SSWpPaparan), load('slides-assets.js', () => !!window.SS_SLIDE_ASSETS)]);
@@ -232,25 +230,15 @@
     } finally { host.remove(); }
   }
 
-  async function run(fmt) {
-    const btns = [$('wp-dl-pptx'), $('wp-dl-png')]; btns.forEach((b) => { b.disabled = true; });
+  async function run() {
+    const btn = $('wp-dl-png'); btn.disabled = true;
     msg('Menyusun paparan…');
     try {
-      const { blob, tag, per } = await image();
-      const name = `Realisasi_Action_Plan_Keandalan${tag ? '_' + tag : ''}`;
-      if (fmt === 'png') save(blob, name + '.png');
-      else {
-        msg('Menyusun file PowerPoint…');
-        await load(PPTX_URL, () => !!window.PptxGenJS);
-        const P = new window.PptxGenJS(); P.layout = 'LAYOUT_WIDE'; P.title = 'Realisasi Action Plan Peningkatan Keandalan Jaringan Distribusi ' + per;
-        const s = P.addSlide(); s.addImage({ data: await toData(blob), x: 0, y: 0, w: 13.333, h: 7.5 });
-        s.addNotes('Realisasi Action Plan Peningkatan Keandalan Jaringan Distribusi, ' + per + '. Dibuat dari dashboard DALOP-ODS tab Workplan Keandalan.');
-        save(await P.write({ outputType: 'blob' }), name + '.pptx');
-      }
-      msg('Paparan sudah diunduh.' + (dash.params().wp_unit ? ' Unit yang dipilih di filter disorot di tabel.' : ''));
+      const { blob, tag } = await image();
+      save(blob, `Realisasi_Action_Plan_Keandalan${tag ? '_' + tag : ''}.png`);
+      msg('Gambar paparan sudah diunduh.' + (dash.params().wp_unit ? ' Unit yang dipilih di filter disorot di tabel.' : ''));
     } catch (e) { msg('Paparan gagal dibuat: ' + ((e && e.message) || e), true); }
-    btns.forEach((b) => { b.disabled = false; });
+    btn.disabled = false;
   }
-  $('wp-dl-pptx').addEventListener('click', () => run('pptx'));
-  $('wp-dl-png').addEventListener('click', () => run('png'));
+  $('wp-dl-png').addEventListener('click', run);
 })();

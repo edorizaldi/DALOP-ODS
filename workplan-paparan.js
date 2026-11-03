@@ -21,20 +21,16 @@
   const ORD = ['ACEH', 'SUMUT', 'SUMBAR', 'RKR', 'S2JB', 'BABEL', 'LAMPUNG', 'KALBAR', 'KALSELTENG', 'KALTIMRA'];
 
   const CSS = `
-.wpx{width:1920px;height:1080px;position:relative;overflow:hidden;font-family:Arial,"Helvetica Neue",Helvetica,sans-serif;color:#0B2A6B;background:linear-gradient(180deg,#E3F3FD 0%,#F4FAFE 22%,#DDF0FB 100%);box-sizing:border-box}
+.wpx{width:1920px;height:1080px;position:relative;overflow:hidden;font-family:Arial,"Helvetica Neue",Helvetica,sans-serif;color:#0B2A6B;background:#EAF3FC center/cover no-repeat;box-sizing:border-box}
 .wpx *{box-sizing:border-box}
-.wpx-hd{position:absolute;left:0;top:0;width:1920px;height:196px;background:linear-gradient(180deg,#FFFFFF 0%,#E6F5FD 45%,#CBEAF8 100%);overflow:hidden}
-.wpx-sky{position:absolute;bottom:8px;height:160px;width:auto}
-.wpx-skyL{left:330px}.wpx-skyR{right:200px}
-.wpx-glow{position:absolute;left:470px;top:-20px;width:980px;height:236px;background:radial-gradient(closest-side,rgba(255,255,255,.97) 62%,rgba(255,255,255,0) 100%)}
-.wpx-ground{position:absolute;left:0;right:0;bottom:0;height:10px;background:linear-gradient(90deg,#7CC243,#A5D65A,#7CC243)}
-.wpx-logo{position:absolute;top:44px;height:78px;width:auto}
-.wpx-logoL{left:44px}.wpx-logoR{right:44px;height:100px;top:38px}
-.wpx-tt{position:absolute;left:510px;width:900px;top:22px;text-align:center;line-height:1.02;color:#0A2A82;font-weight:900}
-.wpx-t1{font-size:56px;letter-spacing:-.5px;font-family:Impact,"Arial Narrow Bold","Arial Narrow",Arial,sans-serif;font-weight:400}
-.wpx-t2{font-size:29px;margin-top:8px;white-space:nowrap;font-family:"Arial Narrow",Arial,sans-serif;font-weight:900;letter-spacing:.2px}
-.wpx-t3{font-size:29px;margin-top:6px;font-family:"Arial Narrow",Arial,sans-serif;font-weight:900}
-.wpx-cards{position:absolute;left:30px;right:30px;top:212px;height:276px;display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.wpx-hd{position:absolute;left:0;top:0;width:1920px;height:200px}
+.wpx-logo{position:absolute;width:auto}
+.wpx-logoL{left:43px;top:32px;height:73px}.wpx-logoR{left:1793px;top:17px;height:118px}
+.wpx-tt{position:absolute;left:374px;width:1166px;top:17px;text-align:center;color:#13254A;font-weight:700}
+.wpx-t1{font-size:60px;line-height:79px;letter-spacing:-.3px}
+.wpx-t2{font-size:32px;line-height:46px}
+.wpx-pill{position:absolute;left:698px;top:144px;width:518px;height:52px;border-radius:26px;background:#1E5BC6;color:#fff;font-size:28px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.wpx-cards{position:absolute;left:30px;right:30px;top:216px;height:276px;display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
 .wpx-card{border-radius:16px;background:#FFFFFF;border:2px solid #9FD4F2;box-shadow:0 4px 10px rgba(10,60,120,.18);overflow:hidden;display:flex;flex-direction:column}
 .wpx-ch{height:92px;display:flex;align-items:center;gap:12px;padding:0 12px 0 14px;color:#fff;border-radius:14px 14px 0 0}
 .wpx-no{width:48px;height:48px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;flex:none;border:3px solid rgba(255,255,255,.6)}
@@ -101,7 +97,7 @@
     const units = ORD.filter((u) => rows.some((r) => r.wil === 'SUMKAL' && r.unit === u))
       .concat([...new Set(rows.filter((r) => r.wil === 'SUMKAL' && r.jenis === 'unit' && !ORD.includes(r.unit)).map((r) => r.unit))]);
     const B = String(o.bulan || '').toUpperCase(), Y = o.tahun || '';
-    const el = document.createElement('div'); el.className = 'wpx';
+    const el = document.createElement('div'); el.className = 'wpx'; if (logo('bg')) el.style.backgroundImage = `url("${logo('bg')}")`;
     const cards = PROG.map((p, i) => {
       const x = get('TOTAL', p.k), u = cap(UNIT[p.k]);
       return `<div class="wpx-card"><div class="wpx-ch" style="background:linear-gradient(90deg,${p.c1},${p.c2})"><div class="wpx-no" style="color:${p.c1}">${i + 1}</div><div class="wpx-cht">${esc(p.t)}${p.sub ? ` <small>(${esc(p.sub)}) (${UNIT[p.k]})</small>` : ` <small>(${u})</small>`}</div></div>
@@ -116,9 +112,9 @@
       return `<tr class="${cls || ''}"><td class="wpx-nob">${i || ''}</td><td class="wpx-un">${esc(nm)}</td>` + PROG.map((p) => { const x = get(u, p.k); return `<td>${num(x && x.target, p.k)}</td><td>${num(x && x.realisasi, p.k)}</td><td class="${lvl(rat(x))}">${pct(x)}</td>`; }).join('') + '</tr>';
     };
     el.innerHTML = `
-      <div class="wpx-hd"><img class="wpx-sky wpx-skyL" src="${A.skyL || ''}" alt=""><img class="wpx-sky wpx-skyR" src="${A.skyR || ''}" alt=""><div class="wpx-glow"></div><div class="wpx-ground"></div>
-        <img class="wpx-logo wpx-logoL" src="${logo('danantara')}" alt=""><img class="wpx-logo wpx-logoR" src="${logo('pln')}" alt="">
-        <div class="wpx-tt"><div class="wpx-t1">REALISASI ACTION PLAN</div><div class="wpx-t2">PENINGKATAN KEANDALAN JARINGAN DISTRIBUSI</div><div class="wpx-t3">JANUARI – ${esc(B)} ${esc(Y)}</div></div></div>
+      <div class="wpx-hd"><img class="wpx-logo wpx-logoL" src="${logo('danantara')}" alt=""><img class="wpx-logo wpx-logoR" src="${logo('pln')}" alt="">
+        <div class="wpx-tt"><div class="wpx-t1">REALISASI ACTION PLAN</div><div class="wpx-t2">PENINGKATAN KEANDALAN JARINGAN DISTRIBUSI</div></div>
+        <div class="wpx-pill">Realisasi Januari – ${esc(o.bulan || '')} ${esc(Y)}</div></div>
       <div class="wpx-cards">${cards}</div>
       <div class="wpx-tb"><div class="wpx-tbh"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6M12 2v3M19 6l1.5-1.5"/></svg>REALISASI ACTION PLAN PER UNIT INDUK s.d ${esc(B)} ${esc(Y)}</div>
         <table class="wpx-t"><colgroup><col style="width:56px"><col style="width:208px"></colgroup><thead><tr class="wpx-g"><th rowspan="2" class="wpx-no-h">No</th><th rowspan="2" class="wpx-un-h">Unit Induk</th>${grp}</tr><tr class="wpx-s">${sub}</tr></thead>
