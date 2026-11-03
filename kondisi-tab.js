@@ -17,8 +17,7 @@ function valAt(r,k){const o=(DOV[sid(r)]||{})[k];
   return{has:true,dmp:r.a.dmp[i],bp:r.a.bp[i],cad:r.a.cad[i],st:SCODE[r.a.sc[i]]||'',upd:false};}
 function applyDay(){
   D.forEach(r=>{Object.assign(r,valAt(r,SELD));r.last=r.has?SELD:null;r.asof=null;
-    // sistem grid utama yang belum melapor pada tanggal ini memakai data terakhirnya (maks. 7 hari ke belakang)
-    if(!r.has&&r.s==='GRID'&&GRIDMAIN.includes(r.n))for(let k=SELD-1;k>=Math.max(1,SELD-7);k--){const v=valAt(r,k);if(v.has){Object.assign(r,v);r.last=k;r.asof=k;break;}}
+    // sistem grid yang tidak melapor pada tanggal ini ditampilkan sebagai Tidak ada data (abu-abu), sama seperti sistem isolated
     let n=0,s=0,d=0;
     for(let k=1;k<=SELD;k++){const t=valAt(r,k).st;if(t==='NORMAL')n++;else if(t==='SIAGA')s++;else if(t==='DEFISIT')d++;}
     r.cN=n;r.cS=s;r.cD=d;});
@@ -41,7 +40,7 @@ function renderTake(tag){
   if(!has.length)t=`Belum ada data ${LT} pada ${b(fd(SELD,1)+tag)}. Data terakhir terisi ${b(fd(FILEMAX,1))}.`;
   else{t=`Pada ${b(fd(SELD,1)+tag)}, ${b(nd.length)} ${LT} defisit dan ${b(ns.length)} siaga dari ${has.length} yang punya data.`;
     if(nd.length)t+=` Defisit: <span class="neg">${nd.slice(0,4).map(r=>esc(nm(r))).join(', ')}${nd.length>4?`, dan ${nd.length-4} lainnya`:''}</span>.`;
-    if(mv.l===1){const tot=gridTotal();if(tot.has)t+=` Cadangan grid SUMKAL ${b(nf(tot.cad,1)+' MW')}${tot.full?'':' (tanpa Batam–Bintan, sebagian dari data terakhir)'}.`;t+=esc(asofTxt());}
+    if(mv.l===1){const tot=gridTotal();if(tot.has)t+=` Cadangan grid SUMKAL ${b(nf(tot.cad,1)+' MW')}${tot.full?'':' (tanpa Batam–Bintan; sebagian sistem tanpa data)'}.`;t+=esc(asofTxt());}
     if(has.length<pool.length)t+=` ${pool.length-has.length} ${LT} belum punya data.`;}
   document.getElementById('ks-take').innerHTML=t;
   // ringkasan cepat: total DMP dan BP sistem yang punya data pada tanggal itu (lapisan aktif)
@@ -70,7 +69,7 @@ const pc=v=>nf(v*100,1)+'%';
 const sum=a=>a.reduce((x,y)=>x+y,0);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const uN=u=>UN[u]||u;
-const chip=s=>s?`<span class="chip s-${s}">${s.charAt(0)+s.slice(1).toLowerCase()}</span>`:'<span class="chip s-NONE">Kosong</span>';
+const chip=s=>s?`<span class="chip s-${s}">${s.charAt(0)+s.slice(1).toLowerCase()}</span>`:'<span class="chip s-NONE">Tidak ada data</span>';
 
 let st={j:-1,s:-1,u:'',q:''};
 const pass=()=>true;
@@ -101,19 +100,19 @@ function renderAgg(){
     .map(([a,b,c])=>`<div><b class="${c}">${a}</b><span>${b}</span></div>`).join('');
 }
 // ---------- grid ----------
-// total grid SUMKAL dari sistem grid utama (tanpa Batam–Bintan), ikut data terakhir bila ada yang belum melapor
+// total grid SUMKAL dari sistem grid utama (tanpa Batam–Bintan); sistem tanpa data pada tanggal ini tidak ikut dijumlah
 function gridTotal(){const rs=GSYS.filter(r=>r.n!=='BATAM-BINTAN');const h=rs.filter(r=>r.has);
   const dmp=h.reduce((x,r)=>x+(r.dmp||0),0),bp=h.reduce((x,r)=>x+(r.bp||0),0);const cad=h.reduce((x,r)=>x+(r.cad!=null?r.cad:(r.dmp||0)-(r.bp||0)),0);
-  const t=D.find(r=>r.n==='TOTAL SISTEM GRID');const full=h.length===rs.length&&!h.some(r=>r.asof);
+  const t=D.find(r=>r.n==='TOTAL SISTEM GRID');const full=h.length===rs.length;
   return{has:h.length>0,n:h.length,of:rs.length,dmp,bp,cad,st:full&&t&&t.has?t.st:(cad<0?'DEFISIT':''),full};}
-const asofTxt=()=>{const st=GSYS.filter(r=>r.asof);return st.length?` ${st.map(r=>gName(r.n)).join(', ')} belum melapor pada tanggal ini; dipakai data terakhirnya (${[...new Set(st.map(r=>fd(r.asof)))].join(', ')}).`:'';};
+const asofTxt=()=>{const st=GSYS.filter(r=>!r.has);return st.length?` Tidak ada data pada tanggal ini: ${st.map(r=>gName(r.n)).join(', ')} (tidak ikut dijumlah).`:'';};
 function renderGrid(){
   const tot=gridTotal();
   document.getElementById('ks-gsub').innerHTML=!tot.has?`Tidak ada data sistem grid pada ${fd(SELD,1)}.`:`Kondisi per ${fd(SELD,1)}. Total grid SUMKAL: DMP ${nf(tot.dmp,1)} MW, BP ${nf(tot.bp,1)} MW, cadangan ${nf(tot.cad,1)} MW ${tot.st?chip(tot.st):''}. Total ini tidak memasukkan Batam–Bintan.${esc(asofTxt())}`;
   document.getElementById('ks-grid').innerHTML=GRIDMAIN.map(n=>{
     const r=D.find(x=>x.s==='GRID'&&x.n===n);const T=r.cN+r.cS+r.cD||1;
-    return `<div class="gc"><h3>${esc(n==='BATAM-BINTAN'?'Batam–Bintan':n.charAt(0)+n.slice(1).toLowerCase().replace(/ (\w)/g,(m,c)=>' '+c.toUpperCase()))}${chip(r.st)}</h3>
-    <div class="u">${esc(r.u)} · 24 jam${r.asof?` · <b class="asof">data ${esc(fd(r.asof))}</b>`:''}</div>
+    return `<div class="gc${r.has?'':' nod'}"><h3>${esc(n==='BATAM-BINTAN'?'Batam–Bintan':n.charAt(0)+n.slice(1).toLowerCase().replace(/ (\w)/g,(m,c)=>' '+c.toUpperCase()))}${chip(r.st)}</h3>
+    <div class="u">${esc(r.u)} · 24 jam${r.has?'':` · <b class="asof">tidak ada data pada ${esc(fd(SELD))}</b>`}</div>
     <div class="k"><div><b>${nf(r.dmp,1)}</b><span>DMP MW</span></div><div><b>${nf(r.bp,1)}</b><span>BP MW</span></div><div><b class="${r.cad<0?'neg':''}">${nf(r.cad,1)}</b><span>Cad MW</span></div></div>
     <div class="days" aria-label="Hari status"><i class="d-n" style="width:${r.cN/T*100}%"></i><i class="d-s" style="width:${r.cS/T*100}%"></i><i class="d-d" style="width:${r.cD/T*100}%"></i></div>
     <div class="dl">${r.cN} hari normal · ${r.cS} siaga · ${r.cD} defisit (1 Okt–${fd(SELD)})</div>
@@ -248,7 +247,7 @@ mp.addEventListener('mousemove',e=>{const p=e.target.closest('[data-u],[data-g]'
     const T=totals(ISO.filter(r=>r.u===u));
     h=`<b>${esc(uN(u))}</b><br>${s.t} sistem isolated<br>Status: <b>${SLBL(q.st)}</b> (${q.n[0]} normal · ${q.n[1]} siaga · ${q.n[2]} defisit${q.ne?` · ${q.ne} tanpa data`:''})<br>${T.n?`Total DMP ${mw(T.dmp)} MW · BP ${mw(T.bp)} MW<br>Cadangan ${mw(T.cad)} MW`:'Tidak ada data DMP/BP'}`+ISO.filter(r=>r.u===u&&r.st==='DEFISIT').map(whyTip).join('')+(q.n[2]?'<span class="tw">Klik wilayah untuk rincian.</span>':'');}
   else{const r=D.find(x=>x.s==='GRID'&&x.n===p.dataset.g);const g=GLAYER.find(x=>x.n===p.dataset.g);
-    h=`<b>${esc(g.t)}</b>${g.subs.length?' ('+g.subs.map(x=>x[0]).join(', ')+')':''}${r.asof?` · data ${esc(fd(r.asof))}`:''}<br>${r.has?`DMP ${mw(r.dmp)} MW · BP ${mw(r.bp)} MW<br>Cadangan ${mw(r.cad)} MW<br>`:'Tidak ada data DMP/BP<br>'}Status: <b>${SLBL(r.st)}</b>`+(r.st==='DEFISIT'?whyTip(r):'')+eskTip(g);}
+    h=`<b>${esc(g.t)}</b>${g.subs.length?' ('+g.subs.map(x=>x[0]).join(', ')+')':''}<br>${r.has?`DMP ${mw(r.dmp)} MW · BP ${mw(r.bp)} MW<br>Cadangan ${mw(r.cad)} MW<br>`:'Tidak ada data DMP/BP<br>'}Status: <b>${SLBL(r.st)}</b>`+(r.st==='DEFISIT'?whyTip(r):'')+eskTip(g);}
   tip.innerHTML=h;tip.hidden=false;tip.style.left=Math.min(e.clientX+14,innerWidth-270)+'px';tip.style.top=(e.clientY+14)+'px';});
 mp.addEventListener('mouseleave',()=>tip.hidden=true);
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(renderMap,150);});
