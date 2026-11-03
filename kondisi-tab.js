@@ -60,6 +60,10 @@ let jumpNote='';
 function lastLayerDay(upto){const pool=mv.l===1?GSYS:ISO;for(let k=Math.min(upto,DMAX);k>=DMIN;k--)if(pool.some(r=>valAt(r,k).has))return k;return 0;}
 function fitLayerDay(){const pool=mv.l===1?GSYS:ISO;if(pool.some(r=>r.has))return false;const k=lastLayerDay(SELD);if(!k||k===SELD)return false;
   const from=SELD;setDay(k);jumpNote=`Data ${mv.l===1?'sistem grid':'sistem isolated'} pada ${fd(from,1)} belum ada, jadi ditampilkan data terakhirnya (${fd(k,1)}).`;renderDate();return true;}
+// label periode data: "1–31 Oktober 2026" atau "1 Oktober – 2 November 2026" (withDays=false: "Oktober – November 2026")
+const perLabel=(last,withDays)=>{const a=new Date(KY,KM-1,1),b=new Date(KY,KM-1,Math.max(1,last||1));const M=d=>BLNF[d.getMonth()];
+  if(a.getMonth()===b.getMonth()&&a.getFullYear()===b.getFullYear())return withDays?`1–${b.getDate()} ${M(a)} ${KY}`:`${M(a)} ${KY}`;
+  const yb=b.getFullYear();return withDays?`1 ${M(a)}${a.getFullYear()!==yb?' '+a.getFullYear():''} – ${b.getDate()} ${M(b)} ${yb}`:`${M(a)}${a.getFullYear()!==yb?' '+a.getFullYear():''} – ${M(b)} ${yb}`;};
 const fd=(n,long)=>n?new Date(KY,KM-1,n).toLocaleDateString('id-ID',long?{day:'numeric',month:'long',year:'numeric'}:{day:'numeric',month:'short'}):'–';
 const JAM=[24,12,6], JC=['--h24','--h12','--h6'];
 const STS=['NORMAL','SIAGA','DEFISIT'];
@@ -86,13 +90,13 @@ function loadData(src){
   GSYS=D.filter(r=>r.s==='GRID'&&GRIDMAIN.includes(r.n));
   FILEMAX=Math.max(0,...D.map(r=>{let m=0;r.a.dmp.forEach((v,i)=>{if(v!=null)m=i+1;});return m;}));
   const t=new Date();t.setHours(0,0,0,0);TODAYOFF=Math.round((t-BASED())/864e5);
-  DMAX=Math.max(new Date(KY,KM,0).getDate(),TODAYOFF);
+  DMAX=Math.max(new Date(KY,KM,0).getDate(),TODAYOFF,FILEMAX);
   SELD=Math.min(DMAX,Math.max(DMIN,TODAYOFF-1));
 }
 let RAWAN=[],RIWAYAT=[];
 loadData({meta:window.__D.kondisi_meta,day:window.__D.kondisi_day,mon:window.__D.kondisi_mon,rawan:window.__D.kondisi_rawan,riwayat:window.__D.kondisi_riwayat});
 function renderAgg(){
-  const h=document.getElementById('ks-h1');if(h)h.textContent='Kondisi Sistem SUMKAL';const eb=document.getElementById('ks-eb-m');if(eb)eb.textContent=`${BLNF[KM-1]} ${KY}`;
+  const h=document.getElementById('ks-h1');if(h)h.textContent='Kondisi Sistem SUMKAL';const eb=document.getElementById('ks-eb-m');if(eb)eb.textContent=perLabel(FILEMAX,false);
   const lt=ISO.filter(r=>r.j<24).length;
   document.getElementById('ks-agg').innerHTML=[
     ['4','sistem grid (7 subsistem)',''],[nf(ISO.length),'sistem isolated',''],[nf(lt),'isolated < 24 jam','hot'],
@@ -115,7 +119,7 @@ function renderGrid(){
     <div class="u">${esc(r.u)} · 24 jam${r.has?'':` · <b class="asof">tidak ada data pada ${esc(fd(SELD))}</b>`}</div>
     <div class="k"><div><b>${nf(r.dmp,1)}</b><span>DMP MW</span></div><div><b>${nf(r.bp,1)}</b><span>BP MW</span></div><div><b class="${r.cad<0?'neg':''}">${nf(r.cad,1)}</b><span>Cad MW</span></div></div>
     <div class="days" aria-label="Hari status"><i class="d-n" style="width:${r.cN/T*100}%"></i><i class="d-s" style="width:${r.cS/T*100}%"></i><i class="d-d" style="width:${r.cD/T*100}%"></i></div>
-    <div class="dl">${r.cN} hari normal · ${r.cS} siaga · ${r.cD} defisit (1 Okt–${fd(SELD)})</div>
+    <div class="dl">${r.cN} hari normal · ${r.cS} siaga · ${r.cD} defisit (${fd(1)}–${fd(SELD)})</div>
     ${GSUB[n]?`<div class="subs">Subsistem: ${GSUB[n].join(', ')}</div>`:`<div class="subs">Tanpa subsistem</div>`}</div>`;
   }).join('');
 }
@@ -224,7 +228,7 @@ function renderPop(){
     const g=GLAYER.find(x=>x.n===sel),r=D.find(x=>x.s==='GRID'&&x.n===sel);
     head={t:g.t,c:SCOL(r.st),m:`Sistem grid · ${g.subs.length?'subsistem '+g.subs.map(x=>x[0]).join(', '):'tanpa subsistem'}`};
     items=item({...r,disp:g.t});
-    hint=`${r.cN} hari normal · ${r.cS} siaga · ${r.cD} defisit (1 Okt–${fd(SELD)}).`+(g.subs.length?' Data per subsistem tidak terisi di file.':'');
+    hint=`${r.cN} hari normal · ${r.cS} siaga · ${r.cD} defisit (${fd(1)}–${fd(SELD)}).`+(g.subs.length?' Data per subsistem tidak terisi di file.':'');
   }
   el.style.setProperty('--c',`var(${head.c})`);
   const KAL=['KALIMANTAN BARAT','KALSELTENG','KALTIMRA','KHATULISTIWA','INTERKONEKSI KALIMANTAN'];el.classList.toggle('left',KAL.includes(sel));if(el.hidden)requestAnimationFrame(()=>{const r=el.getBoundingClientRect();if(r.top>innerHeight-120)el.scrollIntoView({block:'nearest',behavior:'smooth'});});
@@ -363,8 +367,10 @@ function parseNerda(rows){
   if([cS,cU,cN,cJ,cK].some(x=>x<0))throw new Error('Sheet NERDA HARIAN: kolom SISTEM, UNIT INDUK, SUB SISTEM, JAM NYALA atau KLASIFIKASI tidak lengkap.');
   const dcols=[];for(let c=cK+1;c<rows[hr].length;c++){const iso=cellISO(rows[hr][c]);if(iso)dcols.push({c,iso});}
   if(!dcols.length)throw new Error('Sheet NERDA HARIAN: kolom tanggal tidak ditemukan di baris judul.');
-  const [y,mo]=dcols[0].iso.split('-').map(Number);
-  const nd=new Date(y,mo,0).getDate();const col={};dcols.forEach(d=>{const [yy,mm,dd]=d.iso.split('-').map(Number);if(yy===y&&mm===mo)col[dd]=d.c;});
+  // tanggal bisa lintas bulan (mis. Oktober lalu November): indeks hari dihitung dari tanggal 1 bulan pertama
+  const isos=dcols.map(d=>d.iso).sort();const [y,mo]=isos[0].split('-').map(Number);const base=Date.UTC(y,mo-1,1);
+  const off=iso=>{const [yy,mm,dd]=iso.split('-').map(Number);return Math.round((Date.UTC(yy,mm-1,dd)-base)/864e5)+1;};
+  const col={};let nd=new Date(y,mo,0).getDate();dcols.forEach(d=>{const k=off(d.iso);if(k>=1&&k<=400){col[k]=d.c;if(k>nd)nd=k;}});
   const groups=new Map();let prev=null;
   for(let i=hr+1;i<rows.length;i++){const r=rows[i]||[];const n=r[cN];if(n==null||String(n).trim()==='')continue;
     const nn=String(n).trim();let s=String(r[cS]||'').trim().toUpperCase(),u=String(r[cU]||'').trim();
@@ -436,7 +442,7 @@ function upReview(){
   const p=upPending,day=p.day;const last=Math.max(0,...day.map(r=>{let m=0;r.dmp.forEach((v,i)=>{if(v!=null)m=i+1;});return m;}));
   const ng=day.filter(r=>r.s==='GRID'&&GRIDMAIN.includes(r.n)).length,ni=day.filter(r=>r.s==='ISOLATED').length;
   const cnt=r=>r.s==='ISOLATED'||GRIDMAIN.includes(r.n);const at=c=>day.filter(r=>cnt(r)&&last&&r.sc[last-1]===c).length;const filled=day.filter(r=>cnt(r)&&last&&r.dmp[last-1]!=null).length;
-  const bl=`${BLNF[p.meta.bulan-1]} ${p.meta.tahun}`;const lastD=last?new Date(p.meta.tahun,p.meta.bulan-1,last).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'–';
+  const b1=new Date(p.meta.tahun,p.meta.bulan-1,1),b2=new Date(p.meta.tahun,p.meta.bulan-1,Math.max(1,last));const bl=b1.getMonth()===b2.getMonth()?`${BLNF[b1.getMonth()]} ${b1.getFullYear()}`:`${BLNF[b1.getMonth()]} – ${BLNF[b2.getMonth()]} ${b2.getFullYear()}`;const lastD=last?new Date(p.meta.tahun,p.meta.bulan-1,last).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}):'–';
   const monLast=p.mon.reduce((a,m)=>m.t>a?m.t:a,'');
   KSu('ks-up-sum').textContent=`${p.file}: ${bl}, ${ng} sistem grid dan ${ni} sistem isolated, data terisi sampai ${lastD}; ${p.mon.length} laporan defisit${monLast?' sampai '+fdi(monLast):''}.`+(p.miss.length?` ${p.miss.length} nama di Monit Defisit tidak cocok dengan NERDA HARIAN: ${p.miss.slice(0,4).join(', ')}${p.miss.length>4?', …':''}.`:'')+' Periksa angkanya, lalu terapkan.';
   const box=(lab,val,cls)=>`<div><span>${esc(lab)}</span><b class="${cls||''}">${esc(val)}</b></div>`;
@@ -462,12 +468,12 @@ async function upApply(){
   if(!upPending)return;const p=upPending,msg=KSu('ks-up-msg'),btn=KSu('ks-up-apply');
   const mon=p.noMonit?MON:p.mon,rawan=p.rawan||RAWAN,riwayat=p.riwayat||RIWAYAT;
   window.__D.kondisi_meta=p.meta;window.__D.kondisi_day=p.day;window.__D.kondisi_mon=mon;window.__D.kondisi_rawan=rawan;window.__D.kondisi_riwayat=riwayat;
-  loadData({meta:p.meta,day:p.day,mon,rawan,riwayat});sel=null;renderAgg();loadUpd(window.__D.kondisi_update||[]);
-  const last=FILEMAX;const periode=`1–${last} ${BLNF[KM-1]} ${KY}`;const now=new Date().toISOString();
+  loadData({meta:p.meta,day:p.day,mon,rawan,riwayat});sel=null;renderAgg();loadUpd(window.__D.kondisi_update||[]);fitLayerDay();
+  const last=FILEMAX;const periode=perLabel(last,true);const now=new Date().toISOString();
   const sumber=`${p.file} (sheet ${['NERDA HARIAN',p.noMonit?'':'Monit Defisit',p.riwayat?'Riwayat Padam Meluas Tereskalasi':'',p.rawan?'Kerawanan Sistem':''].filter(Boolean).join(', ')})`;
   const A=window.SSAdmin;let saved=false,why='';
   if(A&&A.isAdmin()){btn.disabled=true;msg.textContent='Menyimpan ke repo…';
-    try{await A.put('kondisi_data.js',dataJs(p.meta,p.day,mon,rawan,riwayat),`Update laporan harian kondisi sistem s.d. ${last} ${BLNF[KM-1]} ${KY} dari dashboard`);saved=true;
+    try{await A.put('kondisi_data.js',dataJs(p.meta,p.day,mon,rawan,riwayat),`Update laporan harian kondisi sistem s.d. ${fd(last,1)} dari dashboard`);saved=true;
       try{const cur=await A.get('info_update.js');const m=cur&&/=\s*(\[[\s\S]*\])\s*;?\s*$/.exec(cur);const arr=m?JSON.parse(m[1]):[];
         const ent={tab:'kondisi',diperbarui:now,periode,sumber:sumber+' (diunggah di dashboard)'};const i=arr.findIndex(x=>x.tab==='kondisi');if(i>=0)arr[i]=ent;else arr.push(ent);
         await A.put('info_update.js','window.__D=window.__D||{};window.__D["info_update"]='+JSON.stringify(arr)+';\n','Update info database kondisi sistem');window.__D.info_update=arr;}catch(e){/* info tanggal update tidak tersimpan; data tetap tersimpan */}
