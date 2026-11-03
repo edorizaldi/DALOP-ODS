@@ -16,6 +16,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="kondisi-tab.css?v=20261028h">
 <link rel="stylesheet" href="hirarki-tab.css">
 <link rel="stylesheet" href="workplan-tab.css">
+<link rel="stylesheet" href="gangguan-ps-tab.css">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
@@ -830,6 +831,27 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <p class="ss-note" id="g-matriks-note"></p>
       <div class="ss-g-wrap" data-source="gangguan"><table class="ss-table" id="g-matriks"></table></div>
       <div class="h-preview" id="g-mx-pv" hidden><span class="ss-note"></span><img alt="Matriks unit × bulan"></div>
+    </div>
+    <div class="ss-card" id="gps-card">
+      <div class="dp-head"><h3>Event padam permanen vs sesaat per unit</h3><div class="dp-dl"><span class="ss-note" id="gps-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="gps-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
+      <div class="gx-bar"><span class="ss-flabel">Bulan</span><select id="gps-bulan" aria-label="Bulan permanen dan sesaat"></select></div>
+      <p class="ss-g-sel" id="gps-sel"></p>
+      <div class="ss-legend"><span><i class="ss-sw" style="background:#B3261E"></i>Permanen</span><span><i class="ss-sw" style="background:#E8A39C"></i>Sesaat</span></div>
+      <div class="ss-g-wrap" data-source="gangguan_ps"><table class="ss-table dp-ps-table gx-table" id="gps-table"></table></div>
+      <div class="h-preview" id="gps-pv" hidden><span class="ss-note"></span><img alt="Event padam permanen vs sesaat per unit"></div>
+    </div>
+    <div class="ss-card" id="gsk-card">
+      <div class="dp-head"><h3>Jumlah penyulang sakit vs kronis</h3><div class="dp-dl"><span class="ss-note" id="gsk-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="gsk-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
+      <p class="ss-note">Dihitung per penyulang per bulan dari gangguan permanen (jenis padam Gangguan, kolom P/S = Permanen): <b>sakit</b> = 4–9 kali gangguan permanen dalam sebulan, <b>kronis</b> = 10 kali atau lebih.</p>
+      <p class="ss-g-sel" id="gsk-sel"></p>
+      <div class="ss-legend"><span><i class="ss-sw" style="background:#E9A23B"></i>Sakit (4–9 kali)</span><span><i class="ss-sw" style="background:#B3261E"></i>Kronis (≥10 kali)</span></div>
+      <div class="ss-chart dash-skeleton gx-chart" id="gsk-chart" data-source="peny_bulanan peny_profil"></div>
+      <div class="gx-split">
+        <div><h4 class="gx-h4" id="gsk-unit-h">Per unit</h4><div class="ss-g-wrap"><table class="ss-table gx-table" id="gsk-unit"></table></div></div>
+        <div><div class="gx-bar"><h4 class="gx-h4" id="gsk-list-h">Penyulang kronis dan sakit</h4><select id="gsk-bulan" aria-label="Bulan daftar penyulang"></select></div><div class="ss-g-wrap gx-scroll"><table class="ss-table gx-table" id="gsk-list"></table></div></div>
+      </div>
+      <p class="ss-note" id="gsk-note"></p>
+      <div class="h-preview" id="gsk-pv" hidden><span class="ss-note"></span><img alt="Jumlah penyulang sakit vs kronis"></div>
     </div>
   </section>
 
@@ -2953,6 +2975,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="gj-tab.js"></script>
 <script>document.getElementById('g-mx-dl').addEventListener('click', () => { const c = window.SSGRc || { per: '' }; window.SSExport({ card: 'g-matriks-card', btn: 'g-mx-dl', msg: 'g-mx-msg', preview: 'g-mx-pv', filename: `Matriks_Unit_x_Bulan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
 <script>document.getElementById('g-rc-dl').addEventListener('click', () => { const c = window.SSGRc || { scope: '', per: '' }; window.SSExport({ hideCols: ['Perubahan', 'Porsi'], card: 'g-rincian-card', btn: 'g-rc-dl', msg: 'g-rc-msg', preview: 'g-rc-pv', caption: `Jumlah No. Laporan unik per bulan · ${c.scope} · ${c.per}. % Distribusi = laporan bidang Distribusi ÷ total laporan.`, filename: `Rincian_Bulanan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
+<script src="gangguan-ps-tab.js"></script>
 <script src="kc-tab.js"></script>
 <script src="dp-tab.js"></script>
 <script src="upd-core.js"></script>
