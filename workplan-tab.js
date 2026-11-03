@@ -199,3 +199,58 @@
     }));
   });
 })();
+
+// Unduh paparan (template "Realisasi Action Plan Peningkatan Keandalan Jaringan Distribusi")
+(() => {
+  const $ = (id) => document.getElementById(id);
+  if (!$('wp-dl-pptx')) return;
+  const PPTX_URL = 'https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js';
+  const loaded = {};
+  const load = (src, test) => {
+    if (test()) return Promise.resolve();
+    if (!loaded[src]) loaded[src] = new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = () => (test() ? res() : rej(new Error('gagal memuat ' + src))); s.onerror = () => { delete loaded[src]; rej(new Error('gagal memuat ' + src)); }; document.head.appendChild(s); });
+    return loaded[src];
+  };
+  const msg = (t, bad) => { const m = $('wp-dl-msg'); m.textContent = t || ''; m.className = 'wp-dl-msg' + (bad ? ' bad' : ''); };
+  const save = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); };
+  const toData = (blob) => new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+
+  async function image() {
+    await Promise.all([load('workplan-assets.js', () => !!window.SS_WP_ASSETS), load('workplan-paparan.js', () => !!window.SSWpPaparan), load('slides-assets.js', () => !!window.SS_SLIDE_ASSETS)]);
+    if (!window.htmlToImage) throw new Error('pembuat gambar belum termuat, muat ulang halaman');
+    const D = SSD.data('workplan'); if (D.status !== 'ok' || !D.data.length) throw new Error('data workplan belum termuat');
+    const info = (SSD.data('info_update').data || []).find((r) => r.tab === 'workplan') || {};
+    const m = /(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i.exec(info.periode || '') || [];
+    const unit = dash.params().wp_unit || '';
+    const node = window.SSWpPaparan.render(D.data, { bulan: m[1] || '', tahun: m[2] || '', unit, assets: window.SS_WP_ASSETS, sumber: (info.sumber || '').replace(/\s*\(diunggah di dashboard\)/, '') });
+    const host = document.createElement('div'); host.style.cssText = 'position:fixed;left:-30000px;top:0;width:1920px;height:1080px;pointer-events:none';
+    host.append(node); document.body.append(host);
+    try {
+      await Promise.all([...node.querySelectorAll('img')].map((i) => (i.decode ? i.decode().catch(() => {}) : null)));
+      const blob = await window.htmlToImage.toBlob(node, { pixelRatio: 1.5, skipFonts: true, width: 1920, height: 1080, backgroundColor: '#EAF6FD' });
+      return { blob, tag: `${m[1] || ''}_${m[2] || ''}`.replace(/^_|_$/g, ''), per: `Januari – ${m[1] || ''} ${m[2] || ''}`.trim() };
+    } finally { host.remove(); }
+  }
+
+  async function run(fmt) {
+    const btns = [$('wp-dl-pptx'), $('wp-dl-png')]; btns.forEach((b) => { b.disabled = true; });
+    msg('Menyusun paparan…');
+    try {
+      const { blob, tag, per } = await image();
+      const name = `Realisasi_Action_Plan_Keandalan${tag ? '_' + tag : ''}`;
+      if (fmt === 'png') save(blob, name + '.png');
+      else {
+        msg('Menyusun file PowerPoint…');
+        await load(PPTX_URL, () => !!window.PptxGenJS);
+        const P = new window.PptxGenJS(); P.layout = 'LAYOUT_WIDE'; P.title = 'Realisasi Action Plan Peningkatan Keandalan Jaringan Distribusi ' + per;
+        const s = P.addSlide(); s.addImage({ data: await toData(blob), x: 0, y: 0, w: 13.333, h: 7.5 });
+        s.addNotes('Realisasi Action Plan Peningkatan Keandalan Jaringan Distribusi, ' + per + '. Dibuat dari dashboard DALOP-ODS tab Workplan Keandalan.');
+        save(await P.write({ outputType: 'blob' }), name + '.pptx');
+      }
+      msg('Paparan sudah diunduh.' + (dash.params().wp_unit ? ' Unit yang dipilih di filter disorot di tabel.' : ''));
+    } catch (e) { msg('Paparan gagal dibuat: ' + ((e && e.message) || e), true); }
+    btns.forEach((b) => { b.disabled = false; });
+  }
+  $('wp-dl-pptx').addEventListener('click', () => run('pptx'));
+  $('wp-dl-png').addEventListener('click', () => run('png'));
+})();
