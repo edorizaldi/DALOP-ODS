@@ -311,3 +311,6 @@
 #kondisi .rw .mut{color:var(--muted)}
 @media (max-width:52rem){#kondisi .rw-cols{grid-template-columns:minmax(0,1fr);gap:12px}}
 #kondisi .gc .u .asof{color:var(--warn);font-weight:700}
+#kondisi .gc.nod{background:color-mix(in srgb,var(--muted) 8%,var(--panel));border-style:dashed}
+#kondisi .gc.nod .k b{color:var(--muted)}
+#kondisi .gc.nod .asof{color:var(--muted);font-weight:600}
