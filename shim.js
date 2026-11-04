@@ -190,6 +190,11 @@
           const k = keys[Number(f.nama.value)]; btn.disabled = true; err.textContent = 'Memeriksa…';
           try {
             const tok = await openToken(k, f.pw.value);
+            // cek token GitHub yang tersimpan masih berlaku dan boleh menulis, supaya tidak baru ketahuan saat menyimpan
+            let chk = null;
+            try { chk = await fetch(`https://api.github.com/repos/${GH.owner}/${GH.repo}`, { headers: { Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json' }, cache: 'no-store' }); } catch (x) { chk = null; }
+            if (chk && chk.status === 401) { err.innerHTML = 'Password benar, tetapi token GitHub yang tersimpan untuk admin ini sudah tidak berlaku (di-regenerate, dihapus atau kedaluwarsa). Atur ulang admin ini di <a href="admin-setup.html">admin-setup.html</a> dengan token yang berlaku.'; btn.disabled = false; return; }
+            if (chk && chk.ok) { try { const j = await chk.json(); if (j.permissions && j.permissions.push === false) { err.innerHTML = 'Token GitHub admin ini tidak punya izin menulis (Contents: Read and write). Perbaiki token lalu atur ulang admin di <a href="admin-setup.html">admin-setup.html</a>.'; btn.disabled = false; return; } } catch (x) { /* abaikan */ } }
             memTok = tok; ss.set(tokenKey, tok); ss.set(whoKey, k.nama);
             close(); paint(); location.reload();
           } catch (x) { err.textContent = 'Nama atau password salah.'; btn.disabled = false; f.pw.select(); }
