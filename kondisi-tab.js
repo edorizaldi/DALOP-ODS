@@ -147,7 +147,7 @@ function renderList(){
   const rs=ISO.filter(r=>pass(r)&&(!q||(r.n+' '+r.u+' '+uN(r.u)+' UID '+r.u).toLowerCase().includes(q))).sort((a,b)=>rk(b.st)-rk(a.st)||b.cD-a.cD||a.n.localeCompare(b.n));
   document.getElementById('ks-lsub').textContent=`${rs.length} sistem, kondisi ${fd(SELD,1)}. Diurutkan menurut status (defisit, siaga, normal, lalu tanpa data), kemudian hari defisit terbanyak.`;
   let h=`<thead><tr><th class="l">Sistem</th><th class="l">Unit induk</th><th class="l">Jam nyala</th><th>DMP MW</th><th>BP MW</th><th>Cad MW</th><th class="l">Status</th><th class="l">Hari N / S / D</th><th>Data</th></tr></thead><tbody>`;
-  h+=rs.map(r=>{const T=r.cN+r.cS+r.cD||1;const ji=JAM.indexOf(r.j);
+  h+=rs.map((r,ix)=>{const T=r.cN+r.cS+r.cD||1;const ji=JAM.indexOf(r.j);
     return `<tr><td class="l">${esc(r.n)}</td><td class="l">${esc(uN(r.u))}</td><td class="l"><i class="jam" style="background:var(${JC[ji]})"></i>${r.j} jam</td><td>${nf(r.dmp,2)}</td><td>${nf(r.bp,2)}</td><td>${r.cad!=null&&r.cad<0?`<span class="neg">${nf(r.cad,2)}</span>`:nf(r.cad,2)}</td><td class="l">${chip(r.st)}</td><td class="l">${r.cN} / ${r.cS} / ${r.cD}<span class="dbar"><i class="d-n" style="width:${r.cN/T*100}%"></i><i class="d-s" style="width:${r.cS/T*100}%"></i><i class="d-d" style="width:${r.cD/T*100}%"></i></span></td><td class="mut">${r.has?fd(r.last):'Kosong'}</td></tr>`;}).join('');
   if(!rs.length)h+=`<tr><td class="l mut" colspan="9">Tidak ada sistem yang cocok dengan filter ini.</td></tr>`;
   document.getElementById('ks-list').innerHTML=h+'</tbody>';
@@ -312,17 +312,26 @@ function eskTip(g){if(!RIWAYAT.length)return '';const c=eskCount(g);const last=a
   else if(c.self.length)h+=`<br>Terakhir: ${esc(last(c.self))}`;
   return h+'</span>';}
 const isLive=t=>/\b(now|sekarang|berlangsung)\b/i.test(String(t||''));
+// tanggal mulai kejadian dari teks seperti "4 – 6 Juni 2024", "26 Sept – 2 Okt 2025", "26 Nov 2025 – 8 Mar 2026", "2 Juni 2026 – Now"
+const MONRE=[/^jan/,/^feb/,/^mar/,/^apr/,/^(mei|may)/,/^jun/,/^jul/,/^(agu|aug)/,/^sep/,/^(okt|oct)/,/^nov/,/^(des|dec)/];
+function evStart(t){const s=String(t||'').toLowerCase();const [L,R='']=s.split(/\s+[–—-]\s+|\s*[–—]\s*/);
+  const mon=x=>{for(const w of x.match(/[a-z]+/g)||[]){const i=MONRE.findIndex(re=>re.test(w));if(i>=0)return i;}return -1;};
+  const yr=x=>{const m=/\b(19|20)\d{2}\b/.exec(x);return m?+m[0]:null;};
+  const d=+((/\d{1,2}/.exec(L)||[])[0]||1);let m=mon(L),y=yr(L);const mR=mon(R);
+  if(m<0)m=mR;if(y==null){y=yr(R);if(y!=null&&mR>=0&&m>mR)y--;}
+  return y==null||m<0?0:Date.UTC(y,m,d);}
 function renderEval(){
   const sec=document.getElementById('ks-sec-eval');sec.hidden=mv.l!==1;if(sec.hidden)return;
-  const rs=[...RIWAYAT].reverse();const live=rs.filter(r=>isLive(r.tgl)).length;
+  // urut menurut tanggal mulai kejadian, terbaru di atas (urutan baris di file tidak dipakai)
+  const rs=RIWAYAT.map((r,i)=>({r,i,t:evStart(r.tgl)})).sort((a,b)=>b.t-a.t||b.i-a.i).map(x=>x.r);const live=rs.filter(r=>isLive(r.tgl)).length;
   const cnt={};rs.forEach(r=>{const k=sysTitle(r.sis);cnt[k]=(cnt[k]||0)+1;});const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('ks-evsub').textContent=rs.length?`${rs.length} kejadian padam meluas sistem grid yang tereskalasi ke publik, terbaru di atas (sheet Riwayat Padam Meluas Tereskalasi).${top&&top[1]>1?` Paling sering di ${top[0]} (${top[1]} kejadian).`:''}${live?` ${live} kejadian masih berlangsung.`:''}`
+  document.getElementById('ks-evsub').textContent=rs.length?`${rs.length} kejadian padam meluas sistem grid yang tereskalasi ke publik, diurutkan menurut tanggal kejadian, terbaru di atas (sheet Riwayat Padam Meluas Tereskalasi).${top&&top[1]>1?` Paling sering di ${top[0]} (${top[1]} kejadian).`:''}${live?` ${live} kejadian masih berlangsung.`:''}`
     :'Belum ada data riwayat padam meluas. Unggah file pemantauan sistem yang memuat sheet Riwayat Padam Meluas Tereskalasi.';
   let h=`<thead><tr><th class="l">No</th><th class="l">Tanggal kejadian</th><th class="l">Sistem</th><th class="l">Dampak padam</th><th class="l">Penyebab padam</th><th class="l">Keterangan</th></tr></thead><tbody>`;
-  h+=rs.map(r=>{const lv=isLive(r.tgl);const k=String(r.ket||'').trim();
+  h+=rs.map((r,ix)=>{const lv=isLive(r.tgl);const k=String(r.ket||'').trim();
     const dampak=esc(r.dampak||'–').replace(/([\d.]+)\s*(Pelanggan)/i,'<b>$1</b> $2');
     const ket=/^https?:\/\/\S+$/i.test(k)?`<a href="${esc(k)}" target="_blank" rel="noopener noreferrer">Buka materi</a>`:k?esc(k):'<span class="mut">–</span>';
-    return `<tr class="${lv?'now':''}"><td class="l nw">${esc(r.no||'')}</td><td class="l nw">${esc(r.tgl||'–')}${lv?'<br><span class="live">Masih berlangsung</span>':''}</td><td class="l nw"><b>${esc(sysTitle(r.sis))}</b></td><td class="l">${dampak}</td><td class="l">${esc(r.sebab||'–')}</td><td class="l">${ket}</td></tr>`;}).join('');
+    return `<tr class="${lv?'now':''}"><td class="l nw">${ix+1}</td><td class="l nw">${esc(r.tgl||'–')}${lv?'<br><span class="live">Masih berlangsung</span>':''}</td><td class="l nw"><b>${esc(sysTitle(r.sis))}</b></td><td class="l">${dampak}</td><td class="l">${esc(r.sebab||'–')}</td><td class="l">${ket}</td></tr>`;}).join('');
   if(!rs.length)h+=`<tr><td class="l mut" colspan="6">Belum ada data.</td></tr>`;
   document.getElementById('ks-ev').innerHTML=h+'</tbody>';
 }
