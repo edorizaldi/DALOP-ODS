@@ -486,10 +486,11 @@ async function upApply(){
       try{const cur=await A.get('info_update.js');const m=cur&&/=\s*(\[[\s\S]*\])\s*;?\s*$/.exec(cur);const arr=m?JSON.parse(m[1]):[];
         const ent={tab:'kondisi',diperbarui:now,periode,sumber:sumber+' (diunggah di dashboard)'};const i=arr.findIndex(x=>x.tab==='kondisi');if(i>=0)arr[i]=ent;else arr.push(ent);
         await A.put('info_update.js','window.__D=window.__D||{};window.__D["info_update"]='+JSON.stringify(arr)+';\n','Update info database kondisi sistem');window.__D.info_update=arr;}catch(e){/* info tanggal update tidak tersimpan; data tetap tersimpan */}
-    }catch(e){why=e&&e.code==='gh-403'?' Token admin belum punya izin menulis ke repo ini.':e&&e.code==='gh-401'?' Login admin sudah tidak berlaku; keluar lalu login lagi.':' '+((e&&e.message)||'');}
+    }catch(e){why=e&&e.code==='gh-403'?' Token GitHub admin belum punya izin menulis ke repo ini (Contents: Read and write).':e&&e.code==='gh-401'?' Token GitHub yang tersimpan untuk admin ini sudah tidak berlaku (kedaluwarsa, dihapus, atau di-regenerate). Atur ulang admin di admin-setup.html dengan token yang berlaku, lalu login dan unggah lagi.':' '+((e&&e.message)||'');}
     btn.disabled=false;}
   msg.textContent=saved?`Dashboard diperbarui ke data s.d. ${fd(last,1)} dan disimpan ke repo. Pembaca lain melihatnya setelah GitHub Pages diperbarui (1–2 menit).`
-    :`Dashboard di layar ini sudah memakai data baru (s.d. ${fd(last,1)}). Data belum tersimpan untuk pembaca lain:${why||' klik "Login admin" (kanan bawah), lalu unggah ulang file yang sama.'}`;
+    :`Dashboard di layar ini sudah memakai data baru (s.d. ${fd(last,1)}), tetapi BELUM TERSIMPAN; bila halaman dimuat ulang, data kembali ke versi sebelumnya.${why||' Belum login admin: buka menu akun (kanan atas) → Masuk sebagai admin, lalu unggah ulang file yang sama.'}`;
+  msg.classList.toggle('bad',!saved);
   if(window.SSDbInfo&&window.SSDbInfo.set)window.SSDbInfo.set('kondisi',now,periode,sumber+(saved?' (diunggah di dashboard)':' (hanya di layar ini, belum tersimpan)'));
   KSu('ks-src-note').textContent=`Data dari unggahan ${now.slice(0,10)} (${p.file}).`;
   upPending=null;upReview();
@@ -507,4 +508,15 @@ async function upApply(){
 })();
 window.SSKondisi={parseNerda,parseMonit,parseRawan,parseRiwayat,dataJs};
 renderAgg();loadUpd((window.__D&&window.__D.kondisi_update)||[]);fitLayerDay();
+// kondisi_data.js di <head> bisa tertahan di cache browser/GitHub Pages (±10 menit) setelah admin menyimpan;
+// muat ulang versi terbaru dari server dan pakai bila isinya berbeda
+(async()=>{try{
+  const sig=()=>{const d=window.__D||{};return JSON.stringify([d.kondisi_meta,(d.kondisi_day||[]).length,(d.kondisi_day||[]).map(r=>r.dmp.length+':'+r.dmp.filter(v=>v!=null).length).join(','),(d.kondisi_mon||[]).length,(d.kondisi_riwayat||[]).length,(d.kondisi_rawan||[]).length]);};
+  const before=sig();
+  await new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='kondisi_data.js?t='+Date.now();sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);});
+  if(sig()===before)return;
+  const d=window.__D;loadData({meta:d.kondisi_meta,day:d.kondisi_day,mon:d.kondisi_mon,rawan:d.kondisi_rawan,riwayat:d.kondisi_riwayat});sel=null;renderAgg();loadUpd(d.kondisi_update||[]);fitLayerDay();
+  try{const r=await fetch('info_update.js?t='+Date.now(),{cache:'no-store'});const m=r.ok&&/=\s*(\[[\s\S]*\])\s*;?\s*$/.exec(await r.text());const k=m&&JSON.parse(m[1]).find(x=>x.tab==='kondisi');
+    if(k&&window.SSDbInfo&&window.SSDbInfo.set)window.SSDbInfo.set('kondisi',k.diperbarui,k.periode,k.sumber.replace(/ \(diunggah di dashboard\)$/,''));}catch(e){}
+}catch(e){}})();
 })();
