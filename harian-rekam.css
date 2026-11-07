@@ -1,0 +1,41 @@
+/* Infografis Laporan Harian, baris ke-4: rekam harian + gangguan kode J per UID */
+.h-root .h-r4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); }
+.h-root .h-r4[hidden] { display: none; }
+@media (max-width: 1100px) { .h-root .h-r4 { grid-template-columns: 1fr; } }
+.h-root .h-r4 .h-band h2 span { font-weight: 800; }
+.h-root .h-rk-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 700px) { .h-root .h-rk-charts { grid-template-columns: 1fr; } }
+.h-root .h-rk-h { font-size: 12px; font-weight: 800; color: var(--navy, #0d2b52); margin-bottom: 2px; }
+.h-root .h-rk-h small { display: block; font-weight: 500; color: #5d6f86; font-size: 10.5px; }
+.h-root .h-rk-svg { width: 100%; height: auto; display: block; }
+.h-root .h-rk-svg .g { stroke: #e3eaf1; stroke-width: 1; }
+.h-root .h-rk-svg .ax { font-size: 9px; fill: #7a8aa0; }
+.h-root .h-rk-svg .tg { stroke: #22b3c5; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.h-root .h-rk-svg .tgl { font-size: 9.5px; fill: #0f8a9d; font-weight: 700; }
+.h-root .h-rk-svg .ln { fill: none; stroke-width: 2.4; stroke-linejoin: round; }
+.h-root .h-rk-svg .vl { font-size: 9.5px; font-weight: 800; fill: #0d2b52; }
+.h-root .h-rk-tbl, .h-root .h-kj-tbl { overflow-x: auto; margin-top: 8px; }
+.h-root .h-rk-tbl table, .h-root .h-kj-tbl table { border-collapse: collapse; width: 100%; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.h-root .h-rk-tbl th, .h-root .h-kj-tbl th { background: var(--navy, #0d2b52); color: #fff; font-weight: 700; padding: 5px 7px; text-align: right; white-space: nowrap; }
+.h-root .h-rk-tbl td, .h-root .h-kj-tbl td { padding: 4px 7px; border-bottom: 1px solid #e3eaf1; text-align: right; white-space: nowrap; }
+.h-root .h-rk-tbl .lb { text-align: left; font-weight: 700; color: #0d2b52; position: sticky; left: 0; background: #fff; }
+.h-root .h-rk-tbl th.lb { background: var(--navy, #0d2b52); color: #fff; }
+.h-root .h-rk-tbl tbody tr:nth-child(even) td { background: #f5f9fc; }
+.h-root .h-rk-note { margin: 6px 0 0; font-size: 10.5px; color: #5d6f86; line-height: 1.45; }
+.h-root .h-kj-tbl th:first-child, .h-root .h-kj-tbl td.u { text-align: left; }
+.h-root .h-kj-tbl td.u { font-weight: 700; color: #0d2b52; }
+.h-root .h-kj-tbl td.b { font-weight: 800; }
+.h-root .h-kj-tbl th.bar, .h-root .h-kj-tbl td.bar { width: 18%; min-width: 80px; text-align: left; }
+.h-root .h-kj-bar { display: flex; height: 10px; border-radius: 3px; overflow: hidden; min-width: 2px; }
+.h-root .h-kj-bar i.p, .h-root .h-kj-lg i.p { background: #d83a34; }
+.h-root .h-kj-bar i.s, .h-root .h-kj-lg i.s { background: #f2b33d; }
+.h-root .h-kj-lg { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.h-root .h-kj-lg i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-left: 4px; }
+.h-root .h-kj-tbl th:last-child, .h-root .h-kj-tbl td.kr-l { text-align: left; white-space: normal; }
+.h-root .h-kj-tbl tr.kr td { background: #fdecec; }
+.h-root .h-kj-tbl tr.kr td.u { color: #b3261e; }
+.h-root .h-kj-tbl tr.tot td { background: var(--navy, #0d2b52); color: #fff; font-weight: 800; border: 0; }
+.h-root .h-kr { display: inline-block; margin: 1px 4px 1px 0; padding: 1px 7px; border-radius: 999px; background: #fff; border: 1px solid #f0b4b0; color: #8c1d18; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+.h-root .h-kr b { color: #d83a34; }
+.h-root .h-kr-more { font-size: 10.5px; color: #8c1d18; }
+.h-root .h-kr-none { color: #9aa8b8; }
