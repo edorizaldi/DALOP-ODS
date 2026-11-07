@@ -18,6 +18,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="workplan-tab.css">
 <link rel="stylesheet" href="gangguan-ps-tab.css">
 <link rel="stylesheet" href="acct.css">
+<link rel="stylesheet" href="harian-rekam.css">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
@@ -1428,7 +1429,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <label class="h-drop" id="h-drop" tabindex="0">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
         <b>Tarik file Excel harian ke sini, atau klik untuk memilih</b>
-        <span class="ss-note">Format .xlsx seperti SAIDI_SAIFI.xlsx, sheet "prognosa saidi saifi"</span>
+        <span class="ss-note">Format .xlsx seperti SAIDI_SAIFI.xlsx: sheet "Prognosa Saidi Saifi" (angka bulanan) dan "Detil Kode" (gangguan kode J per UID)</span>
         <input type="file" id="h-file" accept=".xlsx" hidden>
       </label>
       <p class="h-up-err" id="h-up-err" hidden></p>
@@ -1525,6 +1526,23 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
           <span><i class="h-redb"></i>Unit melebihi target / tertinggi</span>
         </div>
       </div></div>
+    </article>
+  </section>
+  <!-- ROW 4: rekam harian bulan berjalan + gangguan kode J per UID (harian-rekam.js) -->
+  <section class="h-grid h-r4" id="h-r4" style="padding-top:0" hidden>
+    <article class="h-card" id="h-rekam-card">
+      <div class="h-band h-blue">
+        <div class="h-ic"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="2" y="4" width="18" height="16" rx="2" fill="none" stroke="#0f8a9d" stroke-width="2"/><path d="M2 9h18M7 2v4M15 2v4" stroke="#0f8a9d" stroke-width="2"/><circle cx="8" cy="14" r="1.6" fill="#0f8a9d"/><circle cx="14" cy="14" r="1.6" fill="#0f8a9d"/></svg></div>
+        <h2>REKAM HARIAN <span id="h-rk-bln"></span></h2>
+      </div>
+      <div class="h-body" id="h-rekam"></div>
+    </article>
+    <article class="h-card" id="h-kj-card">
+      <div class="h-band h-blue">
+        <div class="h-ic"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M12 2 4 12h6l-1 8 8-10h-6z" fill="#0f8a9d"/></svg></div>
+        <h2>GANGGUAN KODE J PER UID <span id="h-kj-bln"></span></h2>
+      </div>
+      <div class="h-body" id="h-kj"></div>
     </article>
   </section>
   </div>
@@ -2730,6 +2748,7 @@ function render(m){
     :`<div class="h-tbox"><table>${rankTbl(clsU)}</table></div>`;
   lineChart($('h-totChart'),tot,{w:900,h:150,steps:2,head:1.25,running:run,color:'#18a6c0',fill:'rgba(37,180,196,.16)',label:'Total event gangguan'});
   $('h-totOkt').textContent=nf(tot[tot.length-1]);
+  document.dispatchEvent(new CustomEvent('ss-harian-render',{detail:{m,year:YEAR,raw:RAW}}));
 }
 
 const sel=$('h-bulan');
@@ -2819,6 +2838,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 })();
 </script>
 
+<script src="harian-rekam.js"></script>
 <script src="apkt-parser.js"></script>
 <script>
 (() => {
@@ -2885,15 +2905,24 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
       box(`SAIFI Sumkal ${BLN[m]}`, `${f3.format(s.saifi.SUMKAL[m])} / ${f3.format(s.saifiT.SUMKAL[m])}`),
       box('Capaian SAIFI', capF != null ? f2.format(capF * 100) + '%' : '—', capF != null ? (capF >= 1 ? 'ok' : 'bad') : ''),
       box(`ENS ${BLN[m]}`, f0.format(s.ens.SUMKAL[m] || 0) + ' kWh'),
-      box(`Total event ${BLN[m]}`, f0.format(s.tot.SUMKAL[m] || 0)));
+      box(`Total event ${BLN[m]}`, f0.format(s.tot.SUMKAL[m] || 0)),
+      ...(pending.detil ? [box('Gangguan kode J (Detil Kode)', `${f0.format(pending.detil.SUMKAL.p)} permanen · ${f0.format(pending.detil.SUMKAL.s)} sesaat`),
+        box('Penyulang kronis (>6 kali)', f0.format(pending.detil.SUMKAL.k) + ' penyulang')] : [box('Sheet Detil Kode', 'tidak ada di file', 'bad')]));
   }
   async function handle(file) {
     if (!file) return; $('h-up-err').hidden = true; $('h-up-msg').textContent = '';
     if (!/\.xlsx$/i.test(file.name)) { $('h-up-err').textContent = 'Pilih file .xlsx.'; $('h-up-err').hidden = false; return; }
     if (!window.APKT) { $('h-up-err').textContent = 'Pembaca Excel belum termuat. Muat ulang halaman lalu coba lagi.'; $('h-up-err').hidden = false; return; }
     try {
-      const parsed = parse(await APKT.readTable(file));
-      pending = { file: file.name, parsed };
+      $('h-up-msg').textContent = 'Membaca file…';
+      const sheets = await APKT.readSheets(file);
+      const nm = (x) => String(x.name || '').toUpperCase().replace(/[^A-Z]/g, '');
+      const prog = sheets.find((x) => nm(x).startsWith('PROGNOSA')) || sheets[0];
+      const parsed = parse(prog.rows);
+      const ds = sheets.find((x) => nm(x) === 'DETILKODE' || nm(x) === 'DETAILKODE');
+      const detil = ds ? window.SSHarianRekam.parseDetil(ds.rows) : null;
+      pending = { file: file.name, parsed, detil };
+      $('h-up-msg').textContent = '';
       const d = new Date(); d.setDate(d.getDate() - 1);
       const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const lastDay = new Date(parsed.year, parsed.last, 0).getDate();
@@ -2917,10 +2946,12 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
     let db = null; try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
     if (db) {
       msg.textContent = 'Menyimpan ke database dashboard…';
-      const doc = { rows, tanggal: tgl, file: pending.file, diunggah: new Date().toISOString() };
+      const doc = await window.SSHarianRekam.makeDoc({ rows, tanggal: tgl, file: pending.file, diunggah: new Date().toISOString(), detil: pending.detil || null });
       try { await db.doc('harian/latest').set(doc); saved = true; window.SSHarianDB = db; window.SSHarianSaved = doc; }
       catch (e) { saved = false; why = e && e.code === 'no-token' ? 'belum login admin' : e && e.code === 'gh-401' ? 'login admin sudah tidak berlaku; keluar lalu login lagi' : ((e && e.message) || String(e)); }
     } else why = 'belum login admin';
+    if (!saved) { try { window.SSHarianSaved = await window.SSHarianRekam.makeDoc({ rows, tanggal: tgl, file: pending.file, diunggah: new Date().toISOString(), detil: pending.detil || null }); } catch (e) { /* abaikan */ } }
+    window.SSHarian.apply(rows);
     msg.textContent = saved
       ? `Infografis diperbarui ke realisasi s.d. ${da} ${BLN[mo - 1]} ${y} dan disimpan ke database dashboard. Semua yang membuka dashboard melihat data ini setelah GitHub Pages diperbarui (1–2 menit); tombol Download juga memakai data baru.`
       : `Infografis di layar ini sudah memakai data baru (realisasi s.d. ${da} ${BLN[mo - 1]} ${y}), tetapi BELUM TERSIMPAN (${why}). Bila halaman ditutup, data kembali ke unggahan sebelumnya. Klik "Login admin" (kanan bawah), lalu klik Terapkan ke infografis lagi.`;

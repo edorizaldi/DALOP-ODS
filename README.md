@@ -67,3 +67,7 @@ Menu **Bulanan → Workplan Keandalan**: target dan realisasi action plan keanda
 
 - Sumber: workpaper reliability (.xlsx), sheet **Action Plan** (kolom Unit Induk, lalu Target/Realisasi/% per program, baris subtotal SUMKAL, JAMALI, SULMAPANA, DIT DIST). Periode dibaca dari judul "Realisasi Action Plan s.d &lt;bulan&gt; - &lt;tahun&gt;".
 - `workplan.js`: dataset workplan. Memperbarui data: tab **Update Data Bulanan**, cluster **Data Bulanan** → kartu **Workplan Keandalan** (`upd-workplan.js`). Bila admin sudah login, `workplan.js` dan `info_update.js` disimpan ke repo dalam satu commit.
+
+## Infografis Laporan Harian: rekam harian dan Detil Kode
+- File harian `SAIDI_SAIFI.xlsx`: sheet **Prognosa Saidi Saifi** tetap mengisi angka Januari–Desember (bulan yang sudah lewat ikut diperbarui). Setiap unggahan juga dicatat sebagai **rekam harian** menurut tanggal realisasi (field `history` di `harian_latest.js`), ditampilkan di kartu *Rekam harian <bulan>*.
+- Sheet **Detil Kode**: No. Laporan unik (yang pertama muncul), kode J; per UID dihitung Permanen (P/S = P) dan Sesaat (P/S = S). Penyulang kronis = penyulang dengan gangguan permanen + sesaat lebih dari 6 kali; 3 teratas per UID dicatat. Ditampilkan di kartu *Gangguan kode J per UID*. Logika: `harian-rekam.js`.
