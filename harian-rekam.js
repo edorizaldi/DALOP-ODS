@@ -160,31 +160,38 @@
     // gangguan kode J per UID
     const kj = $('h-kj'); $('h-kj-bln').textContent = B;
     if (!det) { kj.innerHTML = '<p class="h-rk-note">Belum ada data sheet Detil Kode untuk bulan ini. Unggah file laporan harian yang memuat sheet Detil Kode.</p>'; return; }
-    const T = det.SUMKAL, mx = Math.max(1, ...UNITS.map((u) => det.uid[u].c[0] + det.uid[u].c[1]));
+    const T = det.SUMKAL;
     const dd = (iso) => iso ? `${+iso.slice(8)} ${BLN[+iso.slice(5, 7) - 1].slice(0, 3)}` : '';
-    const n = (v) => (v ? f0.format(v) : '<span class="z">0</span>');
-    const rows = UNITS.map((u) => {
-      const d = det.uid[u]; const ct = d.c[0] + d.c[1];
-      const chips = d.top.length ? d.top.map(([nm, c]) => `<span class="h-kr">${esc(nm)} <b>${f0.format(c)}</b></span>`).join('') + (d.k > d.top.length ? `<span class="h-kr-more">+${d.k - d.top.length} lainnya</span>` : '') : '<span class="h-kr-none">–</span>';
-      return `<tr class="${d.k ? 'kr' : ''}"><td class="u">${NM[u]}</td>
-        <td class="n g1">${n(d.h[0])}</td><td class="n">${n(d.h[1])}</td>
-        <td class="n g1">${n(d.b[0])}</td><td class="n">${n(d.b[1])}</td>
-        <td class="n g1">${n(d.c[0])}</td><td class="n">${n(d.c[1])}</td><td class="n b">${f0.format(ct)}</td>
-        <td class="bar"><div class="h-kj-bar" style="width:${(ct / mx * 100).toFixed(1)}%"><i class="p" style="width:${ct ? d.c[0] / ct * 100 : 0}%"></i><i class="s" style="width:${ct ? d.c[1] / ct * 100 : 0}%"></i></div></td>
-        <td class="n g1">${d.k ? f0.format(d.k) : '–'}</td><td class="kr-l">${chips}</td></tr>`;
-    }).join('');
     const BLm = BLN[det.bulan - 1];
+    // satu panel = tabel UID × Permanen / Sesaat / Total untuk satu periode
+    const panel = (title, sub, key, cls) => {
+      const mx = Math.max(1, ...UNITS.map((u) => det.uid[u][key][0] + det.uid[u][key][1]));
+      const tr = UNITS.map((u) => { const [p, q] = det.uid[u][key], t = p + q;
+        return `<tr><td class="u">${NM[u]}</td><td class="n">${p ? f0.format(p) : '<span class="z">0</span>'}</td><td class="n">${q ? f0.format(q) : '<span class="z">0</span>'}</td><td class="n b">${f0.format(t)}</td>
+          <td class="bar"><div class="h-kj-bar" style="width:${(t / mx * 100).toFixed(1)}%"><i class="p" style="width:${t ? p / t * 100 : 0}%"></i><i class="s" style="width:${t ? q / t * 100 : 0}%"></i></div></td></tr>`; }).join('');
+      const [p, q] = T[key];
+      return `<section class="h-kj-p ${cls}"><header><b>${title}</b><span>${sub}</span></header>
+        <table><thead><tr><th>UID</th><th class="n">Permanen</th><th class="n">Sesaat</th><th class="n">Total</th><th class="bar"></th></tr></thead>
+        <tbody>${tr}<tr class="tot"><td class="u">SUMKAL</td><td class="n">${f0.format(p)}</td><td class="n">${f0.format(q)}</td><td class="n b">${f0.format(p + q)}</td><td></td></tr></tbody></table></section>`;
+    };
+    const kr = UNITS.filter((u) => det.uid[u].k).map((u) => { const d = det.uid[u];
+      return `<li><div class="h-kj-ku"><b>${NM[u]}</b><span>${f0.format(d.k)} penyulang</span></div><div class="h-kj-kl">${d.top.map(([nm, c, p, q]) => `<span class="h-kr" title="${f0.format(p)} permanen, ${f0.format(q)} sesaat">${esc(nm)} <b>${f0.format(c)}</b></span>`).join('')}${d.k > d.top.length ? `<span class="h-kr-more">+${d.k - d.top.length} lainnya</span>` : ''}</div></li>`; }).join('');
+    const noKr = UNITS.filter((u) => !det.uid[u].k).map((u) => NM[u]);
     const dbTxt = det.dbBulan.length ? `${BLN[det.dbBulan[0] - 1]}${det.dbBulan.length > 1 ? '–' + BLN[det.dbBulan[det.dbBulan.length - 1] - 1] : ''}` : 'tidak ada';
     const kurang = det.dbKurang.length ? ` <b class="warn">${det.dbKurang.map((b) => BLN[b - 1]).join(', ')} belum ada di database Event Padam Penyulang, jadi belum ikut dalam kumulatif.</b>` : '';
     kj.innerHTML = `
-      <div class="h-kj-tbl"><table>
-        <thead>
-          <tr class="grp"><th rowspan="2">UID</th><th colspan="2" class="c g1">H-1 · ${dd(det.tgl)}</th><th colspan="2" class="c g1">${esc(BLm)} s.d. ${dd(det.tgl)}</th><th colspan="4" class="c g1">Kumulatif ${det.tahun} s.d. ${dd(det.tgl)}</th><th colspan="2" class="c g1">Penyulang kronis ${esc(BLm)}</th></tr>
-          <tr><th class="n g1">P</th><th class="n">S</th><th class="n g1">P</th><th class="n">S</th><th class="n g1">P</th><th class="n">S</th><th class="n">Total</th><th class="bar"><span class="h-kj-lg"><i class="p"></i>P <i class="s"></i>S</span></th><th class="n g1">Jml</th><th>3 teratas (kali)</th></tr>
-        </thead>
-        <tbody>${rows}<tr class="tot"><td class="u">SUMKAL</td><td class="n g1">${f0.format(T.h[0])}</td><td class="n">${f0.format(T.h[1])}</td><td class="n g1">${f0.format(T.b[0])}</td><td class="n">${f0.format(T.b[1])}</td><td class="n g1">${f0.format(T.c[0])}</td><td class="n">${f0.format(T.c[1])}</td><td class="n b">${f0.format(T.c[0] + T.c[1])}</td><td></td><td class="n g1">${f0.format(T.k)}</td><td></td></tr></tbody>
-      </table></div>
-      <p class="h-rk-note">P = permanen (kolom P/S bernilai P), S = sesaat (S); kode J, No. Laporan unik (yang pertama muncul). H-1 dan ${esc(BLm)} dari sheet Detil Kode (kejadian ${esc(BLm)} s.d. ${dd(det.tgl)}). Kumulatif = ${dbTxt} dari database Event Padam Penyulang (kode J, bidang Distribusi) + ${esc(BLm)} dari Detil Kode.${kurang} Penyulang kronis: gangguan permanen + sesaat lebih dari 6 kali di ${esc(BLm)}; baris merah = UID yang punya penyulang kronis.</p>`;
+      <div class="h-kj-grid">
+        ${panel('Gangguan H-1', dd(det.tgl) + ' ' + det.tahun, 'h', 'k1')}
+        ${panel('Gangguan bulan berjalan', `${BLm} ${det.tahun}, s.d. ${dd(det.tgl)}`, 'b', 'k2')}
+        ${panel(`Gangguan kumulatif ${det.tahun}`, `Januari s.d. ${dd(det.tgl)}`, 'c', 'k3')}
+        <section class="h-kj-p k4"><header><b>Rekap penyulang kronis</b><span>${BLm} ${det.tahun} · lebih dari 6 kali gangguan</span></header>
+          <div class="h-kj-kt"><b>${f0.format(T.k)}</b><span>penyulang kronis di Sumkal</span></div>
+          <ol class="h-kj-kr">${kr || '<li class="h-kr-none">Tidak ada penyulang kronis bulan ini.</li>'}</ol>
+          ${noKr.length ? `<p class="h-kj-nok">Tanpa penyulang kronis: ${noKr.join(', ')}</p>` : ''}
+        </section>
+      </div>
+      <div class="h-kj-lgd"><span class="h-kj-lg"><i class="p"></i>Permanen <i class="s"></i>Sesaat</span></div>
+      <p class="h-rk-note">Kode J, No. Laporan unik (yang pertama muncul); Permanen = kolom P/S bernilai P, Sesaat = S. H-1 dan bulan berjalan dari sheet Detil Kode. Kumulatif = ${dbTxt} dari database Event Padam Penyulang (kode J, bidang Distribusi) + ${esc(BLm)} dari Detil Kode.${kurang} Angka di samping nama penyulang = jumlah gangguan bulan ini (3 teratas per UID).</p>`;
   }
   document.addEventListener('ss-harian-render', (e) => { try { render(e.detail.m, e.detail.year); } catch (x) { console.error(x); } });
 
