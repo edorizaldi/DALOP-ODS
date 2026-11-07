@@ -2893,6 +2893,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
   btn.addEventListener('click', () => { panel.hidden = !panel.hidden; btn.setAttribute('aria-expanded', String(!panel.hidden)); });
   let pending = null;
   const f2 = nf(2), f3 = nf(3), f0 = nf(0);
+  const detilFor = (tgl) => window.SSHarianRekam.compute(pending.detil, tgl, (window.SSD && SSD.data('gangguan_ps').data) || (window.__D && window.__D.gangguan_ps) || []);
   function review() {
     $('h-up-review').hidden = !pending; if (!pending) return;
     const p = pending.parsed, m = p.last - 1, s = p.series;
@@ -2906,8 +2907,14 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
       box('Capaian SAIFI', capF != null ? f2.format(capF * 100) + '%' : '—', capF != null ? (capF >= 1 ? 'ok' : 'bad') : ''),
       box(`ENS ${BLN[m]}`, f0.format(s.ens.SUMKAL[m] || 0) + ' kWh'),
       box(`Total event ${BLN[m]}`, f0.format(s.tot.SUMKAL[m] || 0)),
-      ...(pending.detil ? [box('Gangguan kode J (Detil Kode)', `${f0.format(pending.detil.SUMKAL.p)} permanen · ${f0.format(pending.detil.SUMKAL.s)} sesaat`),
-        box('Penyulang kronis (>6 kali)', f0.format(pending.detil.SUMKAL.k) + ' penyulang')] : [box('Sheet Detil Kode', 'tidak ada di file', 'bad')]));
+      ...(() => {
+        if (!pending.detil) return [box('Sheet Detil Kode', 'tidak ada di file', 'bad')];
+        const tgl = $('h-up-tgl').value; if (!tgl) return [box('Sheet Detil Kode', `${f0.format(pending.detil.j)} kejadian kode J`)];
+        const d = detilFor(tgl), T = d.SUMKAL;
+        return [box(`Kode J H-1 (${+tgl.slice(8)} ${BLN[+tgl.slice(5, 7) - 1].slice(0, 3)})`, `${f0.format(T.h[0])} P · ${f0.format(T.h[1])} S`),
+          box('Kode J kumulatif s.d. H-1', `${f0.format(T.c[0])} P · ${f0.format(T.c[1])} S`, d.dbKurang.length ? 'bad' : ''),
+          box(`Penyulang kronis ${BLN[d.bulan - 1]}`, f0.format(T.k) + ' penyulang')];
+      })());
   }
   async function handle(file) {
     if (!file) return; $('h-up-err').hidden = true; $('h-up-msg').textContent = '';
@@ -2946,11 +2953,11 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
     let db = null; try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { db = null; }
     if (db) {
       msg.textContent = 'Menyimpan ke database dashboard…';
-      const doc = await window.SSHarianRekam.makeDoc({ rows, tanggal: tgl, file: pending.file, diunggah: new Date().toISOString(), detil: pending.detil || null });
+      const doc = await window.SSHarianRekam.makeDoc({ rows, tanggal: tgl, file: pending.file, diunggah: new Date().toISOString(), detil: pending.detil ? detilFor(tgl) : null });
       try { await db.doc('harian/latest').set(doc); saved = true; window.SSHarianDB = db; window.SSHarianSaved = doc; }
       catch (e) { saved = false; why = e && e.code === 'no-token' ? 'belum login admin' : e && e.code === 'gh-401' ? 'login admin sudah tidak berlaku; keluar lalu login lagi' : ((e && e.message) || String(e)); }
     } else why = 'belum login admin';
-    if (!saved) { try { window.SSHarianSaved = await window.SSHarianRekam.makeDoc({ rows, tanggal: tgl, file: pending.file, diunggah: new Date().toISOString(), detil: pending.detil || null }); } catch (e) { /* abaikan */ } }
+    if (!saved) { try { window.SSHarianSaved = await window.SSHarianRekam.makeDoc({ rows, tanggal: tgl, file: pending.file, diunggah: new Date().toISOString(), detil: pending.detil ? detilFor(tgl) : null }); } catch (e) { /* abaikan */ } }
     window.SSHarian.apply(rows);
     msg.textContent = saved
       ? `Infografis diperbarui ke realisasi s.d. ${da} ${BLN[mo - 1]} ${y} dan disimpan ke database dashboard. Semua yang membuka dashboard melihat data ini setelah GitHub Pages diperbarui (1–2 menit); tombol Download juga memakai data baru.`
@@ -2967,6 +2974,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
   ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
   drop.addEventListener('drop', (e) => { const f = e.dataTransfer && e.dataTransfer.files; if (f && f[0]) handle(f[0]); });
   $('h-up-apply').addEventListener('click', apply);
+  $('h-up-tgl').addEventListener('change', () => { if (pending) review(); });
   $('h-up-cancel').addEventListener('click', () => { pending = null; review(); $('h-up-msg').textContent = ''; });
 })();
 </script>

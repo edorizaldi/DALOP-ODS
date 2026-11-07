@@ -1,7 +1,7 @@
 /* Infografis Laporan Harian, baris ke-4: rekam harian + gangguan kode J per UID */
-.h-root .h-r4 { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); }
+.h-root .h-r4 { grid-template-columns: 1fr; }
+.h-root .h-rk-charts .h-rk-svg { max-height: 190px; }
 .h-root .h-r4[hidden] { display: none; }
-@media (max-width: 1100px) { .h-root .h-r4 { grid-template-columns: 1fr; } }
 .h-root .h-r4 .h-band h2 span { font-weight: 800; }
 .h-root .h-rk-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (max-width: 700px) { .h-root .h-rk-charts { grid-template-columns: 1fr; } }
@@ -39,3 +39,12 @@
 .h-root .h-kr b { color: #d83a34; }
 .h-root .h-kr-more { font-size: 10.5px; color: #8c1d18; }
 .h-root .h-kr-none { color: #9aa8b8; }
+.h-root .h-kj-tbl th.c { text-align: center; }
+.h-root .h-kj-tbl tr.grp th { border-bottom: 1px solid rgba(255,255,255,.25); }
+.h-root .h-kj-tbl .g1 { border-left: 1px solid rgba(13,43,82,.18); }
+.h-root .h-kj-tbl th.g1 { border-left-color: rgba(255,255,255,.25); }
+.h-root .h-kj-tbl .z { color: #a9b6c6; }
+.h-root .h-rk-note .warn { color: #b3261e; }
+.h-root .h-kj-tbl th.bar, .h-root .h-kj-tbl td.bar { width: 11%; min-width: 64px; }
+.h-root .h-rk-tbl table { width: auto; min-width: 420px; }
+.h-root .h-rk-tbl td:not(.lb), .h-root .h-rk-tbl th:not(.lb) { min-width: 64px; }
