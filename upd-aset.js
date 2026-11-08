@@ -65,7 +65,7 @@
     const { name, out } = pending; const btn = $('up-a-go'); btn.disabled = true;
     const now = new Date(); const at = now.toISOString();
     const tgl = `${now.getDate()} ${BLN[now.getMonth()]} ${now.getFullYear()}`;
-    const periode = `Data aset per ${tgl}`, sumber = `${name} (sheet GI, FEEDER, ZONA, SECTION, SEGMENT, LATERAL, GARDU, TRAFO)`;
+    const periode = `aset per ${tgl}`, sumber = `${name} (sheet GI, FEEDER, ZONA, SECTION, SEGMENT, LATERAL, GARDU, TRAFO)`;
     const info = ((window.SSD && SSD.data('info_update').data) || (window.__D && window.__D.info_update) || []).map((r) => ({ ...r }));
     const row = { tab: 'hirarki', diperbarui: at, periode, sumber: sumber + ' (diunggah di dashboard)' };
     const i = info.findIndex((r) => r.tab === 'hirarki'); if (i >= 0) info[i] = row; else info.push(row);
