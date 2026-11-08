@@ -335,7 +335,9 @@ const SSUP = (() => {
     const col = (n) => H.indexOf(n);
     const need = ['Jenis Transaksi', 'Distribusi', 'Area', 'Tanggal Approval 2', 'Tahun Bulan'];
     const miss = need.filter((n) => col(n) < 0); if (miss.length) throw new Error('Kolom tidak ditemukan: ' + miss.join(', '));
-    const cK = col('KODE J'); const dup = 0;
+    // kolom kode gangguan: "KODE J" (format lama) atau "Kode" (format baru), huruf besar/kecil tidak dibedakan
+    const cK = H.findIndex((h) => /^KODE( J)?$/i.test(h)); const dup = 0;
+    if (cK < 0) throw new Error('Kolom kode gangguan tidak ditemukan. Beri judul kolom "Kode" (atau "KODE J") berisi kode J / P / …');
     const S = (r, c) => (c < 0 || r[c] == null ? '' : String(r[c]).trim());
     const agg = new Map(); const unknown = new Map(); let total = 0, approved = 0, tahun = null;
     for (let i = hi + 1; i < rows.length; i++) {
