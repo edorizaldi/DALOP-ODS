@@ -82,13 +82,17 @@
       const found = [];
       for (const sh of sheets) {
         try {
-          const { rec, warn } = U.parseLaporan(sh.rows);
+          const { rec, warn } = U.parseLaporan(sh.rows, sh.name);
           const u = U.matchUnit(units, rec.up3_file);
           found.push({ file: sheets.length > 1 ? `${file.name} · ${sh.name}` : file.name, rec, unit: u ? u.unit : null, warn: u ? warn : [...warn, `UP3 "${rec.up3_file}" tidak dikenali, pilih manual.`], error: null });
         } catch (e) { if (sheets.length === 1) found.push({ file: file.name, rec: null, unit: null, warn: [], error: e.message || String(e) }); }
       }
       if (!found.length) { add({ file: file.name, rec: null, unit: null, warn: [], error: 'Tidak ada sheet berformat LAPORAN SAIDI SAIFI per UP3.' }); continue; }
       // workbook berisi banyak bulan: ambil bulan yang belum lengkap di dashboard; bila semua sudah ada, ambil bulan terakhir
+      // sheet arsip tahun yang lebih lama dari data dashboard (mis. 2024) tidak dipakai
+      const minYear = d0 && d0[0].length ? Math.min(...d0[0].map((r) => +r.tahun)) : 0;
+      const old = found.filter((x) => x.rec && x.rec.tahun < minYear);
+      if (old.length) { notes.push(`${file.name}: ${old.length} sheet tahun ${[...new Set(old.map((x) => x.rec.tahun))].join(', ')} dilewati (data dashboard mulai ${minYear}).`); old.forEach((x) => found.splice(found.indexOf(x), 1)); }
       const months = [...new Set(found.filter((x) => x.rec).map((x) => x.rec.tahun * 100 + x.rec.bulan))].sort((a, b) => a - b);
       let keep = months;
       if (months.length > 1) {
