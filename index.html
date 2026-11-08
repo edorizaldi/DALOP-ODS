@@ -2711,7 +2711,7 @@ function kpiData(key,m){
   const real=RAW[key], tgt=RAW[key+'T'], ly=RAW[key+'LY'];
   const r=real.SUMKAL[m], t=tgt.SUMKAL[m];
   return {real:r,target:t,ly:ly.SUMKAL?ly.SUMKAL[m]:null,
-    cap:(m===N-1&&CAP[key]!=null)?CAP[key]:2-r/t,
+    cap:2-r/t, // pencapaian = 2 − realisasi ÷ target (makin kecil makin baik), juga untuk bulan berjalan
     units:U.map(u=>num(real[u][m])),tgt:U.map(u=>num(tgt[u][m]))};
 }
 
@@ -2898,7 +2898,9 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
     $('h-up-review').hidden = !pending; if (!pending) return;
     const p = pending.parsed, m = p.last - 1, s = p.series;
     $('h-up-sum').textContent = `${pending.file}: 8 tabel terbaca untuk 10 UID dan Sumkal, Januari – ${BLN[m]} ${p.year}. Periksa angka Sumkal bulan terakhir, isi tanggal realisasi, lalu terapkan.`;
-    const capS = p.caps.saidi && p.caps.saidi.SUMKAL, capF = p.caps.saifi && p.caps.saifi.SUMKAL;
+    // pencapaian dihitung dari realisasi dan target bulan terakhir (kolom CAPAIAN di file tidak dipakai)
+    const capOf = (k) => { const r = s[k] && s[k].SUMKAL[m], t = s[k + 'T'] && s[k + 'T'].SUMKAL[m]; return r != null && t ? 2 - r / t : null; };
+    const capS = capOf('saidi'), capF = capOf('saifi');
     const box = (lab, val, cls) => el('div', {}, el('span', { textContent: lab }), el('b', { textContent: val, className: cls || '' }));
     $('h-up-kv').replaceChildren(
       box(`SAIDI Sumkal ${BLN[m]}`, `${f2.format(s.saidi.SUMKAL[m])} / ${f2.format(s.saidiT.SUMKAL[m])}`),
@@ -2943,7 +2945,8 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
     const p = pending.parsed; const [y, mo, da] = tgl.split('-').map(Number); const lastDay = new Date(p.year, p.last, 0).getDate();
     const prev = (window.SSHarian && window.SSHarian.rows()) || [];
     const rows = [{ seri: 'meta', unit: 'SUMKAL', tahun: p.year, bulan_terakhir: p.last, bulan_awal: p.last, berjalan: !(mo === p.last && da >= lastDay), realisasi_sd: `${da} ${BLN[mo - 1]} ${y}`,
-      capaian_saidi: p.caps.saidi ? p.caps.saidi.SUMKAL ?? null : null, capaian_saifi: p.caps.saifi ? p.caps.saifi.SUMKAL ?? null : null }];
+      capaian_saidi: (() => { const r = p.series.saidi.SUMKAL[p.last - 1], t = p.series.saidiT.SUMKAL[p.last - 1]; return r != null && t ? 2 - r / t : null; })(),
+      capaian_saifi: (() => { const r = p.series.saifi.SUMKAL[p.last - 1], t = p.series.saifiT.SUMKAL[p.last - 1]; return r != null && t ? 2 - r / t : null; })() }];
     for (const [seri, units] of Object.entries(p.series)) for (const [u, vals] of Object.entries(units)) { const r = { seri, unit: u }; vals.forEach((v, i) => { r['b' + (i + 1)] = v; }); rows.push(r); }
     prev.filter((r) => r.seri === 'saidiLY' || r.seri === 'saifiLY').forEach((r) => rows.push({ ...r }));
     window.SSHarian.apply(rows);
