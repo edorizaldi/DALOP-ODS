@@ -18,7 +18,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="workplan-tab.css">
 <link rel="stylesheet" href="gangguan-ps-tab.css">
 <link rel="stylesheet" href="acct.css">
-<link rel="stylesheet" href="harian-rekam.css">
+<link rel="stylesheet" href="harian-rekam.css?v=20261108">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
@@ -1510,7 +1510,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
   </section>
 
   <!-- ROW 3 -->
-  <section class="h-grid h-r3" style="padding-top:0">
+  <section class="h-grid h-r3" id="h-r3" style="padding-top:0">
     <article class="h-card">
       <div class="h-band h-blue">
         <div class="h-ic"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="2" y="12" width="4" height="8" fill="#0f8a9d"/><rect x="9" y="7" width="4" height="13" fill="#0f8a9d"/><rect x="16" y="2" width="4" height="18" fill="#0f8a9d"/></svg></div>
@@ -1528,20 +1528,11 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         </div>
       </div></div>
     </article>
-  </section>
-  <!-- ROW 4: rekam harian bulan berjalan + gangguan kode J per UID (harian-rekam.js) -->
-  <section class="h-grid h-r4" id="h-r4" style="padding-top:0" hidden>
-    <article class="h-card" id="h-rekam-card">
-      <div class="h-band h-blue">
-        <div class="h-ic"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="2" y="4" width="18" height="16" rx="2" fill="none" stroke="#0f8a9d" stroke-width="2"/><path d="M2 9h18M7 2v4M15 2v4" stroke="#0f8a9d" stroke-width="2"/><circle cx="8" cy="14" r="1.6" fill="#0f8a9d"/><circle cx="14" cy="14" r="1.6" fill="#0f8a9d"/></svg></div>
-        <h2>REKAM HARIAN <span id="h-rk-bln"></span></h2>
-      </div>
-      <div class="h-body" id="h-rekam"></div>
-    </article>
-    <article class="h-card" id="h-kj-card">
+    <!-- Gangguan kode J per UID (harian-rekam.js; tampil bila sheet Detil Kode sudah diunggah) -->
+    <article class="h-card" id="h-kj-card" hidden>
       <div class="h-band h-blue">
         <div class="h-ic"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M12 2 4 12h6l-1 8 8-10h-6z" fill="#0f8a9d"/></svg></div>
-        <h2>GANGGUAN KODE J PER UID <span id="h-kj-bln"></span></h2>
+        <h2>GANGGUAN KODE J PER UID</h2>
       </div>
       <div class="h-body" id="h-kj"></div>
     </article>
@@ -2748,6 +2739,8 @@ function render(m){
     ?`<div class="h-empty"><b>0 event</b>Tidak ada event cleansing di 10 unit pada ${BLN[m]} ${YEAR}.</div>`
     :`<div class="h-tbox"><table>${rankTbl(clsU)}</table></div>`;
   lineChart($('h-totChart'),tot,{w:900,h:150,steps:2,head:1.25,running:run,color:'#18a6c0',fill:'rgba(37,180,196,.16)',label:'Total event gangguan'});
+  // dipakai harian-rekam.js untuk menggambar ulang grafik ini lebih ringkas saat kartu kode J tampil di sebelahnya
+  window.SSHarianTot={draw:(o)=>lineChart($('h-totChart'),tot,{w:900,h:150,steps:2,head:1.25,running:run,color:'#18a6c0',fill:'rgba(37,180,196,.16)',label:'Total event gangguan',...o})};
   $('h-totOkt').textContent=nf(tot[tot.length-1]);
   document.dispatchEvent(new CustomEvent('ss-harian-render',{detail:{m,year:YEAR,raw:RAW}}));
 }
@@ -2839,7 +2832,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 })();
 </script>
 
-<script src="harian-rekam.js"></script>
+<script src="harian-rekam.js?v=20261108"></script>
 <script src="apkt-parser.js"></script>
 <script>
 (() => {

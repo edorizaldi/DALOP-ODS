@@ -106,25 +106,25 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const NM = { ACEH: 'ACEH', SUMUT: 'SUMUT', SUMBAR: 'SUMBAR', RKR: 'RKR', S2JB: 'S2JB', BABEL: 'BABEL', LAMPUNG: 'LAMPUNG', KALBAR: 'KALBAR', KSKT: 'KSKT', KALTIMRA: 'KALTIMRA' };
 
-  function trend(vals, tgt, opt) {
-    // vals: [[tanggal, nilai]] satu batang per tanggal laporan; tgt: target bulan (garis putus-putus)
-    const W = 430, H = 160, L = 36, R = 8, T = 18, B = 22;
-    const mx = Math.max(tgt || 0, ...vals.map((v) => v[1])) * 1.18 || 1;
-    const n = Math.max(vals.length, 6), bw = (W - L - R) / n, y = (v) => T + (H - T - B) * (1 - v / mx);
+  // grafik batang mini: satu batang per tanggal laporan, garis putus-putus = target bulan
+  function mini(vals, tgt, opt) {
+    const W = opt.w || 340, H = opt.h || 86, L = 4, R = 4, T = 16, B = 14;
+    const mx = Math.max(tgt || 0, ...vals.map((v) => v[1])) * 1.12 || 1;
+    const n = Math.max(vals.length, 7), bw = (W - L - R) / n, y = (v) => T + (H - T - B) * (1 - v / mx);
     let s = `<svg viewBox="0 0 ${W} ${H}" class="h-rk-svg" role="img" aria-label="${esc(opt.label)}">`;
-    [0, 0.5, 1].forEach((f) => { const v = (mx / 1.18) * f; s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="g"/><text x="${L - 4}" y="${y(v) + 3}" class="ax" text-anchor="end">${opt.fmtAx(v)}</text>`; });
+    s += `<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" class="g"/>`;
+    const lab = vals.length <= 10 ? () => true : (i) => i === vals.length - 1 || (vals.length - 1 - i) % 2 === 0;
     vals.forEach(([d, v], i) => {
-      const x0 = L + i * bw + bw * 0.18, w = bw * 0.64, over = tgt && v > tgt, last = i === vals.length - 1;
-      s += `<rect x="${x0}" y="${y(v)}" width="${w}" height="${Math.max(0, y(0) - y(v))}" rx="2" style="fill:${over ? '#d83a34' : opt.color};opacity:${last ? 1 : 0.72}"/>`;
-      if (vals.length <= 12 || last || i % 2 === 0) s += `<text x="${x0 + w / 2}" y="${y(v) - 4}" class="vl" text-anchor="middle">${opt.fmt(v)}</text>`;
-      s += `<text x="${x0 + w / 2}" y="${H - 7}" class="ax" text-anchor="middle">${d}</text>`;
+      const x0 = L + i * bw + bw * 0.16, w = bw * 0.68, over = tgt && v > tgt, last = i === vals.length - 1;
+      s += `<rect x="${x0}" y="${y(v)}" width="${w}" height="${Math.max(0, y(0) - y(v))}" rx="1.5" style="fill:${over ? '#d42f2f' : opt.color};opacity:${last ? 1 : 0.55}"/>`;
+      if (lab(i)) s += `<text x="${x0 + w / 2}" y="${y(v) - 3}" class="vl${last ? ' lst' : ''}" text-anchor="middle">${opt.fmt(v)}</text>`;
+      s += `<text x="${x0 + w / 2}" y="${H - 3}" class="ax" text-anchor="middle">${d}</text>`;
     });
-    if (tgt) s += `<line x1="${L}" x2="${W - R}" y1="${y(tgt)}" y2="${y(tgt)}" class="tg"/><text x="${W - R}" y="${y(tgt) - 4}" class="tgl" text-anchor="end">Target ${opt.fmt(tgt)}</text>`;
+    if (tgt) s += `<line x1="${L}" x2="${W - R}" y1="${y(tgt)}" y2="${y(tgt)}" class="tg"/>`;
     return s + '</svg>';
   }
 
   function render(m, year) {
-    const sec = $('h-r4'); if (!sec) return;
     const doc = window.SSHarianSaved || window.__HARIAN || {};
     const mo = m + 1;
     let hist = (Array.isArray(doc.history) ? doc.history : []).slice();
@@ -132,66 +132,57 @@
     if (cur) hist = hist.map((h) => (h.tgl === cur.tgl ? cur : h));
     const ent = hist.filter((h) => h.tahun === year && h.bulan === mo).sort((a, b) => a.tgl.localeCompare(b.tgl));
     const last = ent[ent.length - 1];
-    const det = last && last.detil ? last.detil : null;
-    sec.hidden = !ent.length;
-    if (!ent.length) return;
-    const B = `${BLN[m].toUpperCase()} ${year}`;
-    $('h-rk-bln').textContent = B;
+    const withDet = ent.filter((e) => e.detil); const det = withDet.length ? withDet[withDet.length - 1].detil : null;
+    const B3 = `${BLN[m].slice(0, 3)} ${year}`;
     const day = (e) => +e.tgl.slice(8, 10);
     const S = (k) => ent.filter((e) => e[k] && e[k].SUMKAL != null).map((e) => [day(e), e[k].SUMKAL]);
-    const tS = last.saidiT && last.saidiT.SUMKAL, tF = last.saifiT && last.saifiT.SUMKAL;
-    const cols = ent.map((e) => `<th>${day(e)}</th>`).join('');
-    const row = (lab, k, fmt, unitK) => `<tr><td class="lb">${lab}</td>${ent.map((e) => { const v = unitK ? (e.detil ? e.detil.SUMKAL.h[unitK === 'p' ? 0 : 1] : null) : e[k] && e[k].SUMKAL; return `<td>${v == null ? '–' : fmt(v)}</td>`; }).join('')}</tr>`;
-    $('h-rekam').innerHTML = `
-      <div class="h-rk-charts">
-        <div><div class="h-rk-h">SAIDI SUMKAL per tanggal laporan <small>menit/pelanggan, kumulatif ${esc(BLN[m])}</small></div>${trend(S('saidi'), tS, { color: '#2fa45a', fill: 'rgba(47,164,90,.14)', fmt: (v) => f2.format(v), fmtAx: (v) => f0.format(v), label: 'Rekam harian SAIDI' })}</div>
-        <div><div class="h-rk-h">SAIFI SUMKAL per tanggal laporan <small>kali/pelanggan, kumulatif ${esc(BLN[m])}</small></div>${trend(S('saifi'), tF, { color: '#0f8a9d', fill: 'rgba(37,180,196,.16)', fmt: (v) => f3.format(v), fmtAx: (v) => f2.format(v), label: 'Rekam harian SAIFI' })}</div>
-      </div>
-      <div class="h-rk-tbl"><table><thead><tr><th class="lb">Tanggal laporan</th>${cols}</tr></thead><tbody>
-        ${row('SAIDI (menit/plg)', 'saidi', (v) => f2.format(v))}
-        ${row('SAIFI (kali/plg)', 'saifi', (v) => f3.format(v))}
-        ${row('ENS (kWh)', 'ens', (v) => f0.format(v))}
-        ${row('Total event', 'tot', (v) => f0.format(v))}
-        ${row('Kode J permanen H-1', null, (v) => f0.format(v), 'p')}
-        ${row('Kode J sesaat H-1', null, (v) => f0.format(v), 's')}
-      </tbody></table></div>
-      <p class="h-rk-note">Satu kolom per unggahan laporan harian (tanggal realisasi). Batang merah: realisasi melebihi target bulan; angka di bawah batang = tanggal laporan. Bulan yang sudah lewat tetap diperbarui dari kolom bulannya di sheet Prognosa.</p>`;
 
-    // gangguan kode J per UID
-    const kj = $('h-kj'); $('h-kj-bln').textContent = B;
-    if (!det) { kj.innerHTML = '<p class="h-rk-note">Belum ada data sheet Detil Kode untuk bulan ini. Unggah file laporan harian yang memuat sheet Detil Kode.</p>'; return; }
+    // 1) rekam harian di dalam kartu SAIDI / SAIFI (menggantikan bilah target vs realisasi) dan ENS
+    const put = (card, k, tKey, color, fmt, unit) => {
+      const box = document.querySelector(`#${card} .h-bars`); const v = S(k);
+      if (!box || !v.length) return;
+      const tg = last[tKey] && last[tKey].SUMKAL;
+      box.className = 'h-bars h-rkb';
+      box.innerHTML = `<div class="h-rkb-h"><b>Rekam harian ${esc(B3)}</b><span>${tg ? `<i class="tg"></i>Target ${fmt(tg)}` : ''}<i class="ov"></i>Di atas target</span></div>${mini(v, tg, { color, fmt, label: `Rekam harian ${k.toUpperCase()} (${unit})` })}`;
+    };
+    put('h-saidi', 'saidi', 'saidiT', '#2e9e4f', (v) => f2.format(v), 'menit/pelanggan');
+    put('h-saifi', 'saifi', 'saifiT', '#2e9e4f', (v) => f3.format(v), 'kali/pelanggan');
+    const ensBody = document.querySelector('#harian-root .h-ens .h-body');
+    if (ensBody) {
+      let el = ensBody.querySelector('.h-rkb'); const v = S('ens');
+      if (v.length) {
+        if (!el) { el = document.createElement('div'); el.className = 'h-bars h-rkb'; ensBody.appendChild(el); }
+        el.innerHTML = `<div class="h-rkb-h"><b>Rekam harian ENS ${esc(B3)} (kWh)</b><span>angka bawah = tanggal laporan</span></div>${mini(v, null, { color: '#1e8a45', fmt: (x) => f0.format(x), label: 'Rekam harian ENS (kWh)', w: 560, h: 96 })}`;
+      } else if (el) el.remove();
+    }
+
+    // 2) gangguan kode J per UID, di samping total event (baris 3)
+    const card = $('h-kj-card'), row = $('h-r3');
+    if (!card || !row) return;
+    card.hidden = !det; row.classList.toggle('h-r3kj', !!det);
+    if (!det) return;
+    if (window.SSHarianTot) window.SSHarianTot.draw({ w: 600, h: 230 });
     const T = det.SUMKAL;
     const dd = (iso) => iso ? `${+iso.slice(8)} ${BLN[+iso.slice(5, 7) - 1].slice(0, 3)}` : '';
     const BLm = BLN[det.bulan - 1];
-    // satu panel = tabel UID × Permanen / Sesaat / Total untuk satu periode
-    const panel = (title, sub, key, cls) => {
-      const mx = Math.max(1, ...UNITS.map((u) => det.uid[u][key][0] + det.uid[u][key][1]));
-      const tr = UNITS.map((u) => { const [p, q] = det.uid[u][key], t = p + q;
-        return `<tr><td class="u">${NM[u]}</td><td class="n">${p ? f0.format(p) : '<span class="z">0</span>'}</td><td class="n">${q ? f0.format(q) : '<span class="z">0</span>'}</td><td class="n b">${f0.format(t)}</td>
-          <td class="bar"><div class="h-kj-bar" style="width:${(t / mx * 100).toFixed(1)}%"><i class="p" style="width:${t ? p / t * 100 : 0}%"></i><i class="s" style="width:${t ? q / t * 100 : 0}%"></i></div></td></tr>`; }).join('');
-      const [p, q] = T[key];
-      return `<section class="h-kj-p ${cls}"><header><b>${title}</b><span>${sub}</span></header>
-        <table><thead><tr><th>UID</th><th class="n">Permanen</th><th class="n">Sesaat</th><th class="n">Total</th><th class="bar"></th></tr></thead>
-        <tbody>${tr}<tr class="tot"><td class="u">SUMKAL</td><td class="n">${f0.format(p)}</td><td class="n">${f0.format(q)}</td><td class="n b">${f0.format(p + q)}</td><td></td></tr></tbody></table></section>`;
-    };
-    const kr = UNITS.filter((u) => det.uid[u].k).map((u) => { const d = det.uid[u];
-      return `<li><div class="h-kj-ku"><b>${NM[u]}</b><span>${f0.format(d.k)} penyulang</span></div><div class="h-kj-kl">${d.top.map(([nm, c, p, q]) => `<span class="h-kr" title="${f0.format(p)} permanen, ${f0.format(q)} sesaat">${esc(nm)} <b>${f0.format(c)}</b></span>`).join('')}${d.k > d.top.length ? `<span class="h-kr-more">+${d.k - d.top.length} lainnya</span>` : ''}</div></li>`; }).join('');
-    const noKr = UNITS.filter((u) => !det.uid[u].k).map((u) => NM[u]);
-    const dbTxt = det.dbBulan.length ? `${BLN[det.dbBulan[0] - 1]}${det.dbBulan.length > 1 ? '–' + BLN[det.dbBulan[det.dbBulan.length - 1] - 1] : ''}` : 'tidak ada';
-    const kurang = det.dbKurang.length ? ` <b class="warn">${det.dbKurang.map((b) => BLN[b - 1]).join(', ')} belum ada di database Event Padam Penyulang, jadi belum ikut dalam kumulatif.</b>` : '';
-    kj.innerHTML = `
-      <div class="h-kj-grid">
-        ${panel('Gangguan H-1', dd(det.tgl) + ' ' + det.tahun, 'h', 'k1')}
-        ${panel('Gangguan bulan berjalan', `${BLm} ${det.tahun}, s.d. ${dd(det.tgl)}`, 'b', 'k2')}
-        ${panel(`Gangguan kumulatif ${det.tahun}`, `Januari s.d. ${dd(det.tgl)}`, 'c', 'k3')}
-        <section class="h-kj-p k4"><header><b>Rekap penyulang kronis</b><span>${BLm} ${det.tahun} · lebih dari 6 kali gangguan</span></header>
-          <div class="h-kj-kt"><b>${f0.format(T.k)}</b><span>penyulang kronis di Sumkal</span></div>
-          <ol class="h-kj-kr">${kr || '<li class="h-kr-none">Tidak ada penyulang kronis bulan ini.</li>'}</ol>
-          ${noKr.length ? `<p class="h-kj-nok">Tanpa penyulang kronis: ${noKr.join(', ')}</p>` : ''}
-        </section>
-      </div>
-      <div class="h-kj-lgd"><span class="h-kj-lg"><i class="p"></i>Permanen <i class="s"></i>Sesaat</span></div>
-      <p class="h-rk-note">Kode J, No. Laporan unik (yang pertama muncul); Permanen = kolom P/S bernilai P, Sesaat = S. H-1 dan bulan berjalan dari sheet Detil Kode. Kumulatif = ${dbTxt} dari database Event Padam Penyulang (kode J, bidang Distribusi) + ${esc(BLm)} dari Detil Kode.${kurang} Angka di samping nama penyulang = jumlah gangguan bulan ini (3 teratas per UID).</p>`;
+    const z = (v) => (v ? f0.format(v) : '<span class="z">0</span>');
+    const hiH = Math.max(...UNITS.map((u) => det.uid[u].h[0] + det.uid[u].h[1]));
+    const tr = UNITS.map((u) => { const d = det.uid[u];
+      return `<tr${hiH && d.h[0] + d.h[1] === hiH ? ' class="h-hot"' : ''}><td>${NM[u]}</td><td class="h-n">${z(d.h[0])}</td><td class="h-n">${z(d.h[1])}</td><td class="h-n c">${z(d.b[0])}</td><td class="h-n">${z(d.b[1])}</td><td class="h-n c">${z(d.c[0])}</td><td class="h-n">${z(d.c[1])}</td><td class="h-n c${d.k ? ' kr' : ''}">${z(d.k)}</td></tr>`; }).join('');
+    // penyulang kronis terbanyak se-Sumkal (dari 3 teratas per UID)
+    const all = UNITS.flatMap((u) => det.uid[u].top.map(([nm, c]) => ({ u, nm, c }))).filter((x) => x.c >= 7).sort((a, b) => b.c - a.c);
+    const topK = all.slice(0, 6).map((x) => `<span class="h-kr">${esc(x.nm)} <em>${NM[x.u]}</em> <b>${f0.format(x.c)}</b></span>`).join('');
+    const dbTxt = det.dbBulan.length ? `${BLN[det.dbBulan[0] - 1].slice(0, 3)}${det.dbBulan.length > 1 ? '–' + BLN[det.dbBulan[det.dbBulan.length - 1] - 1].slice(0, 3) : ''}` : '';
+    const kurang = det.dbKurang.length ? ` <b class="warn">${det.dbKurang.map((b) => BLN[b - 1].slice(0, 3)).join(', ')} belum ada di database.</b>` : '';
+    $('h-kj').innerHTML = `
+      <div class="h-tbox"><table class="h-kj-t">
+        <tr><th rowspan="2">UNIT</th><th colspan="2" class="g">H-1 · ${dd(det.tgl)}</th><th colspan="2" class="g c">${esc(BLm.slice(0, 3).toUpperCase())} ${det.tahun}</th><th colspan="2" class="g c">KUMULATIF ${det.tahun}</th><th rowspan="2" class="h-n c">KRONIS<br><small>&gt;6×</small></th></tr>
+        <tr class="sub"><th class="h-n">P</th><th class="h-n">S</th><th class="h-n c">P</th><th class="h-n">S</th><th class="h-n c">P</th><th class="h-n">S</th></tr>
+        ${tr}
+        <tr class="tot"><td>SUMKAL</td><td class="h-n">${f0.format(T.h[0])}</td><td class="h-n">${f0.format(T.h[1])}</td><td class="h-n c">${f0.format(T.b[0])}</td><td class="h-n">${f0.format(T.b[1])}</td><td class="h-n c">${f0.format(T.c[0])}</td><td class="h-n">${f0.format(T.c[1])}</td><td class="h-n c">${f0.format(T.k)}</td></tr>
+      </table></div>
+      ${topK ? `<div class="h-kj-top"><b>Penyulang kronis terbanyak:</b>${topK}</div>` : ''}
+      <div class="h-note">P = permanen, S = sesaat; kode J, No. Laporan unik. Kronis = penyulang &gt;6 kali gangguan di ${esc(BLm)}. Kumulatif = ${dbTxt ? `database Event Padam Penyulang ${dbTxt} + ` : ''}Detil Kode ${esc(BLm.slice(0, 3))}.${kurang} Baris merah: gangguan H-1 tertinggi.</div>`;
   }
   document.addEventListener('ss-harian-render', (e) => { try { render(e.detail.m, e.detail.year); } catch (x) { console.error(x); } });
 
