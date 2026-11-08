@@ -203,7 +203,42 @@
       </table></div>
       <div class="h-note">P = permanen, S = sesaat; kode J, No. Laporan unik. Penyulang kronis no. 1 = penyulang dengan gangguan permanen + sesaat terbanyak (lebih dari 6 kali) di ${esc(BLm)} per UID; +n = jumlah penyulang kronis lain di UID itu. Kumulatif = ${dbTxt ? `database Event Padam Penyulang ${dbTxt} + ` : ''}Detil Kode ${esc(BLm.slice(0, 3))}.${kurang} Baris merah: gangguan H-1 tertinggi.</div>`;
   }
-  document.addEventListener('ss-harian-render', (e) => { try { render(e.detail.m, e.detail.year); } catch (x) { console.error(x); } });
+  // panel di samping grafik trend: penambahan harian per UID untuk permanen, sesaat, koreksi, cleansing
+  function side(m, year, raw) {
+    const el = $('h-kcSide'); if (!el) return;
+    const ent = entries(m, year), last = ent[ent.length - 1], prev = ent[ent.length - 2];
+    const wd = ent.filter((e) => e.detil), det = wd.length ? wd[wd.length - 1].detil : null;
+    const dd = (iso) => `${+iso.slice(8)} ${BLN[+iso.slice(5, 7) - 1].slice(0, 3)}`;
+    // permanen / sesaat bulan ini tanpa Detil Kode: dari database Event Padam Penyulang
+    const db = {}; if (!det) {
+      const D = window.SSD && SSD.data('gangguan_ps'); const gps = (D && D.status === 'ok' && D.data) || (window.__D && window.__D.gangguan_ps) || [];
+      gps.forEach((r) => { if (r.KODE !== 'J' || r.BIDANG !== 'DISTRIBUSI' || +r.BULAN_NO !== m + 1) return; const u = DBU[r.UNIT] || r.UNIT; const o = db[u] || (db[u] = [0, 0]); if (r.PS === 'Permanen') o[0] += +r.JUMLAH || 0; else if (r.PS === 'Sesaat') o[1] += +r.JUMLAH || 0; });
+    }
+    const rv = (k, u) => { const o = raw && raw[k] && raw[k][u]; return o ? +o[m] || 0 : null; };
+    const val = (k, u) => (last && last[k] && last[k][u] != null ? last[k][u] : rv(k, u));
+    const inc = (k, u) => { if (!last || !last[k] || last[k][u] == null) return null; if (prev && prev[k] && prev[k][u] != null) return last[k][u] - prev[k][u]; return +last.tgl.slice(8) === 1 ? last[k][u] : null; };
+    const rows = UNITS.concat('SUMKAL').map((u) => {
+      const ps = u === 'SUMKAL' ? (det ? det.SUMKAL : null) : det ? det.uid[u] : null;
+      const dbv = u === 'SUMKAL' ? Object.values(db).reduce((a, x) => [a[0] + x[0], a[1] + x[1]], [0, 0]) : db[u] || (Object.keys(db).length ? [0, 0] : null);
+      return { u, p: [ps ? ps.b[0] : dbv ? dbv[0] : null, ps ? ps.h[0] : null], s: [ps ? ps.b[1] : dbv ? dbv[1] : null, ps ? ps.h[1] : null], k: [val('kor', u), inc('kor', u)], c: [val('cls', u), inc('cls', u)] };
+    });
+    const hi = {}; ['p', 's', 'k', 'c'].forEach((k) => { hi[k] = Math.max(0, ...rows.filter((r) => r.u !== 'SUMKAL').map((r) => r[k][1] || 0)); });
+    const nv = (v) => (v == null ? '<span class="z">–</span>' : f0.format(v));
+    const iv = (v, k, tot) => (v == null ? '<td class="h-n d"><span class="z">–</span></td>' : `<td class="h-n d${v > 0 ? ' up' : ''}${!tot && v > 0 && v === hi[k] ? ' top' : ''}">${v > 0 ? '+' + f0.format(v) : v < 0 ? '−' + f0.format(-v) : '0'}</td>`);
+    const tr = rows.map((r) => { const t = r.u === 'SUMKAL';
+      return `<tr${t ? ' class="tot"' : ''}><td>${NM[r.u] || r.u}</td>${['p', 's', 'k', 'c'].map((k) => `<td class="h-n c">${nv(r[k][0])}</td>${iv(r[k][1], k, t)}`).join('')}</tr>`; }).join('');
+    const hP = det ? `+H-1<small>${dd(det.tgl)}</small>` : '+H-1<small>&nbsp;</small>';
+    const hK = last ? `+harian<small>${dd(last.tgl)}</small>` : '+harian<small>&nbsp;</small>';
+    const bl = BLN[m].slice(0, 3);
+    el.innerHTML = `<div class="h-ttlbar">PENAMBAHAN HARIAN PER UID${last ? ' · LAPORAN ' + dd(last.tgl).toUpperCase() : ''}</div>
+      <div class="h-tbox" style="border-radius:0 0 5px 5px"><table class="h-kd-t">
+        <tr><th rowspan="2">UNIT</th><th colspan="2" class="g c">PERMANEN</th><th colspan="2" class="g c">SESAAT</th><th colspan="2" class="g c">KOREKSI</th><th colspan="2" class="g c">CLEANSING</th></tr>
+        <tr class="sub"><th class="h-n c">${bl}</th><th class="h-n">${hP}</th><th class="h-n c">${bl}</th><th class="h-n">${hP}</th><th class="h-n c">${bl}</th><th class="h-n">${hK}</th><th class="h-n c">${bl}</th><th class="h-n">${hK}</th></tr>
+        ${tr}
+      </table></div>
+      <div class="h-note">${esc(bl)} = jumlah bulan berjalan. Permanen/sesaat: kode J dari sheet Detil Kode, +H-1 = kejadian pada tanggal laporan${det ? '' : ' (belum ada Detil Kode bulan ini; angka bulan dari database Event Padam Penyulang)'}. Koreksi/cleansing: +harian = selisih dengan laporan ${prev ? dd(prev.tgl) : 'sebelumnya'}${prev && last && (Date.parse(last.tgl) - Date.parse(prev.tgl)) > 864e5 ? ' (lebih dari satu hari)' : ''}. Merah = bertambah; kotak merah = penambahan terbanyak.</div>`;
+  }
+  document.addEventListener('ss-harian-render', (e) => { try { render(e.detail.m, e.detail.year); } catch (x) { console.error(x); } try { side(e.detail.m, e.detail.year, e.detail.raw); } catch (x) { console.error(x); } });
 
   window.SSHarianRekam = { parseDetil, compute, makeDoc, entryOf, psSeries };
 })();

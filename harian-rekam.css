@@ -46,3 +46,20 @@
 .h-root .h-kj-t tr.tot td.nm { color: var(--red); }
 .h-root .h-r3.h-r3kj .h-band h2 { font-size: 17px; white-space: normal; line-height: 1.15; }
 .h-root .h-kj-t tr.sub th.nm { text-align: left; }
+
+/* penambahan harian per UID (samping grafik trend event) */
+.h-root .h-kc-side { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.h-root .h-kc-side .h-note { margin-top: 5px; }
+.h-root .h-kd-t th, .h-root .h-kd-t td { padding: 2px 6px; }
+.h-root .h-kd-t th { text-align: center; }
+.h-root .h-kd-t th[rowspan] { text-align: left; vertical-align: middle; }
+.h-root .h-kd-t th.c, .h-root .h-kd-t td.c { border-left: 1px solid #d5e1ea; }
+.h-root .h-kd-t th.g.c, .h-root .h-kd-t tr.sub th.c { border-left-color: rgba(255,255,255,.3); }
+.h-root .h-kd-t tr.sub th { background: #2c4f78; font-size: 11px; padding: 1px 6px; text-align: right; line-height: 1.1; }
+.h-root .h-kd-t tr.sub th small { display: block; font-size: 9.5px; font-weight: 500; opacity: .85; }
+.h-root .h-kd-t td.c { color: #41566e; }
+.h-root .h-kd-t td.d { font-weight: 700; color: #8a98a8; }
+.h-root .h-kd-t td.d.up { color: var(--red); }
+.h-root .h-kd-t td.d.top { background: var(--redSoft); box-shadow: inset 0 0 0 1px #f1b5b5; }
+.h-root .h-kd-t .z { color: #b4c0cc; font-weight: 400; }
+.h-root .h-kd-t tr.tot td { font-weight: 800; background: #eef5fa; border-top: 2px solid var(--navy); }
