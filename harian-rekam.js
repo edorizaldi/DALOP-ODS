@@ -124,13 +124,34 @@
     return s + '</svg>';
   }
 
-  function render(m, year) {
+  // entri rekam harian untuk bulan m (0-based) tahun year, urut tanggal
+  function entries(m, year) {
     const doc = window.SSHarianSaved || window.__HARIAN || {};
-    const mo = m + 1;
     let hist = (Array.isArray(doc.history) ? doc.history : []).slice();
     const cur = entryOf(doc); if (cur && !hist.some((h) => h.tgl === cur.tgl)) hist.push(cur);
     if (cur) hist = hist.map((h) => (h.tgl === cur.tgl ? cur : h));
-    const ent = hist.filter((h) => h.tahun === year && h.bulan === mo).sort((a, b) => a.tgl.localeCompare(b.tgl));
+    return hist.filter((h) => h.tahun === year && h.bulan === m + 1).sort((a, b) => a.tgl.localeCompare(b.tgl));
+  }
+
+  // event gangguan permanen / sesaat SUMKAL per bulan (Jan s.d. bulan m): kode J, bidang Distribusi dari database
+  // Event Padam Penyulang; bulan m sendiri diambil dari sheet Detil Kode unggahan terakhir bila ada.
+  function psSeries(m, year) {
+    const D = window.SSD && SSD.data('gangguan_ps');
+    const gps = (D && D.status === 'ok' && D.data) || (window.__D && window.__D.gangguan_ps) || [];
+    const p = Array(m + 1).fill(null), s = Array(m + 1).fill(null);
+    gps.forEach((r) => {
+      if (r.KODE !== 'J' || r.BIDANG !== 'DISTRIBUSI') return; const i = +r.BULAN_NO - 1; if (!(i >= 0 && i <= m)) return;
+      const n = +r.JUMLAH || 0; if (r.PS === 'Permanen') p[i] = (p[i] || 0) + n; else if (r.PS === 'Sesaat') s[i] = (s[i] || 0) + n;
+      if (p[i] == null) p[i] = 0; if (s[i] == null) s[i] = 0;
+    });
+    const wd = entries(m, year).filter((e) => e.detil); let detilTgl = null;
+    if (wd.length) { const d = wd[wd.length - 1].detil; p[m] = d.SUMKAL.b[0]; s[m] = d.SUMKAL.b[1]; detilTgl = d.tgl; }
+    return { p, s, detilTgl };
+  }
+
+  function render(m, year) {
+    const mo = m + 1;
+    const ent = entries(m, year);
     const last = ent[ent.length - 1];
     const withDet = ent.filter((e) => e.detil); const det = withDet.length ? withDet[withDet.length - 1].detil : null;
     const B3 = `${BLN[m].slice(0, 3)} ${year}`;
@@ -184,5 +205,5 @@
   }
   document.addEventListener('ss-harian-render', (e) => { try { render(e.detail.m, e.detail.year); } catch (x) { console.error(x); } });
 
-  window.SSHarianRekam = { parseDetil, compute, makeDoc, entryOf };
+  window.SSHarianRekam = { parseDetil, compute, makeDoc, entryOf, psSeries };
 })();

@@ -18,7 +18,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="workplan-tab.css">
 <link rel="stylesheet" href="gangguan-ps-tab.css">
 <link rel="stylesheet" href="acct.css">
-<link rel="stylesheet" href="harian-rekam.css?v=20261108">
+<link rel="stylesheet" href="harian-rekam.css?v=20261108b">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
@@ -495,6 +495,20 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 .h-root .h-empty{border:1px dashed var(--line);border-radius:5px;padding:16px 10px;text-align:center;font-size:13px;color:var(--muted)}
 .h-root .h-empty b{display:block;font-family:var(--display);font-size:22px;color:var(--green)}
 .h-root .h-r3{grid-template-columns:1fr}
+.h-root .h-kc{display:grid;grid-template-columns:minmax(0,1fr) 128px 200px 200px;gap:10px;align-items:start}
+.h-root .h-kc-main{display:flex;flex-direction:column;gap:4px;min-width:0}
+.h-root .h-kc-lg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;font-weight:600}
+.h-root .h-kc-lg span{display:inline-flex;align-items:center;gap:6px}
+.h-root .h-kc-lg i{width:12px;height:12px;border-radius:2px;display:inline-block}
+.h-root .h-kc-lg i.ln{width:20px;height:0;border-radius:0;border-top:3px solid #1e8a45}
+.h-root .h-kc-pills{display:grid;gap:8px}
+.h-root .h-kc-pills .h-pill{padding:6px 4px}
+.h-root .h-kc-pills .h-pill .h-big{font-size:30px}
+.h-root .h-kc-pills .h-pill .h-chip{font-size:14px;margin-top:3px}
+.h-root .h-kc #h-clsSide .h-tbox{border-radius:0 0 5px 5px}
+.h-root .h-kc .h-tbox th,.h-root .h-kc .h-tbox td{padding:3px 6px}
+@media (max-width:1100px){.h-root .h-kc{grid-template-columns:minmax(0,1fr) 128px}}
+@media (max-width:760px){.h-root .h-kc{grid-template-columns:1fr}}
 .h-root .h-tot{display:grid;grid-template-columns:1fr 150px 170px;gap:12px;align-items:center}
 .h-root .h-legend{display:grid;gap:6px;font-size:12.5px;font-weight:600}
 .h-root [hidden]{display:none!important}
@@ -1483,28 +1497,25 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
     <article class="h-card" id="h-saifi"></article>
   </section>
 
-  <!-- ROW 2 -->
-  <section class="h-grid h-r2" style="padding-top:0">
+  <!-- ROW 2: event gangguan permanen, sesaat, cleansing (batang) + koreksi (garis) per bulan -->
+  <section class="h-grid h-r3" style="padding-top:0">
     <article class="h-card">
       <div class="h-band h-blue">
-        <div class="h-ic"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M21 6.5a5 5 0 0 1-6.6 4.7L6 19.6a2 2 0 0 1-2.8-2.8l8.4-8.4A5 5 0 0 1 17.5 3l-3 3 .5 2.5 2.5.5z" fill="#0f8a9d"/></svg></div>
-        <h2>TREND EVENT KOREKSI (KALI)</h2>
+        <div class="h-ic"><svg width="22" height="22" viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="9" fill="#0f8a9d"/><rect x="10" y="7" width="4" height="14" fill="#0f8a9d"/><rect x="17" y="10" width="4" height="11" fill="#0f8a9d"/><path d="M2 9l7-5 6 4 7-5" stroke="#1e8a45" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h2>TREND EVENT PERMANEN, SESAAT, CLEANSING DAN KOREKSI (KALI)</h2>
       </div>
-      <div class="h-body"><div class="h-ev">
-        <div class="h-chart" id="h-korChart"></div>
-        <div class="h-pill"><div class="h-lbl"><span class="h-t-my"></span></div><div class="h-big" id="h-korOkt"></div><div class="h-unit">event</div><div class="h-chip" id="h-korChip"></div><div class="h-note" style="margin-top:4px">vs <span class="h-t-prev"></span></div></div>
-        <div class="h-tbox"><table id="h-korTable"></table></div>
-      </div></div>
-    </article>
-    <article class="h-card">
-      <div class="h-band h-blue">
-        <div class="h-ic"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm9 5.5v-3l-2.4-.6a7 7 0 0 0-.8-1.9l1.3-2.1-2.1-2.1-2.1 1.3a7 7 0 0 0-1.9-.8L12.5 2h-3l-.6 2.4a7 7 0 0 0-1.9.8L4.9 3.9 2.8 6l1.3 2.1a7 7 0 0 0-.8 1.9L1 10.5v3l2.4.6c.2.7.4 1.3.8 1.9l-1.3 2.1L5 20.2l2.1-1.3c.6.4 1.2.6 1.9.8l.6 2.4h3l.6-2.4c.7-.2 1.3-.4 1.9-.8l2.1 1.3 2.1-2.1-1.3-2.1c.4-.6.6-1.2.8-1.9z" fill="#0f8a9d"/></svg></div>
-        <h2>TREND EVENT CLEANSING (KALI)</h2>
-      </div>
-      <div class="h-body"><div class="h-ev">
-        <div class="h-chart" id="h-clsChart"></div>
-        <div class="h-pill"><div class="h-lbl"><span class="h-t-my"></span></div><div class="h-big" id="h-clsOkt"></div><div class="h-unit">event</div><div class="h-chip" id="h-clsChip"></div><div class="h-note" style="margin-top:4px">vs <span class="h-t-prev"></span></div></div>
-        <div id="h-clsSide"></div>
+      <div class="h-body"><div class="h-kc">
+        <div class="h-kc-main">
+          <div class="h-kc-lg"><span><i style="background:#3f6e8c"></i>Permanen</span><span><i style="background:#8fb8d4"></i>Sesaat</span><span><i style="background:#e0a03a"></i>Cleansing</span><span><i class="ln"></i>Koreksi (garis)</span></div>
+          <div class="h-chart" id="h-kcChart"></div>
+          <div class="h-note" id="h-kcNote"></div>
+        </div>
+        <div class="h-kc-pills">
+          <div class="h-pill"><div class="h-lbl">Koreksi <span class="h-t-my"></span></div><div class="h-big" id="h-korOkt"></div><div class="h-chip" id="h-korChip"></div><div class="h-note" style="margin-top:4px">vs <span class="h-t-prev"></span></div></div>
+          <div class="h-pill"><div class="h-lbl">Cleansing <span class="h-t-my"></span></div><div class="h-big" id="h-clsOkt"></div><div class="h-chip" id="h-clsChip"></div><div class="h-note" style="margin-top:4px">vs <span class="h-t-prev"></span></div></div>
+        </div>
+        <div><div class="h-ttlbar">KOREKSI PER UNIT</div><div class="h-tbox" style="border-radius:0 0 5px 5px"><table id="h-korTable"></table></div></div>
+        <div><div class="h-ttlbar">CLEANSING PER UNIT</div><div id="h-clsSide"></div></div>
       </div></div>
     </article>
   </section>
@@ -2692,6 +2703,31 @@ function lineChart(el,vals,opt={}){
     s+=`<text x="${x(i)}" y="${H-6}" font-size="11" text-anchor="middle" fill="#10263f">${M[i]}</text>`;});
   el.innerHTML=s+'</svg>';
 }
+function kcChart(el,d,running){
+  // batang berdampingan permanen, sesaat, cleansing + garis koreksi per bulan (seperti tab Koreksi & Cleansing)
+  const n=d.k.length,W=820,H=215,L=46,R=8,T=18,B=22,gw=(W-L-R)/Math.max(n,1);
+  const all=[...d.p,...d.s,...d.c,...d.k].map(v=>v||0);
+  const {max,step}=niceMax(Math.max(...all)*1.12,4);
+  const y=v=>T+(H-T-B)*(1-v/max),cx=i=>L+i*gw+gw/2;
+  const ab=v=>v>=10000?nf(v/1000,0)+' rb':v>=1000?nf(v/1000,1)+' rb':nf(v);
+  const BARS=[['p','#3f6e8c'],['s','#8fb8d4'],['c','#e0a03a']],bw=Math.min(22,gw*.8/3);
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Event permanen, sesaat, cleansing (batang) dan koreksi (garis) per bulan">`;
+  for(let g=0;g<=max;g+=step)s+=`<line x1="${L}" x2="${W-R}" y1="${y(g)}" y2="${y(g)}" stroke="#e3eaf0"/><text x="${L-6}" y="${y(g)+4}" font-size="10.5" text-anchor="end" fill="#5b6b7c">${nf(g)}</text>`;
+  for(let i=0;i<n;i++){
+    const run=running&&i===n-1,x0=cx(i)-bw*1.5;
+    BARS.forEach(([k,col],j)=>{const v=d[k][i];if(v==null)return;const x=x0+j*bw;
+      s+=`<rect x="${x+.5}" y="${y(v)}" width="${bw-1}" height="${Math.max(0,y(0)-y(v))}" rx="1.5" fill="${col}" opacity="${run?.55:1}"/>`;
+      if(v>0)s+=`<text x="${x+bw/2}" y="${y(v)-3}" font-size="8.5" font-weight="600" text-anchor="middle" fill="#41566e">${ab(v)}</text>`;});
+    s+=`<text x="${cx(i)}" y="${H-6}" font-size="11" text-anchor="middle" fill="#10263f">${M[i]}</text>`;
+  }
+  const pts=d.k.map((v,i)=>[cx(i),y(v||0)]),col='#1e8a45',dash=running&&n>1;
+  s+=`<polyline points="${(dash?pts.slice(0,n-1):pts).map(p=>p.join(',')).join(' ')}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linejoin="round"/>`;
+  if(dash)s+=`<line x1="${pts[n-2][0]}" y1="${pts[n-2][1]}" x2="${pts[n-1][0]}" y2="${pts[n-1][1]}" stroke="${col}" stroke-width="2.6" stroke-dasharray="5 4"/>`;
+  pts.forEach(([x,yy],i)=>{const last=i===n-1;
+    s+=`<circle cx="${x}" cy="${yy}" r="${last?5:4}" fill="${last&&dash?'#fff':col}" stroke="${col}" stroke-width="2"/>`;
+    s+=`<text x="${x}" y="${yy-9}" font-size="11" font-weight="800" text-anchor="middle" fill="#10263f" paint-order="stroke" stroke="#fff" stroke-width="3" stroke-linejoin="round">${nf(d.k[i]||0)}</text>`;});
+  el.innerHTML=s+'</svg>';
+}
 function evPill(id,chip,vals){const o=vals[vals.length-1],p=vals[vals.length-2];$(id).textContent=nf(o);
   const c=$(chip);c.parentElement.querySelector('.h-note').hidden=p==null;c.hidden=p==null;if(p==null)return;
   const down=o<=p;c.className='h-chip'+(down?'':' h-up');
@@ -2731,8 +2767,11 @@ function render(m){
   $('h-ensNote').textContent=`Baris merah: dua unit penyumbang ENS terbesar bulan ini (${ensRank[0].u} dan ${ensRank[1].u}, ±${Math.round((ensRank[0].v+ensRank[1].v)/ensTot*100)}% dari total SUMKAL).`;
 
   const kor=ser('kor'),cls=ser('cls'),tot=ser('tot');
-  lineChart($('h-korChart'),kor,{w:400,h:220,running:run,label:'Trend event koreksi'});evPill('h-korOkt','h-korChip',kor);
-  lineChart($('h-clsChart'),cls,{w:400,h:220,running:run,label:'Trend event cleansing'});evPill('h-clsOkt','h-clsChip',cls);
+  const ps=window.SSHarianRekam&&SSHarianRekam.psSeries?SSHarianRekam.psSeries(m,YEAR):{p:kor.map(()=>null),s:kor.map(()=>null)};
+  kcChart($('h-kcChart'),{p:ps.p,s:ps.s,c:cls,k:kor},run);
+  const psMiss=ps.p.map((v,i)=>v==null?MON3[i]:null).filter(Boolean);
+  $('h-kcNote').textContent=`Permanen dan sesaat: event gangguan distribusi kode J dari database Event Padam Penyulang`+(ps.detilTgl?`; ${BLN[m]} dari sheet Detil Kode s.d. ${+ps.detilTgl.slice(8)} ${MON3[m]}`:'')+(psMiss.length?` (belum ada data: ${psMiss.join(', ')})`:'')+`. Cleansing dan koreksi dari laporan harian.`+(run?` Batang pucat dan garis putus-putus: ${BLN[m]} data berjalan.`:'');
+  evPill('h-korOkt','h-korChip',kor);evPill('h-clsOkt','h-clsChip',cls);
   $('h-korTable').innerHTML=rankTbl(unit('kor'));
   const clsU=unit('cls');
   $('h-clsSide').innerHTML=clsU.every(v=>v===0)
@@ -2832,7 +2871,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 })();
 </script>
 
-<script src="harian-rekam.js?v=20261108"></script>
+<script src="harian-rekam.js?v=20261108b"></script>
 <script src="apkt-parser.js"></script>
 <script>
 (() => {
