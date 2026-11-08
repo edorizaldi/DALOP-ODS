@@ -30,7 +30,7 @@ const SSUP = (() => {
     return Number(s);
   };
   // rows: sheet pertama sebagai array baris (APKT.readTable)
-  function parseLaporan(rows) {
+  function parseLaporan(rows, sheetName) {
     const txt = (r, c) => (rows[r] && rows[r][c] != null ? String(rows[r][c]) : '');
     const warn = [];
     let up3 = '', uid = '', bulan = null, tahun = null, pelanggan = NaN;
@@ -40,6 +40,12 @@ const SSUP = (() => {
       if ((m = /UNIT INDUK\s*:\s*(?:WILAYAH|UID|UIW)?\s*(.+)/i.exec(a))) uid = m[1].trim();
       if ((m = /^\s*([A-Za-z]+)\s+(\d{4})\s*$/.exec(a)) && NAMA.includes(m[1].toLowerCase())) { bulan = NAMA.indexOf(m[1].toLowerCase()) + 1; tahun = +m[2]; }
       if (/Jumlah Pelanggan/i.test(a)) pelanggan = numID(rows[r][1]);
+    }
+    // baris "UNIT PELAKSANA PELAYANAN PELANGGAN : UP3 …" kadang terhapus; pakai nama sheet (mis. "BARABAI 1026") sebagai cadangan
+    let up3Sheet = false;
+    if (!up3 && sheetName && rows.slice(0, 20).some((r) => /LAPORAN SAIDI SAIFI/i.test(String((r && r[0]) || '')))) {
+      const nm = String(sheetName).replace(/\s*\d{3,4}\s*$/, '').replace(/^\d+(\.\d+)?\s*/, '').trim();
+      if (nm) { up3 = nm; up3Sheet = true; }
     }
     if (!up3) throw new Error('Nama UP3 tidak ditemukan (baris "UNIT PELAKSANA PELAYANAN PELANGGAN : …").');
     if (!bulan) throw new Error('Bulan laporan tidak ditemukan (baris seperti "Oktober 2026").');
@@ -68,6 +74,7 @@ const SSUP = (() => {
       if (!near(rec[p + 'dist_ggn'] + rec[p + 'dist_har'] + rec[p + 'dist_bencana'], rec[p + 'dist'])) warn.push(`Distribusi (${p.slice(0, -1)}) tidak sama dengan gangguan + pemeliharaan + bencana`);
       if (!near(rec[p + 'dist'] + rec[p + 'trans'] + rec[p + 'kit'], rec[p + 'total'])) warn.push(`Total (${p.slice(0, -1)}) tidak sama dengan Distribusi + Transmisi + Pembangkit`);
     }
+    if (up3Sheet) warn.push(`Baris "UNIT PELAKSANA PELAYANAN PELANGGAN" tidak ada; UP3 diambil dari nama sheet "${sheetName}".`);
     return { rec, warn };
   }
   // Nama UP3 di laporan yang berbeda dari nama unit dashboard.
