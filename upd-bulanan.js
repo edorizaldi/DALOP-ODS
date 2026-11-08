@@ -295,7 +295,8 @@
     $('up-k-go').disabled = false;
     const s = (j) => kRes.rows.filter((r) => r.JENIS === j).reduce((a, r) => a + r.JUMLAH, 0);
     const ms = [...new Set(kRes.rows.map((r) => r.BULAN_NO))].sort((a, b) => a - b);
-    $('up-k-kv').replaceChildren(...[['Baris di file', f0.format(kRes.total)], ['Disetujui (approval 2)', f0.format(kRes.approved)], ['Event koreksi', f0.format(s('Koreksi'))], ['Event cleansing', f0.format(s('Cleansing'))]]
+    $('up-k-kv').replaceChildren(...[['Baris di file', f0.format(kRes.total)], ['Disetujui (approval 2)', f0.format(kRes.approved)], ['Event koreksi', f0.format(s('Koreksi'))], ['Event cleansing', f0.format(s('Cleansing'))],
+      ['Per kode', (() => { const k = {}; kRes.rows.forEach((r) => { k[r.KODE] = (k[r.KODE] || 0) + r.JUMLAH; }); return Object.entries(k).sort((a, b) => b[1] - a[1]).map(([c, n]) => `${c === '-' ? 'tanpa kode' : c} ${f0.format(n)}`).join(' · '); })()]]
       .map(([a, v]) => el('div', {}, el('span', { textContent: a }), el('b', { textContent: v }))));
     $('up-k-sum').textContent = `${kRes.file}: ${BLN[ms[0] - 1]} – ${BLN[ms[ms.length - 1] - 1]} ${kRes.tahun}, ${new Set(kRes.rows.map((r) => r.UP3)).size} UP3.` + (kRes.unknown.length ? ` Area tidak dikenali (tidak dihitung): ${kRes.unknown.map(([a, n]) => `${a} (${n})`).join(', ')}.` : '');
   }
