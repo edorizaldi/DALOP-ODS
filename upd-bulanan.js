@@ -82,13 +82,17 @@
       const found = [];
       for (const sh of sheets) {
         try {
-          const { rec, warn } = U.parseLaporan(sh.rows);
+          const { rec, warn } = U.parseLaporan(sh.rows, sh.name);
           const u = U.matchUnit(units, rec.up3_file);
           found.push({ file: sheets.length > 1 ? `${file.name} · ${sh.name}` : file.name, rec, unit: u ? u.unit : null, warn: u ? warn : [...warn, `UP3 "${rec.up3_file}" tidak dikenali, pilih manual.`], error: null });
         } catch (e) { if (sheets.length === 1) found.push({ file: file.name, rec: null, unit: null, warn: [], error: e.message || String(e) }); }
       }
       if (!found.length) { add({ file: file.name, rec: null, unit: null, warn: [], error: 'Tidak ada sheet berformat LAPORAN SAIDI SAIFI per UP3.' }); continue; }
       // workbook berisi banyak bulan: ambil bulan yang belum lengkap di dashboard; bila semua sudah ada, ambil bulan terakhir
+      // sheet arsip tahun yang lebih lama dari data dashboard (mis. 2024) tidak dipakai
+      const minYear = d0 && d0[0].length ? Math.min(...d0[0].map((r) => +r.tahun)) : 0;
+      const old = found.filter((x) => x.rec && x.rec.tahun < minYear);
+      if (old.length) { notes.push(`${file.name}: ${old.length} sheet tahun ${[...new Set(old.map((x) => x.rec.tahun))].join(', ')} dilewati (data dashboard mulai ${minYear}).`); old.forEach((x) => found.splice(found.indexOf(x), 1)); }
       const months = [...new Set(found.filter((x) => x.rec).map((x) => x.rec.tahun * 100 + x.rec.bulan))].sort((a, b) => a - b);
       let keep = months;
       if (months.length > 1) {
@@ -295,7 +299,8 @@
     $('up-k-go').disabled = false;
     const s = (j) => kRes.rows.filter((r) => r.JENIS === j).reduce((a, r) => a + r.JUMLAH, 0);
     const ms = [...new Set(kRes.rows.map((r) => r.BULAN_NO))].sort((a, b) => a - b);
-    $('up-k-kv').replaceChildren(...[['Baris di file', f0.format(kRes.total)], ['Disetujui (approval 2)', f0.format(kRes.approved)], ['Event koreksi', f0.format(s('Koreksi'))], ['Event cleansing', f0.format(s('Cleansing'))]]
+    $('up-k-kv').replaceChildren(...[['Baris di file', f0.format(kRes.total)], ['Disetujui (approval 2)', f0.format(kRes.approved)], ['Event koreksi', f0.format(s('Koreksi'))], ['Event cleansing', f0.format(s('Cleansing'))],
+      ['Per kode', (() => { const k = {}; kRes.rows.forEach((r) => { k[r.KODE] = (k[r.KODE] || 0) + r.JUMLAH; }); return Object.entries(k).sort((a, b) => b[1] - a[1]).map(([c, n]) => `${c === '-' ? 'tanpa kode' : c} ${f0.format(n)}`).join(' · '); })()]]
       .map(([a, v]) => el('div', {}, el('span', { textContent: a }), el('b', { textContent: v }))));
     $('up-k-sum').textContent = `${kRes.file}: ${BLN[ms[0] - 1]} – ${BLN[ms[ms.length - 1] - 1]} ${kRes.tahun}, ${new Set(kRes.rows.map((r) => r.UP3)).size} UP3.` + (kRes.unknown.length ? ` Area tidak dikenali (tidak dihitung): ${kRes.unknown.map(([a, n]) => `${a} (${n})`).join(', ')}.` : '');
   }
