@@ -167,22 +167,20 @@
     const BLm = BLN[det.bulan - 1];
     const z = (v) => (v ? f0.format(v) : '<span class="z">0</span>');
     const hiH = Math.max(...UNITS.map((u) => det.uid[u].h[0] + det.uid[u].h[1]));
-    const tr = UNITS.map((u) => { const d = det.uid[u];
-      return `<tr${hiH && d.h[0] + d.h[1] === hiH ? ' class="h-hot"' : ''}><td>${NM[u]}</td><td class="h-n">${z(d.h[0])}</td><td class="h-n">${z(d.h[1])}</td><td class="h-n c">${z(d.b[0])}</td><td class="h-n">${z(d.b[1])}</td><td class="h-n c">${z(d.c[0])}</td><td class="h-n">${z(d.c[1])}</td><td class="h-n c${d.k ? ' kr' : ''}">${z(d.k)}</td></tr>`; }).join('');
-    // penyulang kronis terbanyak se-Sumkal (dari 3 teratas per UID)
-    const all = UNITS.flatMap((u) => det.uid[u].top.map(([nm, c]) => ({ u, nm, c }))).filter((x) => x.c >= 7).sort((a, b) => b.c - a.c);
-    const topK = all.slice(0, 6).map((x) => `<span class="h-kr">${esc(x.nm)} <em>${NM[x.u]}</em> <b>${f0.format(x.c)}</b></span>`).join('');
+    const tr = UNITS.map((u) => { const d = det.uid[u], k1 = d.top[0];
+      const kr = k1 ? `<td class="c nm">${esc(k1[0])}${d.k > 1 ? ` <small>+${d.k - 1}</small>` : ''}</td><td class="h-n">${z(k1[2])}</td><td class="h-n">${z(k1[3])}</td><td class="h-n kr">${f0.format(k1[1])}</td>`
+        : '<td class="c nm z">–</td><td class="h-n z">–</td><td class="h-n z">–</td><td class="h-n z">–</td>';
+      return `<tr${hiH && d.h[0] + d.h[1] === hiH ? ' class="h-hot"' : ''}><td>${NM[u]}</td><td class="h-n">${z(d.h[0])}</td><td class="h-n">${z(d.h[1])}</td><td class="h-n c">${z(d.b[0])}</td><td class="h-n">${z(d.b[1])}</td><td class="h-n c">${z(d.c[0])}</td><td class="h-n">${z(d.c[1])}</td>${kr}</tr>`; }).join('');
     const dbTxt = det.dbBulan.length ? `${BLN[det.dbBulan[0] - 1].slice(0, 3)}${det.dbBulan.length > 1 ? '–' + BLN[det.dbBulan[det.dbBulan.length - 1] - 1].slice(0, 3) : ''}` : '';
     const kurang = det.dbKurang.length ? ` <b class="warn">${det.dbKurang.map((b) => BLN[b - 1].slice(0, 3)).join(', ')} belum ada di database.</b>` : '';
     $('h-kj').innerHTML = `
       <div class="h-tbox"><table class="h-kj-t">
-        <tr><th rowspan="2">UNIT</th><th colspan="2" class="g">H-1 · ${dd(det.tgl)}</th><th colspan="2" class="g c">${esc(BLm.slice(0, 3).toUpperCase())} ${det.tahun}</th><th colspan="2" class="g c">KUMULATIF ${det.tahun}</th><th rowspan="2" class="h-n c">KRONIS<br><small>&gt;6×</small></th></tr>
-        <tr class="sub"><th class="h-n">P</th><th class="h-n">S</th><th class="h-n c">P</th><th class="h-n">S</th><th class="h-n c">P</th><th class="h-n">S</th></tr>
+        <tr><th rowspan="2">UNIT</th><th colspan="2" class="g c">REALISASI H-1<br><small>${dd(det.tgl)}</small></th><th colspan="2" class="g c">BULAN BERJALAN<br><small>${esc(BLm)}</small></th><th colspan="2" class="g c">KUMULATIF<br><small>Jan–${esc(BLm.slice(0, 3))} ${det.tahun}</small></th><th colspan="4" class="g c">PENYULANG KRONIS NO. 1</th></tr>
+        <tr class="sub"><th class="h-n c">P</th><th class="h-n">S</th><th class="h-n c">P</th><th class="h-n">S</th><th class="h-n c">P</th><th class="h-n">S</th><th class="c nm">Nama</th><th class="h-n">P</th><th class="h-n">S</th><th class="h-n">Total</th></tr>
         ${tr}
-        <tr class="tot"><td>SUMKAL</td><td class="h-n">${f0.format(T.h[0])}</td><td class="h-n">${f0.format(T.h[1])}</td><td class="h-n c">${f0.format(T.b[0])}</td><td class="h-n">${f0.format(T.b[1])}</td><td class="h-n c">${f0.format(T.c[0])}</td><td class="h-n">${f0.format(T.c[1])}</td><td class="h-n c">${f0.format(T.k)}</td></tr>
+        <tr class="tot"><td>SUMKAL</td><td class="h-n">${f0.format(T.h[0])}</td><td class="h-n">${f0.format(T.h[1])}</td><td class="h-n c">${f0.format(T.b[0])}</td><td class="h-n">${f0.format(T.b[1])}</td><td class="h-n c">${f0.format(T.c[0])}</td><td class="h-n">${f0.format(T.c[1])}</td><td class="c nm" colspan="4">${f0.format(T.k)} penyulang kronis</td></tr>
       </table></div>
-      ${topK ? `<div class="h-kj-top"><b>Penyulang kronis terbanyak:</b>${topK}</div>` : ''}
-      <div class="h-note">P = permanen, S = sesaat; kode J, No. Laporan unik. Kronis = penyulang &gt;6 kali gangguan di ${esc(BLm)}. Kumulatif = ${dbTxt ? `database Event Padam Penyulang ${dbTxt} + ` : ''}Detil Kode ${esc(BLm.slice(0, 3))}.${kurang} Baris merah: gangguan H-1 tertinggi.</div>`;
+      <div class="h-note">P = permanen, S = sesaat; kode J, No. Laporan unik. Penyulang kronis no. 1 = penyulang dengan gangguan permanen + sesaat terbanyak (lebih dari 6 kali) di ${esc(BLm)} per UID; +n = jumlah penyulang kronis lain di UID itu. Kumulatif = ${dbTxt ? `database Event Padam Penyulang ${dbTxt} + ` : ''}Detil Kode ${esc(BLm.slice(0, 3))}.${kurang} Baris merah: gangguan H-1 tertinggi.</div>`;
   }
   document.addEventListener('ss-harian-render', (e) => { try { render(e.detail.m, e.detail.year); } catch (x) { console.error(x); } });
 
