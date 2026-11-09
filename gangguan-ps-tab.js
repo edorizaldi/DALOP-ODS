@@ -23,6 +23,45 @@
   $('gps-dl').addEventListener('click', () => window.SSExport({ card: 'gps-card', btn: 'gps-dl', msg: 'gps-msg', preview: 'gps-pv', filename: `Permanen_Sesaat_per_Unit_${ctx.gps.replace(/[^A-Za-z0-9]+/g, '_')}.png` }));
   $('gsk-dl').addEventListener('click', () => window.SSExport({ card: 'gsk-card', btn: 'gsk-dl', msg: 'gsk-msg', preview: 'gsk-pv', filename: `Kondisi_Penyulang_${ctx.gsk.replace(/[^A-Za-z0-9]+/g, '_')}.png` }));
 
+  // ---------- rekap permanen / sesaat per UID per bulan (kode J, Distribusi, semua jenis padam) ----------
+  let gprRows = [];
+  $('gpr-dl').addEventListener('click', () => window.SSExport({ card: 'gpr-card', btn: 'gpr-dl', msg: 'gpr-msg', preview: 'gpr-pv', filename: 'Rekap_Permanen_Sesaat_per_UID_2026.png' }));
+  $('gpr-csv').addEventListener('click', () => {
+    if (!gprRows.length) return;
+    const csv = gprRows.map((r) => r.map((v) => (/[;"\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v)).join(';')).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = 'Rekap_Permanen_Sesaat_per_UID_2026.csv'; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  });
+  function renderRekap() {
+    const D = SSD.data('gangguan_ps'); if (D.status !== 'ok') return;
+    const v = {}; const ms = new Set();
+    D.data.forEach((r) => {
+      if (r.KODE !== 'J' || r.BIDANG !== 'DISTRIBUSI' || (r.PS !== 'Permanen' && r.PS !== 'Sesaat')) return;
+      const m = +r.BULAN_NO; if (!(m >= 1 && m <= 12)) return; ms.add(m);
+      const k = r.UNIT + '|' + r.PS + '|' + m; v[k] = (v[k] || 0) + Number(r.JUMLAH);
+    });
+    const months = [...ms].sort((a, b) => a - b); const lastM = months[months.length - 1];
+    const us = UORD.filter((u) => months.some((m) => v[u + '|Permanen|' + m] || v[u + '|Sesaat|' + m]));
+    const g = (u, ps, m) => (u ? v[u + '|' + ps + '|' + m] || 0 : us.reduce((a, x) => a + (v[x + '|' + ps + '|' + m] || 0), 0));
+    const cum = (u, ps) => months.reduce((a, m) => a + g(u, ps, m), 0);
+    const th = mk('thead'), hr = mk('tr');
+    [['UID', ''], ['', ''], ...months.map((m) => [BS[m - 1], 'num']), [`Kumulatif Jan–${BS[lastM - 1]}`, 'num gpr-cum']].forEach(([h, c]) => hr.append(mk('th', h, c))); th.append(hr);
+    const tb = mk('tbody'); gprRows = [['UID', 'Jenis', ...months.map((m) => BLN[m - 1]), `Kumulatif Jan-${BLN[lastM - 1]}`]];
+    const block = (u, name, cls) => {
+      ['Permanen', 'Sesaat', 'Total'].forEach((ps, i) => {
+        const tr = mk('tr', null, [cls, i === 0 ? 'gpr-first' : '', ps === 'Total' ? 'gpr-sum' : ''].filter(Boolean).join(' '));
+        if (i === 0) { const td = mk('td', name, 'gpr-u'); td.rowSpan = 3; tr.append(td); }
+        const val = (m) => (ps === 'Total' ? g(u, 'Permanen', m) + g(u, 'Sesaat', m) : g(u, ps, m));
+        const sw = mk('td', null, 'gpr-l'); if (ps !== 'Total') { const i2 = mk('i', null, 'ss-sw'); i2.style.background = ps === 'Permanen' ? C_P : C_S; sw.append(i2); } sw.append(ps); tr.append(sw);
+        months.forEach((m) => { const n = val(m); tr.append(mk('td', fmt(n), 'num' + (n ? '' : ' gx-zero'))); });
+        const c = ps === 'Total' ? cum(u, 'Permanen') + cum(u, 'Sesaat') : cum(u, ps); tr.append(mk('td', fmt(c), 'num gpr-cum'));
+        tb.append(tr); gprRows.push([name, ps, ...months.map(val), c]);
+      });
+    };
+    us.forEach((u) => block(u, uname(u)));
+    block(null, 'Total Sumkal', 'dp-ps-tot');
+    $('gpr-table').replaceChildren(th, tb);
+  }
+
   const filterText = (P) => [P.g_kode ? 'Kode ' + P.g_kode : 'semua kode', P.g_bidang ? 'Bidang ' + tc(P.g_bidang) : 'semua bidang'].join(' · ');
 
   // ---------- 1) permanen vs sesaat per unit ----------
@@ -170,5 +209,5 @@
     $('gsk-note').textContent = 'Dihitung dari gangguan kode J bidang Distribusi (permanen + sesaat) per penyulang per bulan; filter Kode dan Bidang di atas tidak berlaku di kartu ini. P = permanen, S = sesaat. Sempurna = penyulang di database (selain status Inactive / Not Ready) tanpa gangguan kode J distribusi pada bulan itu. Klik batang untuk memilih bulan; klik baris unit untuk memilih unit.';
   }
 
-  SSD.onData(() => { const P = dash.params(); try { renderPS(P); } catch (e) { console.error(e); } try { renderSK(P); } catch (e) { console.error(e); } });
+  SSD.onData(() => { const P = dash.params(); try { renderRekap(); } catch (e) { console.error(e); } try { renderPS(P); } catch (e) { console.error(e); } try { renderSK(P); } catch (e) { console.error(e); } });
 })();

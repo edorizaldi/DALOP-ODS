@@ -25,3 +25,13 @@
 #gsk-chart { height: 280px; }
 #gsk-card .gx-split { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
 @media (max-width: 60rem) { #gsk-card .gx-split { grid-template-columns: 1fr; } }
+/* rekap permanen / sesaat per UID per bulan */
+.gpr-table td, .gpr-table th { padding-top: 4px; padding-bottom: 4px; }
+.gpr-table td.gpr-u { font-weight: 600; vertical-align: middle; white-space: nowrap; }
+.gpr-table tr.gpr-first td { border-top: 2px solid var(--color-border-line); }
+.gpr-table tr.gpr-sum td { font-weight: 700; }
+.gpr-table td.gpr-l { text-align: left !important; white-space: nowrap; }
+.gpr-table tr.dp-ps-tot td { border-top: 0; }
+.gpr-table tr.dp-ps-tot.gpr-first td { border-top: 2px solid var(--color-border-line); }
+.gpr-table .gpr-cum { background: color-mix(in srgb, #B3261E 7%, transparent); font-weight: 700; border-left: 2px solid var(--color-border-line); }
+.gpr-table .ss-sw { margin-right: 6px; }
