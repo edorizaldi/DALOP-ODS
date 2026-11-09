@@ -21,3 +21,7 @@
 .gx-sub { display: block; font-size: 11px; color: var(--color-fg-muted); }
 #gsk-list td:first-child { font-weight: 600; white-space: nowrap; }
 #gsk-list td:nth-child(2), #gsk-list th:nth-child(2), #gsk-list td:nth-child(4), #gsk-list th:nth-child(4) { text-align: left; }
+.gx-mini4 i { display: block; height: 100%; }
+#gsk-chart { height: 280px; }
+#gsk-card .gx-split { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
+@media (max-width: 60rem) { #gsk-card .gx-split { grid-template-columns: 1fr; } }
