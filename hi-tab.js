@@ -1,7 +1,7 @@
 // Tab Health Index Penyulang (menu Database).
 // Sumber: database Event Padam Penyulang saja: per penyulang (peny_bulanan) dan per UP3 (gangguan_up3, untuk UID tiap UP3).
 // Kelas per penyulang per bulan dari gangguan kode J bidang Distribusi, jumlah permanen + sesaat (semua jenis padam):
-//   kronis >= 6 kali, sakit 2-5 kali, sehat 1 kali, sempurna 0 kali (penyulang yang tercatat di database Event Padam Penyulang tanpa gangguan kode J distribusi bulan itu).
+//   kronis >= 6 kali, sakit 2-5 kali, sehat 1 kali. Penyulang tanpa gangguan kode J distribusi pada bulan itu tidak dihitung.
 (() => {
   const $ = (id) => document.getElementById(id);
   if (!$('hi')) return;
@@ -17,12 +17,11 @@
   const KAT = [
     { id: 'k', nm: 'Kronis', ket: '≥6 kali', c: '#B3261E', fg: '#fff' },
     { id: 's', nm: 'Sakit', ket: '2–5 kali', c: '#E9A23B', fg: '#2A1A00' },
-    { id: 'h', nm: 'Sehat', ket: '1 kali', c: '#9CCB8A', fg: '#1d2a14' },
-    { id: 'p', nm: 'Sempurna', ket: '0 kali', c: '#2E7D4F', fg: '#fff' },
+    { id: 'h', nm: 'Sehat', ket: '1 kali', c: '#3E9A5B', fg: '#fff' },
   ];
   const KBY = Object.fromEntries(KAT.map((k) => [k.id, k]));
-  const katOf = (n) => (n >= 6 ? 'k' : n >= 2 ? 's' : n === 1 ? 'h' : 'p');
-  const zero = () => ({ k: 0, s: 0, h: 0, p: 0, t: 0 });
+  const katOf = (n) => (n >= 6 ? 'k' : n >= 2 ? 's' : n === 1 ? 'h' : null);
+  const zero = () => ({ k: 0, s: 0, h: 0, t: 0 });
 
   // ---------- kontrol ----------
   $('hi-f-uid').addEventListener('change', (e) => dash.setParams({ hi_uid: e.target.value || null, hi_up3: null }));
@@ -59,7 +58,7 @@
     const up3ByU = {}; feeders.forEach((f) => { (up3ByU[f.u] || (up3ByU[f.u] = new Set())).add(f.u3); });
     return { feeders, months, ada, up3ByU };
   }
-  // kelas penyulang f pada bulan m: 'k' | 's' | 'h' | 'p' | null (tidak dihitung)
+  // kelas penyulang f pada bulan m: 'k' | 's' | 'h' | null (tanpa gangguan atau belum ada data)
   const kat = (f, m) => {
     if (!IX.ada.has(m + '|' + f.u)) return null;
     const o = f.mo[m]; const n = o ? o[0] + o[1] : 0;
@@ -100,7 +99,7 @@
     {
       const tk = $('hi-take'); tk.classList.remove('dash-skeleton'); tk.replaceChildren();
       const Bb = (t) => mk('b', t);
-      tk.append(`${BLN[bm - 1]} 2026, ${where}: dari `, Bb(`${fmt(cur.t)} penyulang`), ' terdapat ', Bb(`${fmt(cur.k)} kronis (${pc(cur.t ? cur.k / cur.t : 0)})`), ', ', Bb(`${fmt(cur.s)} sakit`), ', ', Bb(`${fmt(cur.h)} sehat`), ' dan ', Bb(`${fmt(cur.p)} sempurna`), '. ');
+      tk.append(`${BLN[bm - 1]} 2026, ${where}: `, Bb(`${fmt(cur.t)} penyulang`), ' mengalami gangguan kode J distribusi, terdiri dari ', Bb(`${fmt(cur.k)} kronis (${pc(cur.t ? cur.k / cur.t : 0)})`), ', ', Bb(`${fmt(cur.s)} sakit`), ' dan ', Bb(`${fmt(cur.h)} sehat`), '. ');
       if (prv) { const d = cur.k - prv.k; tk.append(`Kronis ${d > 0 ? 'naik' : d < 0 ? 'turun' : 'tetap'} `, Bb(d ? `${fmt(Math.abs(d))} penyulang` : ''), ` dibanding ${BLN[prevM - 1]}. `); }
       if (!up3) {
         const grp = uid ? [...(IX.up3ByU[uid] || [])].map((u3) => [u3, count(scoped.filter((f) => f.u3 === u3), bm)]) : UORD.map((u) => [u, count(scoped.filter((f) => f.u === u), bm)]);
@@ -132,7 +131,7 @@
       const topK = shown.slice().sort((a, b) => b[1].k - a[1].k)[0];
       const uidO = {}; feeders.forEach((f) => { const k = kat(f, bm); if (!k) return; const o = uidO[f.u] || (uidO[f.u] = zero()); o[k]++; o.t++; });
       const share = (r) => (uidO[r] && uidO[r].t ? uidO[r].k / uidO[r].t : 0); const smx = Math.max(0.01, ...UORD.map(share));
-      const pts = shown.map(([u3, o]) => { const k = findK(u3); return { lon: k.lon, lat: k.lat, r: 3 + 9 * Math.sqrt(o.k / mx), color: '#B3261E', label: u3, selected: u3 === up3, pulse: !!topK && topK[0] === u3 && o.k > 0, pulseColor: 'var(--cds-chart-status-critical)', tip: ['UP3 ' + u3, [[null, 'Kronis', fmt(o.k)], [null, 'Sakit', fmt(o.s)], [null, 'Sehat', fmt(o.h)], [null, 'Sempurna', fmt(o.p)], [null, 'Porsi kronis', pc(o.t ? o.k / o.t : 0)]]], onClick: () => dash.setParams({ hi_uid: o.u, hi_up3: up3 === u3 ? null : u3 }) }; });
+      const pts = shown.map(([u3, o]) => { const k = findK(u3); return { lon: k.lon, lat: k.lat, r: 3 + 9 * Math.sqrt(o.k / mx), color: '#B3261E', label: u3, selected: u3 === up3, pulse: !!topK && topK[0] === u3 && o.k > 0, pulseColor: 'var(--cds-chart-status-critical)', tip: ['UP3 ' + u3, [[null, 'Kronis', fmt(o.k)], [null, 'Sakit', fmt(o.s)], [null, 'Sehat', fmt(o.h)], [null, 'Porsi kronis', pc(o.t ? o.k / o.t : 0)]]], onClick: () => dash.setParams({ hi_uid: o.u, hi_up3: up3 === u3 ? null : u3 }) }; });
       window.SSMAP($('hi-map'), { label: 'Peta health index penyulang', focus: uid, fill: (r) => `color-mix(in srgb, #B3261E ${Math.round(4 + 34 * (share(r) / smx))}%, var(--color-panel))`, regionTip: (r, prov) => [ULABEL[r] || r, [[null, prov, ''], [null, 'Kronis', fmt((uidO[r] || {}).k || 0)], [null, 'Porsi kronis', pc(share(r))]]], onRegion: (r) => dash.setParams({ hi_uid: uid === r ? null : r, hi_up3: null }), points: pts });
       $('hi-map-note').textContent = `${BLN[bm - 1]} 2026. Ukuran titik: jumlah penyulang kronis per UP3; warna wilayah: porsi penyulang kronis per UID.` + (topK && topK[1].k ? ` Titik berdenyut: UP3 ${topK[0]} (${fmt(topK[1].k)} kronis).` : '') + ' Klik titik untuk memilih UP3, klik wilayah untuk memilih UID.';
     }
@@ -173,7 +172,7 @@
       const keys = byUp3 ? [...(IX.up3ByU[uid] || [])].sort() : UORD;
       const rows = keys.map((k) => ({ key: k, ...count(feeders.filter((f) => (byUp3 ? f.u === uid && f.u3 === k : f.u === k)), bm) })).filter((o) => o.t).sort((a, b) => (b.k / b.t) - (a.k / a.t) || b.k - a.k);
       const th = mk('thead'), hr = mk('tr');
-      [[byUp3 ? 'UP3' : 'UID', ''], ...KAT.map((k) => [k.nm, 'num']), ['Total', 'num'], ['% kronis', 'num'], ['Komposisi', '']].forEach(([h, c], i) => { const t = mk('th', h, c); if (i >= 1 && i <= 4) t.style.boxShadow = `inset 0 3px 0 ${KAT[i - 1].c}`; hr.append(t); });
+      [[byUp3 ? 'UP3' : 'UID', ''], ...KAT.map((k) => [k.nm, 'num']), ['Total', 'num'], ['% kronis', 'num'], ['Komposisi', '']].forEach(([h, c], i) => { const t = mk('th', h, c); if (i >= 1 && i <= KAT.length) t.style.boxShadow = `inset 0 3px 0 ${KAT[i - 1].c}`; hr.append(t); });
       th.append(hr);
       const tb = mk('tbody');
       const line = (name, o, cls, onPick) => {
@@ -192,18 +191,18 @@
       $('hi-unit-note').textContent = `Diurutkan dari porsi penyulang kronis terbesar. Klik baris untuk memilih ${byUp3 ? 'UP3' : 'UID'}${byUp3 ? '; klik baris total untuk kembali ke semua UID' : ''}.`;
     }
 
-    S = { scoped, bm, where, uid, months, katSel: ['k', 's', 'h', 'p', 'ks'].includes(P.hi_kat) ? P.hi_kat : 'ks' };
+    S = { scoped, bm, where, uid, months, katSel: ['k', 's', 'h', 'ks', 'all'].includes(P.hi_kat) ? P.hi_kat : 'ks' };
     renderList();
-    $('hi-note').textContent = 'Sumber: database Event Padam Penyulang saja (gangguan per penyulang dari APKT); tidak memakai Database Penyulang. Penyulang yang dihitung = semua penyulang yang pernah tercatat di database Event Padam Penyulang 2026. Kelas per penyulang per bulan dari gangguan kode J bidang Distribusi, jumlah permanen + sesaat, semua jenis padam: kronis ≥ 6 kali, sakit 2–5 kali, sehat 1 kali, sempurna tanpa gangguan kode J distribusi pada bulan itu. UP3 mengikuti nama UP3 di database Event Padam Penyulang (termasuk "UP3 tidak dikenali"). Unit yang belum punya data penyulang pada suatu bulan tidak diberi kelas di bulan itu.';
+    $('hi-note').textContent = 'Sumber: database Event Padam Penyulang saja (gangguan per penyulang dari APKT); tidak memakai Database Penyulang. Kelas per penyulang per bulan dari gangguan kode J bidang Distribusi, jumlah permanen + sesaat, semua jenis padam: kronis ≥ 6 kali, sakit 2–5 kali, sehat 1 kali. Penyulang tanpa gangguan kode J distribusi pada bulan itu tidak dihitung; total = penyulang yang mengalami gangguan. UP3 mengikuti nama UP3 di database Event Padam Penyulang (termasuk "UP3 tidak dikenali"). Unit yang belum punya data penyulang pada suatu bulan tidak diberi kelas di bulan itu.';
   }
 
   // daftar penyulang dengan riwayat kelas per bulan
   function renderList() {
     if (!S) return;
     const { scoped, bm, where, uid, months, katSel } = S;
-    const opts = [['ks', 'Kronis + sakit'], ['k', 'Kronis'], ['s', 'Sakit'], ['h', 'Sehat'], ['p', 'Sempurna']];
+    const opts = [['ks', 'Kronis + sakit'], ['k', 'Kronis'], ['s', 'Sakit'], ['h', 'Sehat'], ['all', 'Semua']];
     $('hi-f-kat').replaceChildren(...opts.map(([v, l]) => { const b = mk('button', l, 'ss-chip'); b.type = 'button'; b.dataset.v = v; b.setAttribute('aria-pressed', String(v === katSel)); return b; }));
-    const want = katSel === 'ks' ? ['k', 's'] : [katSel];
+    const want = katSel === 'ks' ? ['k', 's'] : katSel === 'all' ? ['k', 's', 'h'] : [katSel];
     let rows = scoped.map((f) => ({ f, k: kat(f, bm), o: f.mo[bm] || [0, 0] })).filter((r) => r.k && want.includes(r.k));
     if (q) rows = rows.filter((r) => r.f.peny.toLowerCase().includes(q) || r.f.u3.toLowerCase().includes(q));
     rows.sort((a, b) => (b.o[0] + b.o[1]) - (a.o[0] + a.o[1]) || b.o[0] - a.o[0] || a.f.peny.localeCompare(b.f.peny));
@@ -224,9 +223,9 @@
       let nK = 0;
       upto.forEach((m) => {
         const km = kat(f, m); const mo = f.mo[m]; const n = mo ? mo[0] + mo[1] : 0; if (km === 'k') nK++;
-        const td = mk('td', null, 'hi-mc'); const c = mk('span', km ? (n ? fmt(n) : '') : '–', 'hi-cell' + (km ? '' : ' na'));
+        const td = mk('td', null, 'hi-mc'); const nd = !IX.ada.has(m + '|' + f.u); const c = mk('span', km ? fmt(n) : nd ? '–' : '0', 'hi-cell' + (km ? '' : nd ? ' na' : ' z'));
         if (km) { c.style.background = KBY[km].c; c.style.color = KBY[km].fg; }
-        c.title = `${BLN[m - 1]}: ${km ? KBY[km].nm.toLowerCase() + (mo ? ` (${fmt(mo[0])} permanen, ${fmt(mo[1])} sesaat)` : '') : 'belum ada data'}`;
+        c.title = `${BLN[m - 1]}: ${km ? KBY[km].nm.toLowerCase() + (mo ? ` (${fmt(mo[0])} permanen, ${fmt(mo[1])} sesaat)` : '') : nd ? 'belum ada data' : 'tanpa gangguan kode J distribusi'}`;
         if (m === bm) td.classList.add('cur'); td.append(c); tr.append(td);
       });
       tr.append(mk('td', `${fmt(nK)} dari ${upto.length}`, 'num'));
