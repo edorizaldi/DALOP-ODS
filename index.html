@@ -851,19 +851,6 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <div class="ss-g-wrap" data-source="gangguan_ps"><table class="ss-table gx-table gpr-table" id="gpr-table"></table></div>
       <div class="h-preview" id="gpr-pv" hidden><span class="ss-note"></span><img alt="Rekap gangguan permanen dan sesaat per UID per bulan"></div>
     </div>
-    <div class="ss-card" id="gsk-card">
-      <div class="dp-head"><h3>Kondisi penyulang: kronis, sakit, sehat, sempurna</h3><div class="dp-dl"><span class="ss-note" id="gsk-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="gsk-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
-      <p class="ss-note">Dihitung per penyulang per bulan dari gangguan <b>kode J, bidang Distribusi</b>, jumlah permanen + sesaat: <b>kronis</b> ≥ 6 kali, <b>sakit</b> 2–5 kali, <b>sehat</b> 1 kali, <b>sempurna</b> tanpa gangguan.</p>
-      <p class="ss-g-sel" id="gsk-sel"></p>
-      <div class="ss-legend" id="gsk-legend"></div>
-      <div class="ss-chart dash-skeleton gx-chart" id="gsk-chart" data-source="peny_bulanan peny_profil"></div>
-      <div class="gx-split">
-        <div><h4 class="gx-h4" id="gsk-unit-h">Per unit</h4><div class="ss-g-wrap"><table class="ss-table gx-table" id="gsk-unit"></table></div></div>
-        <div><div class="gx-bar"><h4 class="gx-h4" id="gsk-list-h">Penyulang kronis dan sakit</h4><select id="gsk-bulan" aria-label="Bulan daftar penyulang"></select></div><div class="ss-g-wrap gx-scroll"><table class="ss-table gx-table" id="gsk-list"></table></div></div>
-      </div>
-      <p class="ss-note" id="gsk-note"></p>
-      <div class="h-preview" id="gsk-pv" hidden><span class="ss-note"></span><img alt="Jumlah penyulang sakit vs kronis"></div>
-    </div>
   </section>
 
   <section class="ss-sec" id="kc" data-tab="kc" hidden>
@@ -1045,6 +1032,19 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <input class="ss-search" id="p-search" type="search" placeholder="Cari penyulang atau ULP" aria-label="Cari penyulang">
       </div>
       <div class="ss-tablewrap" data-source="peny_profil peny_bulanan"><table class="ss-table ss-p-table" id="p-tabel"></table></div>
+    </div>
+    <div class="ss-card" id="gsk-card">
+      <div class="dp-head"><h3>Kondisi penyulang: kronis, sakit, sehat, sempurna</h3><div class="dp-dl"><span class="ss-note" id="gsk-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="gsk-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
+      <p class="ss-note">Dihitung per penyulang per bulan dari gangguan <b>kode J, bidang Distribusi</b>, jumlah permanen + sesaat: <b>kronis</b> ≥ 6 kali, <b>sakit</b> 2–5 kali, <b>sehat</b> 1 kali, <b>sempurna</b> tanpa gangguan.</p>
+      <p class="ss-g-sel" id="gsk-sel"></p>
+      <div class="ss-legend" id="gsk-legend"></div>
+      <div class="ss-chart dash-skeleton gx-chart" id="gsk-chart" data-source="peny_bulanan peny_profil"></div>
+      <div class="gx-split">
+        <div><h4 class="gx-h4" id="gsk-unit-h">Per unit</h4><div class="ss-g-wrap"><table class="ss-table gx-table" id="gsk-unit"></table></div></div>
+        <div><div class="gx-bar"><h4 class="gx-h4" id="gsk-list-h">Penyulang kronis dan sakit</h4><select id="gsk-bulan" aria-label="Bulan daftar penyulang"></select></div><div class="ss-g-wrap gx-scroll"><table class="ss-table gx-table" id="gsk-list"></table></div></div>
+      </div>
+      <p class="ss-note" id="gsk-note"></p>
+      <div class="h-preview" id="gsk-pv" hidden><span class="ss-note"></span><img alt="Jumlah penyulang sakit vs kronis"></div>
     </div>
   </section>
 
@@ -2565,6 +2565,7 @@ SSD.calc('up3_yoy', {
 </script>
 
 <script src="peny-tab.js"></script>
+<script src="penyulang-kondisi.js?v=20261109"></script>
 
 <script>
 (() => {
@@ -2995,7 +2996,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="gj-tab.js"></script>
 <script>document.getElementById('g-mx-dl').addEventListener('click', () => { const c = window.SSGRc || { per: '' }; window.SSExport({ card: 'g-matriks-card', btn: 'g-mx-dl', msg: 'g-mx-msg', preview: 'g-mx-pv', filename: `Matriks_Unit_x_Bulan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
 <script>document.getElementById('g-rc-dl').addEventListener('click', () => { const c = window.SSGRc || { scope: '', per: '' }; window.SSExport({ hideCols: ['Perubahan', 'Porsi'], card: 'g-rincian-card', btn: 'g-rc-dl', msg: 'g-rc-msg', preview: 'g-rc-pv', caption: `Jumlah No. Laporan unik per bulan · ${c.scope} · ${c.per}. % Distribusi = laporan bidang Distribusi ÷ total laporan.`, filename: `Rincian_Bulanan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
-<script src="gangguan-ps-tab.js?v=20261109b"></script>
+<script src="gangguan-ps-tab.js?v=20261109c"></script>
 <script src="kc-tab.js"></script>
 <script src="dp-tab.js"></script>
 <script src="upd-core.js?v=20261108b"></script>
