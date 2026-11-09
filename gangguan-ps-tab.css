@@ -35,3 +35,4 @@
 .gpr-table tr.dp-ps-tot.gpr-first td { border-top: 2px solid var(--color-border-line); }
 .gpr-table .gpr-cum { background: color-mix(in srgb, #B3261E 7%, transparent); font-weight: 700; border-left: 2px solid var(--color-border-line); }
 .gpr-table .ss-sw { margin-right: 6px; }
+#gsk-chart .gsk-empty { display: grid; place-items: center; height: 100%; text-align: center; padding: 0 16px; }
