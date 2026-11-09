@@ -1,7 +1,7 @@
 // Tab Health Index Penyulang (menu Database).
-// Sumber: database Event Padam Penyulang per penyulang (peny_bulanan) dan database penyulang (peny_profil).
+// Sumber: database Event Padam Penyulang saja: per penyulang (peny_bulanan) dan per UP3 (gangguan_up3, untuk UID tiap UP3).
 // Kelas per penyulang per bulan dari gangguan kode J bidang Distribusi, jumlah permanen + sesaat (semua jenis padam):
-//   kronis >= 6 kali, sakit 2-5 kali, sehat 1 kali, sempurna 0 kali (penyulang aktif di database tanpa gangguan).
+//   kronis >= 6 kali, sakit 2-5 kali, sehat 1 kali, sempurna 0 kali (penyulang yang tercatat di database Event Padam Penyulang tanpa gangguan kode J distribusi bulan itu).
 (() => {
   const $ = (id) => document.getElementById(id);
   if (!$('hi')) return;
@@ -37,18 +37,24 @@
 
   // ---------- indeks data (dibangun ulang hanya bila data berubah) ----------
   let IX = null, srcB = null, srcP = null;
-  function build(B, PR) {
-    const u3uid = new Map(); PR.forEach((r) => { if (r.uid && !u3uid.has(r.up3)) u3uid.set(r.up3, r.uid); });
-    const F = new Map(); // up3|penyulang -> { u, u3, peny, pop, mo: { m: [p, s] } }
-    const get = (u3, peny) => { const id = u3 + '\u0001' + peny; let f = F.get(id); if (!f) { f = { u: u3uid.get(u3) || '', u3, peny, pop: false, mo: {} }; F.set(id, f); } return f; };
-    PR.forEach((r) => { if (r.di_database !== 'Ya' || /inactive|not ready/i.test(r.status || '')) return; const f = get(r.up3, r.penyulang); f.pop = true; if (r.uid) f.u = r.uid; });
+  function build(B, GU) {
+    // UP3 -> UID dari database Event Padam Penyulang per UP3 (gangguan_up3); "UID X (UP3 tidak dikenali)" -> X
+    const nk = (x) => String(x || '').toUpperCase().replace(/[^A-Z]/g, '');
+    const ALIAS = { BELITUNG: 'TANJUNGPANDANBELITUNG', PADANGSIDIMPUAN: 'PADANGSIDEMPUAN' };
+    const gu = new Map(); GU.forEach((r) => { if (UORD.includes(r.UNIT)) gu.set(nk(r.UP3), r.UNIT); });
+    const uidOf = (u3) => { const m = /^UID\s+(\S+)\s+\(UP3 tidak dikenali\)/i.exec(u3) || /UP3 tidak dikenali \((\S+)\)/i.exec(u3); if (m) return m[1].toUpperCase(); return gu.get(nk(u3)) || gu.get(ALIAS[nk(u3)]) || ''; };
+    const u3uid = new Map(); B.forEach((r) => { if (!u3uid.has(r.up3)) u3uid.set(r.up3, uidOf(r.up3)); });
+    // penyulang = semua penyulang yang tercatat di database Event Padam Penyulang (semua kode, bidang, jenis padam)
+    const F = new Map(); // up3|penyulang -> { u, u3, peny, mo: { m: [p, s] } }
     B.forEach((r) => {
+      const id = r.up3 + '\u0001' + r.penyulang; let f = F.get(id);
+      if (!f) { f = { u: u3uid.get(r.up3) || '', u3: r.up3, peny: r.penyulang, mo: {} }; F.set(id, f); }
       if (r.kode !== 'J' || r.bidang !== 'DISTRIBUSI' || (r.ps !== 'Permanen' && r.ps !== 'Sesaat')) return;
-      const f = get(r.up3, r.penyulang); const m = +r.bulan; const o = f.mo[m] || (f.mo[m] = [0, 0]); o[r.ps === 'Permanen' ? 0 : 1] += Number(r.kali);
+      const m = +r.bulan; const o = f.mo[m] || (f.mo[m] = [0, 0]); o[r.ps === 'Permanen' ? 0 : 1] += Number(r.kali);
     });
     const feeders = [...F.values()].filter((f) => UORD.includes(f.u));
     const months = [...new Set(B.map((r) => +r.bulan))].filter((m) => m >= 1 && m <= 12).sort((a, b) => a - b);
-    // unit yang punya data penyulang pada bulan itu (semua kode); tanpa data, penyulangnya tidak diberi kelas
+    // unit yang punya data penyulang pada bulan itu; tanpa data, penyulangnya tidak diberi kelas
     const ada = new Set(B.map((r) => +r.bulan + '|' + (u3uid.get(r.up3) || '')));
     const up3ByU = {}; feeders.forEach((f) => { (up3ByU[f.u] || (up3ByU[f.u] = new Set())).add(f.u3); });
     return { feeders, months, ada, up3ByU };
@@ -57,16 +63,15 @@
   const kat = (f, m) => {
     if (!IX.ada.has(m + '|' + f.u)) return null;
     const o = f.mo[m]; const n = o ? o[0] + o[1] : 0;
-    if (n > 0) return katOf(n);
-    return f.pop ? 'p' : null;
+    return katOf(n);
   };
   const count = (list, m) => { const o = zero(); list.forEach((f) => { const k = kat(f, m); if (k) { o[k]++; o.t++; } }); return o; };
 
   let S = null; // keadaan render terakhir untuk daftar penyulang
   function render() {
-    const B = SSD.data('peny_bulanan'), PR = SSD.data('peny_profil');
-    if (B.status !== 'ok' || PR.status !== 'ok') return;
-    if (srcB !== B.data || srcP !== PR.data) { srcB = B.data; srcP = PR.data; IX = build(B.data, PR.data); }
+    const B = SSD.data('peny_bulanan'), GU = SSD.data('gangguan_up3');
+    if (B.status !== 'ok' || GU.status !== 'ok') return;
+    if (srcB !== B.data || srcP !== GU.data) { srcB = B.data; srcP = GU.data; IX = build(B.data, GU.data); }
     const P = dash.params();
     const { feeders, months } = IX;
     if (!months.length) return;
@@ -189,7 +194,7 @@
 
     S = { scoped, bm, where, uid, months, katSel: ['k', 's', 'h', 'p', 'ks'].includes(P.hi_kat) ? P.hi_kat : 'ks' };
     renderList();
-    $('hi-note').textContent = 'Sumber: database Event Padam Penyulang (gangguan per penyulang dari APKT) dan database penyulang. Kelas dihitung per penyulang per bulan dari gangguan kode J bidang Distribusi, jumlah permanen + sesaat, semua jenis padam: kronis ≥ 6 kali, sakit 2–5 kali, sehat 1 kali, sempurna tanpa gangguan. Sempurna hanya untuk penyulang di database penyulang (selain status Inactive / Not Ready). Unit yang belum punya data penyulang pada suatu bulan tidak diberi kelas di bulan itu.';
+    $('hi-note').textContent = 'Sumber: database Event Padam Penyulang saja (gangguan per penyulang dari APKT); tidak memakai Database Penyulang. Penyulang yang dihitung = semua penyulang yang pernah tercatat di database Event Padam Penyulang 2026. Kelas per penyulang per bulan dari gangguan kode J bidang Distribusi, jumlah permanen + sesaat, semua jenis padam: kronis ≥ 6 kali, sakit 2–5 kali, sehat 1 kali, sempurna tanpa gangguan kode J distribusi pada bulan itu. UP3 mengikuti nama UP3 di database Event Padam Penyulang (termasuk "UP3 tidak dikenali"). Unit yang belum punya data penyulang pada suatu bulan tidak diberi kelas di bulan itu.';
   }
 
   // daftar penyulang dengan riwayat kelas per bulan

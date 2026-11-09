@@ -1043,8 +1043,8 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <div class="ss-hero-main">
         <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-3 3 6 2-3h7"/></svg>Health index penyulang · kode J distribusi</span>
         <h1 class="ss-title" id="hi-h">Health Index Penyulang</h1>
-        <p class="ss-take dash-skeleton" id="hi-take" data-source="peny_profil peny_bulanan">—</p>
-        <div class="ss-filters" id="hi-filter" data-source="peny_profil">
+        <p class="ss-take dash-skeleton" id="hi-take" data-source="peny_bulanan gangguan_up3">—</p>
+        <div class="ss-filters" id="hi-filter" data-source="peny_bulanan">
           <div class="ss-frow"><span class="ss-flabel">UID</span><select id="hi-f-uid" aria-label="UID"></select></div>
           <div class="ss-frow"><span class="ss-flabel">UP3</span><select id="hi-f-up3" aria-label="UP3"></select></div>
           <div class="ss-frow"><span class="ss-flabel">Bulan</span><select id="hi-f-bulan" aria-label="Bulan"></select></div>
@@ -1052,11 +1052,11 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="hi-def"><span class="hi-k"><i></i><b>Kronis</b> ≥ 6 kali</span><span class="hi-s"><i></i><b>Sakit</b> 2–5 kali</span><span class="hi-h"><i></i><b>Sehat</b> 1 kali</span><span class="hi-p"><i></i><b>Sempurna</b> 0 kali</span></div>
       </div>
       <figure class="ss-map" id="hi-peta-wrap">
-        <div class="ss-mapbox" id="hi-map" data-source="peta koordinat peny_profil peny_bulanan"></div>
+        <div class="ss-mapbox" id="hi-map" data-source="peta koordinat peny_bulanan gangguan_up3"></div>
         <figcaption class="ss-map-note" id="hi-map-note"></figcaption>
       </figure>
     </header>
-    <div class="ss-tiles hi-tiles" id="hi-kpi" data-source="peny_profil peny_bulanan">
+    <div class="ss-tiles hi-tiles" id="hi-kpi" data-source="peny_bulanan gangguan_up3">
       <div class="ss-tile hi-tile k"><div class="ss-tile-label">Penyulang kronis</div><div class="ss-big"><span class="dash-skeleton" id="hi-t-k">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="hi-t-k-sub"></div></div>
       <div class="ss-tile hi-tile s"><div class="ss-tile-label">Penyulang sakit</div><div class="ss-big"><span class="dash-skeleton" id="hi-t-s">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="hi-t-s-sub"></div></div>
       <div class="ss-tile hi-tile h"><div class="ss-tile-label">Penyulang sehat</div><div class="ss-big"><span class="dash-skeleton" id="hi-t-h">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="hi-t-h-sub"></div></div>
@@ -1066,13 +1066,13 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <div class="dp-head"><h3 id="hi-trend-h">Health index penyulang per bulan</h3><div class="dp-dl"><span class="ss-note" id="hi-trend-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="hi-trend-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
       <p class="ss-g-sel" id="hi-trend-sel"></p>
       <div class="ss-legend" id="hi-legend"></div>
-      <div class="ss-chart dash-skeleton hi-chart" id="hi-chart" data-source="peny_bulanan peny_profil"></div>
+      <div class="ss-chart dash-skeleton hi-chart" id="hi-chart" data-source="peny_bulanan gangguan_up3"></div>
       <div class="h-preview" id="hi-trend-pv" hidden><span class="ss-note"></span><img alt="Health index penyulang per bulan"></div>
     </div>
     <div class="ss-card" id="hi-unit-card">
       <div class="dp-head"><h3 id="hi-unit-h">Health index per unit</h3><div class="dp-dl"><span class="ss-note" id="hi-unit-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="hi-unit-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
       <p class="ss-note" id="hi-unit-note"></p>
-      <div class="ss-g-wrap" data-source="peny_bulanan peny_profil"><table class="ss-table gx-table hi-unit" id="hi-unit"></table></div>
+      <div class="ss-g-wrap" data-source="peny_bulanan gangguan_up3"><table class="ss-table gx-table hi-unit" id="hi-unit"></table></div>
       <div class="h-preview" id="hi-unit-pv" hidden><span class="ss-note"></span><img alt="Health index per unit"></div>
     </div>
     <div class="ss-card" id="hi-list-card">
@@ -1080,7 +1080,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div><h3 id="hi-list-h">Penyulang kronis dan sakit</h3><p class="ss-note" id="hi-list-note"></p></div>
         <div class="hi-list-ctl"><div class="ss-chips" id="hi-f-kat" role="group" aria-label="Kelas penyulang"></div><input class="ss-search" id="hi-search" type="search" placeholder="Cari penyulang atau UP3" aria-label="Cari penyulang"></div>
       </div>
-      <div class="ss-tablewrap gx-scroll hi-scroll" data-source="peny_profil peny_bulanan"><table class="ss-table gx-table hi-list" id="hi-list"></table></div>
+      <div class="ss-tablewrap gx-scroll hi-scroll" data-source="peny_bulanan gangguan_up3"><table class="ss-table gx-table hi-list" id="hi-list"></table></div>
     </div>
     <p class="ss-note" id="hi-note"></p>
   </section>
@@ -2602,7 +2602,7 @@ SSD.calc('up3_yoy', {
 </script>
 
 <script src="peny-tab.js"></script>
-<script src="hi-tab.js?v=20261109"></script>
+<script src="hi-tab.js?v=20261109b"></script>
 
 <script>
 (() => {
