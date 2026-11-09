@@ -1,4 +1,4 @@
-/* Tab Event Padam Penyulang: permanen vs sesaat per unit, penyulang sakit vs kronis */
+/* Tab Event Padam Penyulang (permanen vs sesaat per unit, rekap per UID) dan Health Index Penyulang (kelas gx-*) */
 .gx-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .gx-h4 { margin: 0; font-size: var(--cds-font-size-body); font-weight: 600; }
 .gx-table td.num, .gx-table th.num, .gx-table td.num + td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -19,5 +19,14 @@
 .gx-table td, .gx-table th { text-align: left; }
 .gx-table tr.dp-ps-tot td { font-weight: 700; border-top: 2px solid var(--color-border-line); }
 .gx-sub { display: block; font-size: 11px; color: var(--color-fg-muted); }
-#gsk-list td:first-child { font-weight: 600; white-space: nowrap; }
-#gsk-list td:nth-child(2), #gsk-list th:nth-child(2), #gsk-list td:nth-child(4), #gsk-list th:nth-child(4) { text-align: left; }
+.gx-mini4 i { display: block; height: 100%; }
+@media (max-width: 60rem) { /* rekap permanen / sesaat per UID per bulan */
+.gpr-table td, .gpr-table th { padding-top: 4px; padding-bottom: 4px; }
+.gpr-table td.gpr-u { font-weight: 600; vertical-align: middle; white-space: nowrap; }
+.gpr-table tr.gpr-first td { border-top: 2px solid var(--color-border-line); }
+.gpr-table tr.gpr-sum td { font-weight: 700; }
+.gpr-table td.gpr-l { text-align: left !important; white-space: nowrap; }
+.gpr-table tr.dp-ps-tot td { border-top: 0; }
+.gpr-table tr.dp-ps-tot.gpr-first td { border-top: 2px solid var(--color-border-line); }
+.gpr-table .gpr-cum { background: color-mix(in srgb, #B3261E 7%, transparent); font-weight: 700; border-left: 2px solid var(--color-border-line); }
+.gpr-table .ss-sw { margin-right: 6px; }

@@ -16,7 +16,8 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="kondisi-tab.css?v=20261103">
 <link rel="stylesheet" href="hirarki-tab.css">
 <link rel="stylesheet" href="workplan-tab.css">
-<link rel="stylesheet" href="gangguan-ps-tab.css">
+<link rel="stylesheet" href="gangguan-ps-tab.css?v=20261109">
+<link rel="stylesheet" href="hi-tab.css?v=20261109">
 <link rel="stylesheet" href="acct.css">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
@@ -650,6 +651,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <li class="ss-mg" data-group="database"><button type="button" class="ss-mg-btn" id="mg-database-b" aria-haspopup="true" aria-expanded="false" aria-controls="mg-database"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span>Database</span><svg class="ss-mg-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         <div class="ss-mg-pop" id="mg-database" role="menu" aria-labelledby="mg-database-b" hidden>
           <button type="button" class="ss-tab" id="tab-penyulang" data-tab-to="penyulang" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12h10M7 12l10-7M7 12l10 7"/></svg><span class="ss-tab-t"><b>Database Penyulang</b><small>Profil dan peta penyulang</small></span></button>
+          <button type="button" class="ss-tab" id="tab-hi" data-tab-to="hi" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M3 12h4l2-3 3 6 2-3h7"/></svg><span class="ss-tab-t"><b>Health Index Penyulang</b><small>Penyulang kronis, sakit, sehat, sempurna</small></span></button>
           <button type="button" class="ss-tab" id="tab-hirarki" data-tab-to="hirarki" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v5M12 8l-6 5M12 8l6 5M6 13v4M18 13v4M4 17h4v4H4zM16 17h4v4h-4z"/></svg><span class="ss-tab-t"><b>Hirarki Aset</b><small>GI, feeder, zona sampai gardu dan trafo</small></span></button>
           <button type="button" class="ss-tab" id="tab-update" data-tab-to="update" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span class="ss-tab-t"><b>Update Data Bulanan</b><small>Unggah file data bulanan ke database</small></span></button>
           <button type="button" class="ss-tab" id="tab-slides" data-tab-to="slides" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8M7 12l3-3 2 2 4-4"/></svg><span class="ss-tab-t"><b>Desain Paparan</b><small>Susun dan unduh slide PowerPoint</small></span></button>
@@ -845,18 +847,11 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <div class="ss-g-wrap" data-source="gangguan_ps"><table class="ss-table dp-ps-table gx-table" id="gps-table"></table></div>
       <div class="h-preview" id="gps-pv" hidden><span class="ss-note"></span><img alt="Event padam permanen vs sesaat per unit"></div>
     </div>
-    <div class="ss-card" id="gsk-card">
-      <div class="dp-head"><h3>Jumlah penyulang sakit vs kronis</h3><div class="dp-dl"><span class="ss-note" id="gsk-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="gsk-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
-      <p class="ss-note">Dihitung per penyulang per bulan dari gangguan permanen (jenis padam Gangguan, kolom P/S = Permanen): <b>sakit</b> = 4–9 kali gangguan permanen dalam sebulan, <b>kronis</b> = 10 kali atau lebih.</p>
-      <p class="ss-g-sel" id="gsk-sel"></p>
-      <div class="ss-legend"><span><i class="ss-sw" style="background:#E9A23B"></i>Sakit (4–9 kali)</span><span><i class="ss-sw" style="background:#B3261E"></i>Kronis (≥10 kali)</span></div>
-      <div class="ss-chart dash-skeleton gx-chart" id="gsk-chart" data-source="peny_bulanan peny_profil"></div>
-      <div class="gx-split">
-        <div><h4 class="gx-h4" id="gsk-unit-h">Per unit</h4><div class="ss-g-wrap"><table class="ss-table gx-table" id="gsk-unit"></table></div></div>
-        <div><div class="gx-bar"><h4 class="gx-h4" id="gsk-list-h">Penyulang kronis dan sakit</h4><select id="gsk-bulan" aria-label="Bulan daftar penyulang"></select></div><div class="ss-g-wrap gx-scroll"><table class="ss-table gx-table" id="gsk-list"></table></div></div>
-      </div>
-      <p class="ss-note" id="gsk-note"></p>
-      <div class="h-preview" id="gsk-pv" hidden><span class="ss-note"></span><img alt="Jumlah penyulang sakit vs kronis"></div>
+    <div class="ss-card" id="gpr-card">
+      <div class="dp-head"><h3>Rekap gangguan permanen dan sesaat per UID per bulan</h3><div class="dp-dl"><span class="ss-note" id="gpr-msg" role="status"></span><button type="button" class="h-act" id="gpr-csv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download CSV</button><button type="button" class="h-act h-act-primary" id="gpr-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
+      <p class="ss-note">Database Event Padam Penyulang: <b>kode J</b>, <b>bidang Distribusi</b>, semua jenis padam. Kolom paling kanan: kumulatif awal tahun s.d. bulan terakhir.</p>
+      <div class="ss-g-wrap" data-source="gangguan_ps"><table class="ss-table gx-table gpr-table" id="gpr-table"></table></div>
+      <div class="h-preview" id="gpr-pv" hidden><span class="ss-note"></span><img alt="Rekap gangguan permanen dan sesaat per UID per bulan"></div>
     </div>
   </section>
 
@@ -1040,6 +1035,54 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       </div>
       <div class="ss-tablewrap" data-source="peny_profil peny_bulanan"><table class="ss-table ss-p-table" id="p-tabel"></table></div>
     </div>
+  </section>
+
+  <section class="ss-sec" id="hi" data-tab="hi" hidden>
+    <div class="ss-dbinfo" data-dbinfo="hi" data-source="info_update"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span class="ss-dbinfo-t">Memuat info update database…</span></div>
+    <header class="ss-hero" id="hi-ringkasan">
+      <div class="ss-hero-main">
+        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-3 3 6 2-3h7"/></svg>Health index penyulang · kode J distribusi</span>
+        <h1 class="ss-title" id="hi-h">Health Index Penyulang</h1>
+        <p class="ss-take dash-skeleton" id="hi-take" data-source="peny_profil peny_bulanan">—</p>
+        <div class="ss-filters" id="hi-filter" data-source="peny_profil">
+          <div class="ss-frow"><span class="ss-flabel">UID</span><select id="hi-f-uid" aria-label="UID"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">UP3</span><select id="hi-f-up3" aria-label="UP3"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">Bulan</span><select id="hi-f-bulan" aria-label="Bulan"></select></div>
+        </div>
+        <div class="hi-def"><span class="hi-k"><i></i><b>Kronis</b> ≥ 6 kali</span><span class="hi-s"><i></i><b>Sakit</b> 2–5 kali</span><span class="hi-h"><i></i><b>Sehat</b> 1 kali</span><span class="hi-p"><i></i><b>Sempurna</b> 0 kali</span></div>
+      </div>
+      <figure class="ss-map" id="hi-peta-wrap">
+        <div class="ss-mapbox" id="hi-map" data-source="peta koordinat peny_profil peny_bulanan"></div>
+        <figcaption class="ss-map-note" id="hi-map-note"></figcaption>
+      </figure>
+    </header>
+    <div class="ss-tiles hi-tiles" id="hi-kpi" data-source="peny_profil peny_bulanan">
+      <div class="ss-tile hi-tile k"><div class="ss-tile-label">Penyulang kronis</div><div class="ss-big"><span class="dash-skeleton" id="hi-t-k">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="hi-t-k-sub"></div></div>
+      <div class="ss-tile hi-tile s"><div class="ss-tile-label">Penyulang sakit</div><div class="ss-big"><span class="dash-skeleton" id="hi-t-s">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="hi-t-s-sub"></div></div>
+      <div class="ss-tile hi-tile h"><div class="ss-tile-label">Penyulang sehat</div><div class="ss-big"><span class="dash-skeleton" id="hi-t-h">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="hi-t-h-sub"></div></div>
+      <div class="ss-tile hi-tile p"><div class="ss-tile-label">Penyulang sempurna</div><div class="ss-big"><span class="dash-skeleton" id="hi-t-p">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="hi-t-p-sub"></div></div>
+    </div>
+    <div class="ss-card" id="hi-trend-card">
+      <div class="dp-head"><h3 id="hi-trend-h">Health index penyulang per bulan</h3><div class="dp-dl"><span class="ss-note" id="hi-trend-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="hi-trend-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
+      <p class="ss-g-sel" id="hi-trend-sel"></p>
+      <div class="ss-legend" id="hi-legend"></div>
+      <div class="ss-chart dash-skeleton hi-chart" id="hi-chart" data-source="peny_bulanan peny_profil"></div>
+      <div class="h-preview" id="hi-trend-pv" hidden><span class="ss-note"></span><img alt="Health index penyulang per bulan"></div>
+    </div>
+    <div class="ss-card" id="hi-unit-card">
+      <div class="dp-head"><h3 id="hi-unit-h">Health index per unit</h3><div class="dp-dl"><span class="ss-note" id="hi-unit-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="hi-unit-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
+      <p class="ss-note" id="hi-unit-note"></p>
+      <div class="ss-g-wrap" data-source="peny_bulanan peny_profil"><table class="ss-table gx-table hi-unit" id="hi-unit"></table></div>
+      <div class="h-preview" id="hi-unit-pv" hidden><span class="ss-note"></span><img alt="Health index per unit"></div>
+    </div>
+    <div class="ss-card" id="hi-list-card">
+      <div class="ss-sechead">
+        <div><h3 id="hi-list-h">Penyulang kronis dan sakit</h3><p class="ss-note" id="hi-list-note"></p></div>
+        <div class="hi-list-ctl"><div class="ss-chips" id="hi-f-kat" role="group" aria-label="Kelas penyulang"></div><input class="ss-search" id="hi-search" type="search" placeholder="Cari penyulang atau UP3" aria-label="Cari penyulang"></div>
+      </div>
+      <div class="ss-tablewrap gx-scroll hi-scroll" data-source="peny_profil peny_bulanan"><table class="ss-table gx-table hi-list" id="hi-list"></table></div>
+    </div>
+    <p class="ss-note" id="hi-note"></p>
   </section>
 
   <section class="ss-sec" id="update" data-tab="update" hidden>
@@ -1566,7 +1609,7 @@ window.SSD = (() => {
 </script>
 <script>
 (() => {
-  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'workplan', 'penyulang', 'hirarki', 'update', 'harian', 'kondisi', 'slides'];
+  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'workplan', 'penyulang', 'hi', 'hirarki', 'update', 'harian', 'kondisi', 'slides'];
   window.SSC = ['var(--x-c0)', 'var(--x-c1)', 'var(--x-c2)', 'var(--x-c3)', 'var(--x-c4)', 'var(--x-c5)', 'var(--x-c6)', 'var(--x-c7)'];
   const show = (tab) => {
     if (!TABS.includes(tab)) tab = 'saidi';
@@ -2559,6 +2602,7 @@ SSD.calc('up3_yoy', {
 </script>
 
 <script src="peny-tab.js"></script>
+<script src="hi-tab.js?v=20261109"></script>
 
 <script>
 (() => {
@@ -2976,7 +3020,9 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
   SSD.onData(() => {
     const D = SSD.data('info_update'); if (D.status !== 'ok') return;
     const keep = INFO.harian && INFO.harian.live ? INFO.harian : null;
-    INFO = {}; D.data.forEach((r) => { INFO[r.tab] = r; }); if (keep) INFO.harian = keep; paint();
+    INFO = {}; D.data.forEach((r) => { INFO[r.tab] = r; }); if (keep) INFO.harian = keep;
+    if (!INFO.hi && INFO.gangguan) INFO.hi = INFO.gangguan; // Health Index Penyulang memakai database Event Padam Penyulang
+    paint();
   });
   // unggahan langsung di tab Infografis Laporan Harian
   window.SSDbInfo = { chip, harian: (iso, periode, sumber) => { INFO.harian = { tab: 'harian', diperbarui: iso, periode, sumber, live: true }; paint(); },
@@ -2989,7 +3035,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="gj-tab.js"></script>
 <script>document.getElementById('g-mx-dl').addEventListener('click', () => { const c = window.SSGRc || { per: '' }; window.SSExport({ card: 'g-matriks-card', btn: 'g-mx-dl', msg: 'g-mx-msg', preview: 'g-mx-pv', filename: `Matriks_Unit_x_Bulan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
 <script>document.getElementById('g-rc-dl').addEventListener('click', () => { const c = window.SSGRc || { scope: '', per: '' }; window.SSExport({ hideCols: ['Perubahan', 'Porsi'], card: 'g-rincian-card', btn: 'g-rc-dl', msg: 'g-rc-msg', preview: 'g-rc-pv', caption: `Jumlah No. Laporan unik per bulan · ${c.scope} · ${c.per}. % Distribusi = laporan bidang Distribusi ÷ total laporan.`, filename: `Rincian_Bulanan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
-<script src="gangguan-ps-tab.js"></script>
+<script src="gangguan-ps-tab.js?v=20261109"></script>
 <script src="kc-tab.js"></script>
 <script src="dp-tab.js"></script>
 <script src="upd-core.js?v=20261108b"></script>
