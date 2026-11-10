@@ -323,7 +323,7 @@
       [['Permanen', 0], ['Sesaat', 1], ['Total', -1]].forEach(([lbl, i], j) => {
         const tr = mk('tr', null, [j === 0 ? 'hi-tfirst' : '', i < 0 ? 'hi-psum' : '', !u ? 'dp-ps-tot' : '', u && u === uid ? 'on' : ''].filter(Boolean).join(' '));
         tr.append(mk('td', j === 0 ? name : '', 'hi-tu'));
-        const lc = mk('td', null, 'hi-pl'); if (i >= 0) { const sw = mk('i', null, 'ss-sw'); sw.style.background = i === 0 ? '#B3261E' : '#E8A39C'; lc.append(sw); } lc.append(lbl); tr.append(lc);
+        const lc = mk('td', null, 'hi-pl'); if (i >= 0) { const sw = mk('i', null, 'ss-sw'); sw.style.background = i === 0 ? SSC[4] : SSC[6]; lc.append(sw); } lc.append(lbl); tr.append(lc);
         let cum = 0;
         upto.forEach((m) => { const n = i < 0 ? get(u, 0, m) + get(u, 1, m) : get(u, i, m); cum += n; tr.append(mk('td', fmt(n), 'num' + (n ? '' : ' gx-zero'))); });
         if (HP) { const n = i < 0 ? getB(u, 0) + getB(u, 1) : getB(u, i); cum += n; tr.append(mk('td', fmt(n), 'num hi-bbh2' + (n ? '' : ' gx-zero'))); }
@@ -335,6 +335,32 @@
     UORD.forEach((u) => block(u, ULABEL[u]));
     block(null, 'Total Sumkal');
     $('hi-unit').replaceChildren(th, tb);
+    // grafik batang permanen dan sesaat per bulan untuk UID terpilih (atau Sumkal)
+    {
+      const ser = upto.map((m) => ({ m, lab: BS[m - 1], P: get(uid, 0, m), S: get(uid, 1, m) }));
+      if (HP) ser.push({ m: HP.bulan, lab: bbTxt, P: getB(uid, 0), S: getB(uid, 1), run: true });
+      const BARS = [['P', 'Permanen', SSC[4]], ['S', 'Sesaat', SSC[6]]];
+      $('hi-ps-sel').replaceChildren('Unit dipilih: ', mk('b', uid ? ULABEL[uid] : 'Sumkal'), ` · batang: event gangguan kode J${bidang ? ' ' + BNAME[bidang].toLowerCase() : ''} permanen dan sesaat` + (HP ? ` · ${bbTxt}: laporan harian (data berjalan, batang pucat)` : ''));
+      $('hi-ps-legend').replaceChildren(...BARS.map(([, n, c]) => { const sp = mk('span'); const i = mk('i', null, 'ss-sw'); i.style.background = c; sp.append(i, n); return sp; }));
+      const chart = $('hi-ps-chart'); chart.classList.remove('dash-skeleton'); chart.replaceChildren();
+      const W = Math.max(300, chart.clientWidth || 900), H = 340, mg = { t: 26, r: 8, b: 28, l: 40 };
+      const svg = d3.select(chart).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Event permanen dan sesaat per bulan, ' + (uid ? ULABEL[uid] : 'Sumkal'));
+      const y = d3.scaleLinear([0, (d3.max(ser, (d) => Math.max(d.P, d.S)) || 1) * 1.12], [H - mg.b, mg.t]).nice();
+      const yt = y.ticks(5);
+      const probe = svg.append('text').style('font-size', 'var(--cds-font-size-caption)').text(fmt(yt[yt.length - 1])); mg.l = Math.ceil(probe.node().getComputedTextLength()) + 12; probe.remove();
+      const x = d3.scaleBand(ser.map((d) => d.lab), [mg.l, W - mg.r]).padding(0.2);
+      const x1 = d3.scaleBand(BARS.map((b) => b[0]), [0, x.bandwidth()]).padding(0.08);
+      svg.append('g').selectAll('line').data(yt).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
+      svg.append('g').selectAll('text').data(yt).join('text').attr('x', mg.l - 8).attr('y', y).attr('dy', '0.32em').attr('text-anchor', 'end').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(fmt);
+      svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', 'var(--cds-chart-axis)');
+      svg.append('g').selectAll('text').data(ser).join('text').attr('x', (d) => x(d.lab) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text((d) => d.lab);
+      const bw = Math.min(x1.bandwidth(), 28), off = (x1.bandwidth() - bw) / 2;
+      BARS.forEach(([key, nm, c]) => {
+        svg.append('g').selectAll('rect').data(ser).join('rect').attr('x', (d) => x(d.lab) + x1(key) + off).attr('width', bw).attr('y', (d) => y(d[key])).attr('height', (d) => Math.max(0, y(0) - y(d[key]))).attr('rx', 3).attr('fill', c).attr('opacity', (d) => (d.run ? 0.5 : 1))
+          .append('title').text((d) => `${d.lab}: ${fmt(d[key])} event ${nm.toLowerCase()}`);
+        if (bw >= 18) svg.append('g').selectAll('text').data(ser.filter((d) => d[key] > 0)).join('text').attr('x', (d) => x(d.lab) + x1(key) + x1.bandwidth() / 2).attr('y', (d) => y(d[key]) - 5).attr('text-anchor', 'middle').attr('fill', 'var(--color-fg-muted)').style('font-size', '10px').text((d) => fmt(d[key]));
+      });
+    }
     $('hi-unit-note').textContent = `Event gangguan kode J${bidang ? ' bidang ' + BNAME[bidang] : ' semua bidang'}, semua jenis padam (filter jenis padam tidak berlaku di tabel ini). Jan–${BS[bm - 1]}: database Event Padam Penyulang (rekap per UID).` + (HP ? ` ${bbTxt}: laporan harian, sheet Detil Kode (No. Laporan unik).` : (HP0 && bm === lastM && HP0.bulan > lastM ? ' Bulan berjalan dari laporan harian hanya untuk bidang Distribusi.' : '')) + ' Kumulatif = jumlah kolom yang tampil. Klik baris untuk memilih UID.';
   }
   document.addEventListener('ss-harian-saved', () => { try { renderList(); renderTop(); renderPS(); } catch (e) { console.error(e); } });

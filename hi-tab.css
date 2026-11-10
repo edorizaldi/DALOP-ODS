@@ -51,3 +51,4 @@
 .hi-unit tr.hi-psum td { font-weight: 700; }
 .hi-unit .hi-bbh2 { background: color-mix(in srgb, #2a7fc1 7%, transparent); border-left: 2px solid var(--color-border-line); }
 .hi-unit .hi-cum { background: color-mix(in srgb, #B3261E 7%, transparent); font-weight: 700; border-left: 2px solid var(--color-border-line); }
+.hi-ps-chart { height: 340px; position: relative; margin-bottom: 12px; }
