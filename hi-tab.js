@@ -35,7 +35,25 @@
   $('hi-search').addEventListener('input', (e) => { q = e.target.value.trim().toLowerCase(); renderList(); });
   const ctx = { name: '' };
   const exp = (id) => $(`hi-${id}-dl`).addEventListener('click', () => window.SSExport({ card: `hi-${id}-card`, btn: `hi-${id}-dl`, msg: `hi-${id}-msg`, preview: `hi-${id}-pv`, filename: `Health_Index_Penyulang_${id}_${ctx.name.replace(/[^A-Za-z0-9]+/g, '_')}.png` }));
-  exp('trend'); exp('unit');
+  exp('trend'); exp('unit'); exp('top');
+  // laporan PNG: header (ringkasan + kotak), rekap event permanen/sesaat, dan Top 3 per UID sesuai filter
+  $('hi-rep-dl').addEventListener('click', async () => {
+    const sec = $('hi'); const W = mk('div', null, 'hi-report'); W.id = 'hi-report';
+    const strip = (el) => { el.removeAttribute('id'); el.querySelectorAll('[id]').forEach((e) => e.removeAttribute('id')); return el; };
+    const P = dash.params();
+    const bidT = P.hi_bidang === 'SEMUA' ? 'Semua' : BNAME[BIDS.includes(P.hi_bidang) ? P.hi_bidang : 'DISTRIBUSI'];
+    const sel = $('hi-f-bulan'); const blnT = sel.selectedOptions[0] ? sel.selectedOptions[0].textContent : '';
+    const now = new Date(); const tgl = `${now.getDate()} ${BLN[now.getMonth()]} ${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}.${String(now.getMinutes()).padStart(2, '0')}`;
+    const head = mk('div', null, 'hi-rep-head');
+    const logos = mk('div', null, 'hi-rep-logos'); [...document.querySelectorAll('.ss-logo img')].slice(0, 2).forEach((im) => { const c = im.cloneNode(true); c.removeAttribute('id'); logos.append(c); });
+    const tt = mk('div', null, 'hi-rep-tt'); tt.append(mk('b', 'Laporan Health Index Penyulang'), mk('span', `UID: ${ULABEL[P.hi_uid] || 'Semua UID (Sumkal)'} · Bidang: ${bidT} · Jenis padam: ${P.hi_jenis || 'Semua'} · Bulan: ${blnT}`));
+    head.append(logos, tt, mk('span', `Dibuat ${tgl}`, 'hi-rep-when'));
+    const hero = strip($('hi-ringkasan').cloneNode(true)); hero.querySelectorAll('.ss-filters, .hi-rep').forEach((e) => e.remove());
+    W.append(head, hero, strip($('hi-unit-card').cloneNode(true)), strip($('hi-top-card').cloneNode(true)));
+    sec.appendChild(W);
+    try { await window.SSExport({ card: 'hi-report', btn: 'hi-rep-dl', msg: 'hi-rep-msg', preview: 'hi-rep-pv', minWidth: 1320, filename: `Laporan_Health_Index_Penyulang_${ctx.name.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); }
+    finally { W.remove(); }
+  });
 
   // ---------- indeks data (dibangun ulang hanya bila data berubah) ----------
   let IX = null, srcB = null, srcP = null, srcG = null;
@@ -80,14 +98,32 @@
     if (B.status !== 'ok' || GU.status !== 'ok' || GPS.status !== 'ok') return;
     if (srcB !== B.data || srcP !== GU.data || srcG !== GPS.data) { srcB = B.data; srcP = GU.data; srcG = GPS.data; IX = build(B.data, GU.data, GPS.data); }
     const P = dash.params();
-    const { feeders, months } = IX;
+    // bulan berjalan (laporan harian, sheet Detil Kode) disisipkan sebagai bulan tambahan: kode J, bidang Distribusi, jenis padam tidak dibedakan
+    const HPx = harianPeny(); const dbLast = IX.months[IX.months.length - 1];
+    const run = HPx && HPx.tahun === 2026 && HPx.bulan > dbLast ? HPx : null;
+    if (IX.runSrc !== run) {
+      if (IX.runM) { IX.feeders = IX.feeders.filter((f) => !f.inj); IX.feeders.forEach((f) => { delete f.raw[IX.runM]; }); UORD.forEach((u) => IX.ada.delete(IX.runM + '|' + u)); }
+      if (run) {
+        const byName = new Map(); IX.feeders.forEach((f) => { const k = f.u + '|' + nn(f.peny); if (!byName.has(k)) byName.set(k, f); });
+        run.rows.forEach(([u, , peny, p, sv]) => {
+          if (!UORD.includes(u)) return; const k = u + '|' + nn(peny); let f = byName.get(k);
+          if (!f) { f = { u, u3: '', peny, raw: {}, mo: {}, ulp: new Map(), inj: true }; byName.set(k, f); IX.feeders.push(f); }
+          const rm = f.raw[run.bulan] || (f.raw[run.bulan] = {}); const o = rm['DISTRIBUSI|*'] || (rm['DISTRIBUSI|*'] = [0, 0]); o[0] += p; o[1] += sv;
+          IX.ada.add(run.bulan + '|' + u);
+        });
+      }
+      IX.runSrc = run; IX.runM = run ? run.bulan : null; IX.fkey = null;
+    }
+    const feeders = IX.feeders; const months = run ? [...IX.months, run.bulan] : IX.months;
+    const runTxt = run ? ` (berjalan, s.d. ${+run.sampai.slice(8)})` : '';
+    const mLab = (m) => BLN[m - 1] + ' 2026' + (run && m === run.bulan ? runTxt : '');
     // filter bidang (bawaan Distribusi) dan jenis padam (bawaan semua): hitung ulang permanen/sesaat per penyulang per bulan
     const bidang = P.hi_bidang === 'SEMUA' ? null : BIDS.includes(P.hi_bidang) ? P.hi_bidang : 'DISTRIBUSI';
     const jenis = JENIS.includes(P.hi_jenis) ? P.hi_jenis : null;
     const fkey = (bidang || '*') + '|' + (jenis || '*');
     if (IX.fkey !== fkey) {
       IX.fkey = fkey;
-      feeders.forEach((f) => { f.mo = {}; Object.entries(f.raw).forEach(([m, o]) => { const v = [0, 0]; Object.entries(o).forEach(([kk, ps]) => { const [b, j] = kk.split('|'); if ((bidang && b !== bidang) || (jenis && j !== jenis)) return; v[0] += ps[0]; v[1] += ps[1]; }); if (v[0] + v[1]) f.mo[m] = v; }); });
+      feeders.forEach((f) => { f.mo = {}; Object.entries(f.raw).forEach(([m, o]) => { const v = [0, 0]; Object.entries(o).forEach(([kk, ps]) => { const [b, j] = kk.split('|'); if ((bidang && b !== bidang) || (jenis && j !== jenis && j !== '*')) return; v[0] += ps[0]; v[1] += ps[1]; }); if (v[0] + v[1]) f.mo[m] = v; }); });
     }
     const fTxt = `${jenis && jenis !== 'Gangguan' ? 'padam' : 'gangguan'} kode J${bidang ? ' bidang ' + BNAME[bidang] : ' semua bidang'}${jenis ? ', jenis padam ' + jenis : ''}`;
     renderChips('hi-f-bidang', [['SEMUA', 'Semua'], ['DISTRIBUSI', 'Distribusi'], ['TRANSMISI', 'Transmisi'], ['PEMBANGKIT', 'Pembangkit']], bidang || 'SEMUA', 'hi_bidang');
@@ -97,6 +133,7 @@
     const uid = UORD.includes(P.hi_uid) ? P.hi_uid : null;
     const bm = months.includes(Number(P.hi_bulan)) ? Number(P.hi_bulan) : months[months.length - 1];
     const prevM = months[months.indexOf(bm) - 1];
+    const isRun = !!run && bm === run.bulan;
     const inScope = (f) => !uid || f.u === uid;
     const scoped = feeders.filter(inScope);
     const where = uid ? ULABEL[uid] : 'Sumkal';
@@ -105,7 +142,7 @@
     // kontrol
     const su = $('hi-f-uid'); if (!su.options.length) su.replaceChildren(new Option('Semua UID', ''), ...UORD.map((u) => new Option(ULABEL[u], u)));
     su.value = uid || '';
-    $('hi-f-bulan').replaceChildren(...months.map((m) => new Option(BLN[m - 1] + ' 2026', m)).reverse()); $('hi-f-bulan').value = String(bm);
+    $('hi-f-bulan').replaceChildren(...months.map((m) => new Option(mLab(m), m)).reverse()); $('hi-f-bulan').value = String(bm);
 
     const ser = months.map((m) => ({ m, ...count(scoped, m) }));
     const cur = ser.find((d) => d.m === bm), prv = prevM ? ser.find((d) => d.m === prevM) : null;
@@ -114,50 +151,65 @@
     {
       const tk = $('hi-take'); tk.classList.remove('dash-skeleton'); tk.replaceChildren();
       const Bb = (t) => mk('b', t);
-      tk.append(`${BLN[bm - 1]} 2026, ${where}: `, Bb(`${fmt(cur.t)} penyulang`), ` mengalami ${fTxt}, terdiri dari `, Bb(`${fmt(cur.k)} kronis (${pc(cur.t ? cur.k / cur.t : 0)})`), ', ', Bb(`${fmt(cur.s)} sakit`), ' dan ', Bb(`${fmt(cur.h)} sehat`), '. ');
-      if (prv) { const d = cur.k - prv.k; tk.append(`Kronis ${d > 0 ? 'naik' : d < 0 ? 'turun' : 'tetap'} `, Bb(d ? `${fmt(Math.abs(d))} penyulang` : ''), ` dibanding ${BLN[prevM - 1]}. `); }
+      const lastDay = new Date(2026, bm, 0).getDate();
+      const sd = isRun ? `${+run.sampai.slice(8)} ${BLN[bm - 1]} 2026` : `${lastDay} ${BLN[bm - 1]} 2026`;
+      const pp = (v) => pc(cur.t ? v / cur.t : 0);
+      tk.append(`Sampai tanggal ${sd}, sebanyak `, Bb(`${fmt(cur.t)} penyulang`), ` pada ${uid ? ULABEL[uid] : 'Regional SUMKAL'} mengalami gangguan. Klasifikasi gangguannya terdiri dari `,
+        Bb(`${fmt(cur.k)} kronis (${pp(cur.k)})`), ', ', Bb(`${fmt(cur.s)} sakit (${pp(cur.s)})`), ', dan ', Bb(`${fmt(cur.h)} sehat (${pp(cur.h)})`), '. ');
       if (!uid) {
-        const top = UORD.map((u) => [u, count(scoped.filter((f) => f.u === u), bm)]).filter(([, o]) => o.t).sort((a, b) => b[1].k - a[1].k)[0];
-        if (top && top[1].k) tk.append(`Kronis terbanyak di ${uname(top[0])} `, Bb(`${fmt(top[1].k)} penyulang`), '.');
+        const top = UORD.map((u) => [u, count(scoped.filter((f) => f.u === u), bm)]).filter(([, o]) => o.t).sort((a, b2) => b2[1].k - a[1].k)[0];
+        if (top && top[1].k) tk.append(`UID dengan jumlah penyulang kronis terbanyak pada ${isRun ? 'bulan berjalan' : 'bulan ' + BLN[bm - 1]} adalah `, Bb(ULABEL[top[0]]), ' sebanyak ', Bb(`${fmt(top[1].k)} penyulang`), '.');
       }
     }
 
     // kotak angka
     KAT.forEach((k) => {
       const el = $(`hi-t-${k.id}`); el.classList.remove('dash-skeleton'); el.textContent = fmt(cur[k.id]);
-      const sub = $(`hi-t-${k.id}-sub`); sub.replaceChildren(`${pc(cur.t ? cur[k.id] / cur.t : 0)} dari ${fmt(cur.t)} penyulang`);
-      if (prv) {
+      $(`hi-t-${k.id}-bar`).style.width = (cur.t ? (cur[k.id] / cur.t) * 100 : 0) + '%';
+      const sub = $(`hi-t-${k.id}-sub`); sub.replaceChildren(mk('b', pc(cur.t ? cur[k.id] / cur.t : 0)), ` dari ${fmt(cur.t)} penyulang`);
+      // tren kecil per bulan (titik = bulan terpilih)
+      {
+        const vals = ser.map((d) => d[k.id]); const W = 220, H = 38, n = vals.length, mx = Math.max(1, ...vals);
+        const X = (i) => 4 + (n > 1 ? (i * (W - 8)) / (n - 1) : 0), Y = (v) => H - 6 - (v / mx) * (H - 12);
+        const pts = vals.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`);
+        const bi = ser.findIndex((d) => d.m === bm);
+        const ruN = run ? ser.findIndex((d) => d.m === run.bulan) : -1;
+        const solid = ruN > 0 ? pts.slice(0, ruN) : pts;
+        let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Tren ${k.nm.toLowerCase()} per bulan">`;
+        svg += `<polygon points="${X(0)},${H - 4} ${solid.join(' ')} ${X(solid.length - 1)},${H - 4}" fill="${k.c}" opacity=".12"/>`;
+        svg += `<polyline points="${solid.join(' ')}" fill="none" stroke="${k.c}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+        if (ruN > 0) svg += `<polyline points="${pts[ruN - 1]} ${pts[ruN]}" fill="none" stroke="${k.c}" stroke-width="2" stroke-dasharray="3 3"/>`;
+        if (bi >= 0) svg += `<circle cx="${X(bi)}" cy="${Y(vals[bi])}" r="3.6" fill="#fff" stroke="${k.c}" stroke-width="2"/>`;
+        $(`hi-t-${k.id}-spark`).innerHTML = svg + '</svg>' + `<span>${BS[ser[0].m - 1]}</span><span>${BS[ser[n - 1].m - 1]}${ruN >= 0 ? ' s.d. ' + (+run.sampai.slice(8)) : ''}</span>`;
+      }
+      if (isRun) sub.append(' · ', mk('span', `s.d. ${+run.sampai.slice(8)} ${BS[bm - 1]}`, 'hi-chg flat'));
+      else if (prv) {
         const d = cur[k.id] - prv[k.id]; const bad = k.id === 'k' || k.id === 's' ? d > 0 : d < 0;
         sub.append(' · ', mk('span', `${d > 0 ? '▲ +' : d < 0 ? '▼ −' : ''}${fmt(Math.abs(d))} vs ${BS[prevM - 1]}`, 'hi-chg ' + (d === 0 ? 'flat' : bad ? 'ss-bad' : 'ss-ok')));
       }
     });
 
-    // peta: warna wilayah UID = porsi penyulang kronis
-    if (window.SSMAP) {
-      const uidO = {}; feeders.forEach((f) => { const k = kat(f, bm); if (!k) return; const o = uidO[f.u] || (uidO[f.u] = zero()); o[k]++; o.t++; });
-      const share = (r) => (uidO[r] && uidO[r].t ? uidO[r].k / uidO[r].t : 0); const smx = Math.max(0.01, ...UORD.map(share));
-      const topU = UORD.slice().sort((a, b) => share(b) - share(a))[0];
-      window.SSMAP($('hi-map'), { label: 'Peta health index penyulang', focus: uid, fill: (r) => `color-mix(in srgb, #B3261E ${Math.round(4 + 44 * (share(r) / smx))}%, var(--color-panel))`, regionTip: (r, prov) => { const o = uidO[r] || zero(); return [ULABEL[r] || r, [[null, prov, ''], [null, 'Kronis', fmt(o.k)], [null, 'Sakit', fmt(o.s)], [null, 'Sehat', fmt(o.h)], [null, 'Porsi kronis', pc(share(r))]]]; }, onRegion: (r) => dash.setParams({ hi_uid: uid === r ? null : r }), points: [] });
-      $('hi-map-note').textContent = `${BLN[bm - 1]} 2026. Warna wilayah: porsi penyulang kronis terhadap penyulang yang mengalami gangguan per UID` + (share(topU) ? `; tertinggi ${ULABEL[topU]} (${pc(share(topU))})` : '') + '. Klik wilayah untuk memilih UID.';
-    }
-
     // grafik bertumpuk per bulan
     {
       $('hi-trend-h').textContent = `Health index penyulang per bulan · ${where}`;
       $('hi-legend').replaceChildren(...KAT.map((k) => { const sp = mk('span'); const i = mk('i', null, 'ss-sw'); i.style.background = k.c; sp.append(i, `${k.nm} (${k.ket})`); return sp; }));
-      // bulan yang data per penyulangnya belum lengkap dibanding rekap Event Padam Penyulang per UID
-      const kurang = months.map((m) => {
-        const us = UORD.filter((u) => !uid || u === uid);
-        const bids = bidang ? [bidang] : BIDS;
-        const kos = us.filter((u) => !IX.ada.has(m + '|' + u) || IX.cov(m, u, bids) === 0);
-        const sebagian = us.filter((u) => !kos.includes(u)).map((u) => [u, IX.cov(m, u, bids)]).filter(([, c]) => c != null && c < 0.95);
-        return [m, kos, sebagian];
-      }).filter(([, a, b]) => a.length || b.length);
-      $('hi-trend-sel').replaceChildren('Klik batang untuk memilih bulan.');
-      if (kurang.length) {
-        const w = mk('span', null, 'hi-warn'); w.append(' Data per penyulang belum lengkap: ');
-        w.append(kurang.map(([m, a, b]) => `${BLN[m - 1]} — ` + [a.length ? `${a.map(uname).join(', ')} kosong` : '', b.length ? b.map(([u, c]) => `${uname(u)} ${pc(c)}`).join(', ') + ' dari rekap per UID' : ''].filter(Boolean).join('; ')).join(' | ') + '. Angka bulan itu lebih rendah dari kondisi sebenarnya; unggah ulang file APKT bulan tersebut untuk melengkapi.');
-        $('hi-trend-sel').append(w);
+      // ulasan singkat grafik
+      {
+        // bulan yang data per penyulangnya belum lengkap (dibanding rekap per UID) tidak dipakai untuk tertinggi/terendah/rata-rata
+        const bids = bidang ? [bidang] : BIDS; const us = UORD.filter((u) => !uid || u === uid);
+        const kurang = new Set(IX.months.filter((m) => us.some((u) => { const c = IX.cov(m, u, bids); return !IX.ada.has(m + '|' + u) || (c != null && c < 0.95); })));
+        const full = ser.filter((d) => !(run && d.m === run.bulan) && d.t && !kurang.has(d.m));
+        const shr = (d) => (d.t ? d.k / d.t : 0);
+        const pk = full.slice().sort((a, b2) => b2.k - a.k)[0], lo = full.slice().sort((a, b2) => a.k - b2.k)[0];
+        const avg = full.length ? full.reduce((a, d) => a + shr(d), 0) / full.length : 0;
+        const lastF = full[full.length - 1], prevF = full[full.length - 2];
+        const parts = [];
+        if (pk) parts.push(`Penyulang kronis terbanyak pada ${BLN[pk.m - 1]} (${fmt(pk.k)} penyulang) dan paling sedikit pada ${BLN[lo.m - 1]} (${fmt(lo.k)}).`);
+        if (full.length) parts.push(`Rata-rata porsi kronis ${BS[full[0].m - 1]}–${BS[lastF.m - 1]} ${pc(avg)} dari penyulang yang mengalami gangguan.`);
+        if (lastF && prevF) { const d = lastF.k - prevF.k; parts.push(`${BLN[lastF.m - 1]}: ${fmt(lastF.k)} kronis (${pc(shr(lastF))}), ${d > 0 ? 'naik ' + fmt(d) : d < 0 ? 'turun ' + fmt(-d) : 'sama'} dibanding ${BLN[prevF.m - 1]}.`); }
+        if (run) { const r = ser.find((d) => d.m === run.bulan); if (r && r.t) parts.push(`${BLN[run.bulan - 1]} s.d. ${+run.sampai.slice(8)}: ${fmt(r.k)} kronis dari ${fmt(r.t)} penyulang (${pc(shr(r))}), data bulan berjalan.`); }
+        if (kurang.size) parts.push(`${[...kurang].map((m) => BLN[m - 1]).join(', ')} tidak dihitung karena data per penyulang belum lengkap.`);
+        $('hi-trend-sel').textContent = parts.join(' ');
       }
       const ch = $('hi-chart'); ch.classList.remove('dash-skeleton'); ch.replaceChildren();
       const W = Math.max(320, ch.clientWidth || 900), H = 300, mg = { t: 12, r: 8, b: 26, l: 44 };
@@ -178,36 +230,13 @@
           if (y0 - y1 >= 13 && bw >= 26) g.append('text').attr('x', x(d.m) + x.bandwidth() / 2).attr('y', (y0 + y1) / 2).attr('dy', '0.35em').attr('text-anchor', 'middle').style('font-size', '10.5px').style('font-weight', 600).attr('fill', k.fg).text(fmt(v));
         });
         g.append('title').text(`${BLN[d.m - 1]} 2026 · ` + KAT.map((k) => `${k.nm.toLowerCase()} ${fmt(d[k.id])}`).join(', ') + ` (total ${fmt(d.t)})`);
-        svg.append('text').attr('x', x(d.m) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').attr('fill', d.m === bm ? 'var(--color-fg)' : 'var(--color-fg-muted)').style('font-weight', d.m === bm ? 600 : 400).style('font-size', 'var(--cds-font-size-caption)').text(BS[d.m - 1]);
+        svg.append('text').attr('x', x(d.m) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').attr('fill', d.m === bm ? 'var(--color-fg)' : 'var(--color-fg-muted)').style('font-weight', d.m === bm ? 600 : 400).style('font-size', 'var(--cds-font-size-caption)').text(BS[d.m - 1] + (run && d.m === run.bulan ? ` s.d. ${+run.sampai.slice(8)}` : ''));
       });
     }
 
-    // tabel per UID
-    {
-      $('hi-unit-h').textContent = `Health index per UID · ${BLN[bm - 1]} 2026`;
-      const rows = UORD.map((k) => ({ key: k, ...count(feeders.filter((f) => f.u === k), bm) })).filter((o) => o.t).sort((a, b) => (b.k / b.t) - (a.k / a.t) || b.k - a.k);
-      const th = mk('thead'), hr = mk('tr');
-      [['UID', ''], ...KAT.map((k) => [k.nm, 'num']), ['Total', 'num'], ['% kronis', 'num'], ['Komposisi', '']].forEach(([h, c], i) => { const t = mk('th', h, c); if (i >= 1 && i <= KAT.length) t.style.boxShadow = `inset 0 3px 0 ${KAT[i - 1].c}`; hr.append(t); });
-      th.append(hr);
-      const tb = mk('tbody');
-      const line = (name, o, cls, onPick) => {
-        const tr = mk('tr', null, cls || ''); tr.append(mk('td', name));
-        KAT.forEach((k) => tr.append(mk('td', fmt(o[k.id]), 'num' + (o[k.id] ? '' : ' gx-zero'))));
-        tr.append(mk('td', fmt(o.t), 'num'), mk('td', pc(o.t ? o.k / o.t : 0), 'num hi-pk'));
-        const bc = mk('td'); if (o.t) { const b = mk('div', null, 'gx-mini gx-mini4 hi-bar'); KAT.forEach((k) => { const i = mk('i'); i.style.background = k.c; i.style.width = (o[k.id] / o.t * 100) + '%'; b.append(i); }); bc.append(b); }
-        tr.append(bc);
-        if (onPick) { tr.classList.add('gx-click'); tr.tabIndex = 0; tr.addEventListener('click', onPick); tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') onPick(); }); }
-        return tr;
-      };
-      rows.forEach((o) => tb.append(line(ULABEL[o.key], o, uid === o.key ? 'on' : '', () => dash.setParams({ hi_uid: uid === o.key ? null : o.key }))));
-      const tot = rows.reduce((a, o) => { KAT.forEach((k) => { a[k.id] += o[k.id]; }); a.t += o.t; return a; }, zero());
-      tb.append(line('Total Sumkal', tot, 'dp-ps-tot', uid ? () => dash.setParams({ hi_uid: null }) : null));
-      $('hi-unit').replaceChildren(th, tb);
-      $('hi-unit-note').textContent = `Diurutkan dari porsi penyulang kronis terbesar. Klik baris untuk memilih UID${uid ? '; klik lagi atau klik baris total untuk kembali ke semua UID' : ''}.`;
-    }
-
-    S = { fTxt, scoped, bm, where, uid, months, bidang };
-    renderList();
+    S = { fTxt, scoped, bm, where, uid, months: IX.months, bidang };
+    renderPS();
+    renderList(); renderTop();
     $('hi-note').textContent = `Sumber: database Event Padam Penyulang saja (gangguan per penyulang dari APKT); tidak memakai Database Penyulang. Kelas per penyulang per bulan dari jumlah gangguan permanen + sesaat kode J, mengikuti filter bidang (bawaan Distribusi) dan jenis padam (bawaan semua): kronis ≥ 6 kali, sakit 2–5 kali, sehat 1 kali. Penyulang tanpa gangguan pada bulan itu tidak dihitung; total = penyulang yang mengalami gangguan. Rekap per UP3 belum ditampilkan. Pemeriksaan kelengkapan data dibandingkan rekap Event Padam Penyulang per UID untuk bidang terpilih (semua jenis padam).`;
   }
 
@@ -239,11 +268,11 @@
       if (ulp) g.ulpH.set(ulp, (g.ulpH.get(ulp) || 0) + p + sv);
     });
     let rows = [...G.values()];
-    if (q) rows = rows.filter((g) => g.peny.toLowerCase().includes(q) || [...g.ulp.keys(), ...g.ulpH.keys()].some((x) => x.toLowerCase().includes(q)));
+    if (q) rows = rows.filter((g) => g.peny.toLowerCase().includes(q) || uname(g.u).toLowerCase().includes(q) || ULABEL[g.u].toLowerCase().includes(q) || g.u.toLowerCase().includes(q) || [...g.ulp.keys(), ...g.ulpH.keys()].some((x) => x.toLowerCase().includes(q)));
     const tb0 = (g) => (g.bb ? g.bb[0] + g.bb[1] : -1); const tm = (g) => { const o = g.mo[bm]; return o ? o[0] + o[1] : 0; };
     rows.sort((a, b2) => tb0(b2) - tb0(a) || tm(b2) - tm(a) || a.peny.localeCompare(b2.peny));
     $('hi-list-h').textContent = `Penyulang · ${where} (${fmt(rows.length)})`;
-    $('hi-list-note').textContent = `Kolom ${BS[0]}–${BS[bm - 1]}: kelas per bulan dari database Event Padam Penyulang (angka = kali gangguan permanen + sesaat). Rekap ${bbTxt}: dari laporan harian (sheet Detil Kode)` + (HP ? `, unggahan s.d. ${+HP.sampai.slice(8)} ${BLN[HP.bulan - 1]} ${HP.tahun}` : HP0 ? '' : ', belum ada unggahan dengan sheet Detil Kode') + (HP && !hpOn ? '; hanya untuk bidang Distribusi' : '') + (HP0 && !HP ? ` (data laporan harian tersimpan adalah ${BLN[HP0.bulan - 1]} ${HP0.tahun}, bukan bulan berjalan; unggah ulang laporan harian dengan tanggal realisasi bulan ini)` : '') + '. Kelas = status penyulang pada bulan berjalan. ULP dari database Event Padam Penyulang (huruf miring: dari laporan harian, bila database belum memuat ULP).';
+    $('hi-list-note').textContent = '';
     const th = mk('thead'), h1 = mk('tr'), h2 = mk('tr');
     const th1 = (t, cls, rs, cs) => { const e = mk('th', t, cls); if (rs) e.rowSpan = rs; if (cs) e.colSpan = cs; h1.append(e); return e; };
     th1('Penyulang', '', 2); th1('ULP', 'hi-u3', 2); th1('UID', 'hi-u3', 2); upto.forEach((m) => th1(BS[m - 1], 'hi-mh', 2));
@@ -269,7 +298,7 @@
       const bb = g.bb; const nb = bb ? bb[0] + bb[1] : 0;
       if (hpOn) tr.append(mk('td', fmt(bb ? bb[0] : 0), 'num hi-bb first' + (bb && bb[0] ? '' : ' gx-zero')), mk('td', fmt(bb ? bb[1] : 0), 'num hi-bb' + (bb && bb[1] ? '' : ' gx-zero')), mk('td', fmt(nb), 'num hi-bb hi-bbt' + (nb ? '' : ' gx-zero')));
       else { for (let i = 0; i < 3; i++) tr.append(mk('td', '–', 'num hi-bb gx-zero' + (i === 0 ? ' first' : ''))); }
-      const kc = mk('td', null, 'hi-kc'); const kb = hpOn && nb ? katOf(nb) : null;
+      const kc = mk('td', null, 'hi-kc hi-bbc'); const kb = hpOn && nb ? katOf(nb) : null;
       if (kb) { const pill = mk('span', KBY[kb].nm, 'hi-pill'); pill.style.background = KBY[kb].c; pill.style.color = KBY[kb].fg; kc.append(pill); }
       else kc.append(mk('span', hpOn ? 'Tanpa gangguan' : '–', 'gx-zero hi-k0'));
       tr.append(kc); tb.append(tr);
@@ -277,7 +306,110 @@
     if (rows.length > MAX) { const tr = mk('tr'); const td = mk('td', `Menampilkan ${fmt(MAX)} dari ${fmt(rows.length)} penyulang. Pilih UID atau cari nama penyulang / ULP untuk mempersempit.`, 'gx-zero'); td.colSpan = ncol; tr.append(td); tb.append(tr); }
     $('hi-list').replaceChildren(th, tb);
   }
-  document.addEventListener('ss-harian-saved', () => { try { renderList(); } catch (e) { console.error(e); } });
+  // ---------- Top 3 penyulang gangguan per UID, bulan berjalan (laporan harian, sheet Detil Kode), semua UID dalam satu tabel ----------
+  function renderTop() {
+    if (!S || !IX) return;
+    const HP0 = harianPeny(); const lastM = IX.months[IX.months.length - 1];
+    const HP = HP0 && HP0.tahun === 2026 && HP0.bulan > lastM ? HP0 : null;
+    const tb = mk('tbody');
+    const th = mk('thead'), hr = mk('tr'), hr2 = mk('tr', null, 'hi-sub2');
+    [['UID', ''], ['#', 'num'], ['Penyulang', ''], ['ULP', '']].forEach(([h, c]) => { const e = mk('th', h, c); e.rowSpan = 2; hr.append(e); });
+    const grp = (t, cls, n) => { const e = mk('th', t, cls); e.colSpan = n; hr.append(e); };
+    grp(`${BLN[lastM - 1]} (bulan lalu)`, 'hi-gph hi-gp-prev', 3); grp(`Kumulatif Jan–${BS[lastM - 1]}`, 'hi-gph hi-gp-cum', 3);
+    grp(HP ? `Rekap bulan berjalan · ${BLN[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'Rekap bulan berjalan', 'hi-bbh', 4);
+    [['P', 'num hi-pv first'], ['S', 'num hi-pv'], ['Total', 'num hi-pv'], ['P', 'num hi-cm first'], ['S', 'num hi-cm'], ['Total', 'num hi-cm'], ['P', 'num hi-bbc first'], ['S', 'num hi-bbc'], ['Total', 'num hi-bbc'], ['Kelas', 'hi-kh hi-bbc']].forEach(([h, c]) => hr2.append(mk('th', h, c)));
+    th.append(hr, hr2);
+    if (!HP) {
+      $('hi-top-h').textContent = 'Top 3 penyulang gangguan per UID · bulan berjalan';
+      $('hi-top-note').textContent = HP0 ? `Data laporan harian tersimpan adalah ${BLN[HP0.bulan - 1]} ${HP0.tahun}, bukan bulan berjalan. Unggah laporan harian (sheet Detil Kode) dengan tanggal realisasi bulan ini.` : 'Belum ada unggahan laporan harian dengan sheet Detil Kode.';
+      $('hi-top').replaceChildren(th, tb); return;
+    }
+    const bb = `${BLN[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}`;
+    $('hi-top-h').textContent = `Top 3 penyulang gangguan per UID · ${bb} ${HP.tahun}`;
+    // ULP dan riwayat bulan lalu dari database Event Padam Penyulang (kode J distribusi, semua jenis padam)
+    const ulpDb = new Map(), prev = new Map(), cum = new Map();
+    IX.feeders.forEach((f) => {
+      const k = f.u + '|' + nn(f.peny);
+      if (f.ulp.size) { const o = ulpDb.get(k) || new Map(); f.ulp.forEach((n, x) => o.set(x, (o.get(x) || 0) + n)); ulpDb.set(k, o); }
+      const add = (map, o) => { const v = map.get(k) || [0, 0]; Object.entries(o).forEach(([kk, ps]) => { if (kk.startsWith('DISTRIBUSI|')) { v[0] += ps[0]; v[1] += ps[1]; } }); if (v[0] + v[1]) map.set(k, v); };
+      Object.entries(f.raw).forEach(([m, o]) => { if (+m <= lastM) add(cum, o); });
+      if (f.raw[lastM]) add(prev, f.raw[lastM]);
+    });
+    const G = new Map();
+    HP.rows.forEach(([u, ulp, peny, p, sv]) => { const k = u + '|' + nn(peny); const g = G.get(k) || { u, peny, p: 0, s: 0, ulpH: new Map() }; g.p += p; g.s += sv; if (ulp) g.ulpH.set(ulp, (g.ulpH.get(ulp) || 0) + p + sv); G.set(k, g); });
+    const mode = (m) => [...m].sort((a, b) => b[1] - a[1])[0][0];
+    let nTop = 0;
+    UORD.forEach((u) => {
+      const top = [...G].filter(([, g]) => g.u === u).sort((a, b) => (b[1].p + b[1].s) - (a[1].p + a[1].s) || b[1].p - a[1].p || a[1].peny.localeCompare(b[1].peny)).slice(0, 3);
+      if (!top.length) { const tr = mk('tr', null, 'hi-tfirst'); tr.append(mk('td', ULABEL[u], 'hi-tu')); const td = mk('td', 'Tidak ada gangguan kode J penyulang pada bulan berjalan.', 'gx-zero'); td.colSpan = 13; tr.append(td); tb.append(tr); return; }
+      top.forEach(([k, g], i) => {
+        nTop++;
+        const tr = mk('tr', null, (i === 0 ? 'hi-tfirst' : '') + (S.uid === u ? ' on' : ''));
+        tr.append(mk('td', i === 0 ? ULABEL[u] : '', 'hi-tu'));
+        const fromDb = ulpDb.has(k); const ul = fromDb ? mode(ulpDb.get(k)) : g.ulpH.size ? mode(g.ulpH) : '–';
+        const n = g.p + g.s; const kb = katOf(n); const pill = mk('span', KBY[kb].nm, 'hi-pill'); pill.style.background = KBY[kb].c; pill.style.color = KBY[kb].fg;
+        const kc = mk('td', null, 'hi-kc hi-bbc'); kc.append(pill);
+        const pv = prev.get(k) || [0, 0], cv = cum.get(k) || [0, 0];
+        // total bulan lalu sebagai kotak warna kelas bulan itu
+        const pt = pv[0] + pv[1]; const pk = pt ? katOf(pt) : null; const pc0 = mk('td', null, 'hi-mc hi-pv'); const c = mk('span', fmt(pt), 'hi-cell' + (pk ? '' : ' z')); if (pk) { c.style.background = KBY[pk].c; c.style.color = KBY[pk].fg; } c.title = `${BLN[lastM - 1]}: ${pt ? KBY[pk].nm.toLowerCase() : 'tanpa gangguan'}`; pc0.append(c);
+        const num = (v, cls) => mk('td', fmt(v), 'num ' + cls + (v ? '' : ' gx-zero'));
+        tr.append(mk('td', String(i + 1), 'num hi-rank'), mk('td', g.peny, 'hi-nm'), mk('td', ul, 'hi-u3' + (fromDb ? '' : ' hi-ulph')),
+          num(pv[0], 'hi-pv first'), num(pv[1], 'hi-pv'), pc0,
+          num(cv[0], 'hi-cm first'), num(cv[1], 'hi-cm'), mk('td', fmt(cv[0] + cv[1]), 'num hi-cm hi-cmt' + (cv[0] + cv[1] ? '' : ' gx-zero')),
+          num(g.p, 'hi-bbc first'), num(g.s, 'hi-bbc'), mk('td', fmt(n), 'num hi-bbt hi-bbc'), kc);
+        tb.append(tr);
+      });
+    });
+    $('hi-top').replaceChildren(th, tb);
+    $('hi-top-note').textContent = '';
+  }
+  // ---------- rekap event permanen dan sesaat per UID: Jan s.d. bulan terpilih (database Event Padam Penyulang) + bulan berjalan (laporan harian) ----------
+  function renderPS() {
+    if (!S || !IX) return;
+    const { bm, uid, months, bidang } = S;
+    const GPS = SSD.data('gangguan_ps'); if (GPS.status !== 'ok') return;
+    const upto = months.filter((m) => m <= bm);
+    const v = {};
+    GPS.data.forEach((r) => {
+      if (r.KODE !== 'J' || (bidang && r.BIDANG !== bidang) || (r.PS !== 'Permanen' && r.PS !== 'Sesaat')) return;
+      const k = r.UNIT + '|' + (r.PS === 'Permanen' ? 0 : 1) + '|' + (+r.BULAN_NO); v[k] = (v[k] || 0) + Number(r.JUMLAH);
+    });
+    const HP0 = harianPeny(); const lastM = months[months.length - 1];
+    const HP = HP0 && HP0.tahun === 2026 && HP0.bulan > lastM && bm >= lastM && (!bidang || bidang === 'DISTRIBUSI') ? HP0 : null;
+    const hb = {}; if (HP) HP.rows.forEach(([u, , , p, sv]) => { const o = hb[u] || (hb[u] = [0, 0]); o[0] += p; o[1] += sv; });
+    const bbTxt = HP ? `${BS[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : '';
+    $('hi-unit-h').textContent = `Rekap event permanen dan sesaat · ${uid ? ULABEL[uid] : 'Sumkal'} · Jan–${BS[Math.min(bm, lastM) - 1]}${HP ? ' + ' + bbTxt : ''} 2026`;
+    const get = (u, i, m) => (u ? v[u + '|' + i + '|' + m] || 0 : UORD.reduce((a, x) => a + (v[x + '|' + i + '|' + m] || 0), 0));
+    const getB = (u, i) => (u ? (hb[u] || [0, 0])[i] : UORD.reduce((a, x) => a + (hb[x] || [0, 0])[i], 0));
+    // grafik batang permanen dan sesaat per bulan untuk UID terpilih (atau Sumkal)
+    {
+      const ser = upto.map((m) => ({ m, lab: BS[m - 1], P: get(uid, 0, m), S: get(uid, 1, m) }));
+      if (HP) ser.push({ m: HP.bulan, lab: bbTxt, P: getB(uid, 0), S: getB(uid, 1), run: true });
+      const BARS = [['P', 'Permanen', SSC[4]], ['S', 'Sesaat', SSC[6]]];
+      $('hi-ps-sel').replaceChildren('Unit dipilih: ', mk('b', uid ? ULABEL[uid] : 'Sumkal'), ` · batang: event gangguan kode J${bidang ? ' ' + BNAME[bidang].toLowerCase() : ''} permanen dan sesaat` + (HP ? ` · ${bbTxt}: laporan harian (data berjalan, batang pucat)` : ''));
+      $('hi-ps-legend').replaceChildren(...BARS.map(([, n, c]) => { const sp = mk('span'); const i = mk('i', null, 'ss-sw'); i.style.background = c; sp.append(i, n); return sp; }));
+      const chart = $('hi-ps-chart'); chart.classList.remove('dash-skeleton'); chart.replaceChildren();
+      const W = Math.max(300, chart.clientWidth || 900), H = 340, mg = { t: 26, r: 8, b: 28, l: 40 };
+      const svg = d3.select(chart).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Event permanen dan sesaat per bulan, ' + (uid ? ULABEL[uid] : 'Sumkal'));
+      const y = d3.scaleLinear([0, (d3.max(ser, (d) => Math.max(d.P, d.S)) || 1) * 1.12], [H - mg.b, mg.t]).nice();
+      const yt = y.ticks(5);
+      const probe = svg.append('text').style('font-size', 'var(--cds-font-size-caption)').text(fmt(yt[yt.length - 1])); mg.l = Math.ceil(probe.node().getComputedTextLength()) + 12; probe.remove();
+      const x = d3.scaleBand(ser.map((d) => d.lab), [mg.l, W - mg.r]).padding(0.2);
+      const x1 = d3.scaleBand(BARS.map((b) => b[0]), [0, x.bandwidth()]).padding(0.08);
+      svg.append('g').selectAll('line').data(yt).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
+      svg.append('g').selectAll('text').data(yt).join('text').attr('x', mg.l - 8).attr('y', y).attr('dy', '0.32em').attr('text-anchor', 'end').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(fmt);
+      svg.append('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', 'var(--cds-chart-axis)');
+      svg.append('g').selectAll('text').data(ser).join('text').attr('x', (d) => x(d.lab) + x.bandwidth() / 2).attr('y', H - 8).attr('text-anchor', 'middle').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text((d) => d.lab);
+      const bw = Math.min(x1.bandwidth(), 28), off = (x1.bandwidth() - bw) / 2;
+      BARS.forEach(([key, nm, c]) => {
+        svg.append('g').selectAll('rect').data(ser).join('rect').attr('x', (d) => x(d.lab) + x1(key) + off).attr('width', bw).attr('y', (d) => y(d[key])).attr('height', (d) => Math.max(0, y(0) - y(d[key]))).attr('rx', 3).attr('fill', c).attr('opacity', (d) => (d.run ? 0.5 : 1))
+          .append('title').text((d) => `${d.lab}: ${fmt(d[key])} event ${nm.toLowerCase()}`);
+        if (bw >= 18) svg.append('g').selectAll('text').data(ser.filter((d) => d[key] > 0)).join('text').attr('x', (d) => x(d.lab) + x1(key) + x1.bandwidth() / 2).attr('y', (d) => y(d[key]) - 5).attr('text-anchor', 'middle').attr('fill', 'var(--color-fg-muted)').style('font-size', '10px').text((d) => fmt(d[key]));
+      });
+    }
+    $('hi-unit-note').textContent = `Event gangguan diambil dari kode J ${bidang ? 'bidang ' + BNAME[bidang] : 'seluruh bidang'} untuk seluruh jenis padam. Pilih UID di atas untuk melihat UID tertentu.`;
+  }
+  document.addEventListener('ss-harian-saved', () => { try { renderList(); renderTop(); renderPS(); } catch (e) { console.error(e); } });
 
   SSD.onData(() => { try { render(); } catch (e) { console.error(e); } });
 })();
