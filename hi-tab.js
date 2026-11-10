@@ -314,8 +314,8 @@
     const tb = mk('tbody');
     const th = mk('thead'), hr = mk('tr'), hr2 = mk('tr', null, 'hi-sub2');
     // gangguan permanen dan sesaat per UID bulan berjalan, di kiri kolom UID
-    { const e = mk('th', HP ? `Kumulatif UID · Jan–${BS[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'Kumulatif UID', 'hi-uidh'); e.colSpan = 2; hr.append(e); hr2.append(mk('th', 'P', 'num hi-uidc'), mk('th', 'S', 'num hi-uidc')); }
-    [['UID', ''], ['#', 'num'], ['Penyulang', ''], ['ULP', '']].forEach(([h, c]) => { const e = mk('th', h, c); e.rowSpan = 2; hr.append(e); });
+    { const e = mk('th', null, 'hi-uidh'); e.rowSpan = 2; e.append('UID', mk('small', HP ? `Kumulatif Jan–${BS[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}: P · S` : 'Kumulatif: P · S')); hr.append(e); }
+    [ ['#', 'num'], ['Penyulang', ''], ['ULP', '']].forEach(([h, c]) => { const e = mk('th', h, c); e.rowSpan = 2; hr.append(e); });
     const grp = (t, cls, n) => { const e = mk('th', t, cls); e.colSpan = n; hr.append(e); };
     grp(`${BLN[lastM - 1]} (bulan lalu)`, 'hi-gph hi-gp-prev', 3); grp(`Kumulatif Jan–${BS[lastM - 1]}`, 'hi-gph hi-gp-cum', 3);
     grp(HP ? `Rekap bulan berjalan · ${BLN[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'Rekap bulan berjalan', 'hi-bbh', 4);
@@ -349,12 +349,13 @@
     UORD.forEach((u) => {
       const top = [...G].filter(([, g]) => g.u === u).sort((a, b) => (b[1].p + b[1].s) - (a[1].p + a[1].s) || b[1].p - a[1].p || a[1].peny.localeCompare(b[1].peny)).slice(0, 3);
       const uPS = uTot[u] || [0, 0];
-      const uidCells = (tr, show) => tr.append(mk('td', show ? fmt(uPS[0]) : '', 'num hi-uidc hi-uidv'), mk('td', show ? fmt(uPS[1]) : '', 'num hi-uidc hi-uidv'));
-      if (!top.length) { const tr = mk('tr', null, 'hi-tfirst'); uidCells(tr, true); tr.append(mk('td', ULABEL[u], 'hi-tu')); const td = mk('td', 'Tidak ada gangguan kode J penyulang pada bulan berjalan.', 'gx-zero'); td.colSpan = 13; tr.append(td); tb.append(tr); return; }
+      // sel UID: nama UID + kumulatif permanen / sesaat
+      const uidCell = (tr, show) => { const td = mk('td', null, 'hi-tu hi-uidcell'); if (show) { td.append(mk('b', ULABEL[u])); const ps = mk('span', null, 'hi-uidps'); ps.append(mk('em', 'P'), fmt(uPS[0]), mk('em', 'S'), fmt(uPS[1])); td.append(ps); } tr.append(td); };
+      if (!top.length) { const tr = mk('tr', null, 'hi-tfirst'); uidCell(tr, true); const td = mk('td', 'Tidak ada gangguan kode J penyulang pada bulan berjalan.', 'gx-zero'); td.colSpan = 13; tr.append(td); tb.append(tr); return; }
       top.forEach(([k, g], i) => {
         nTop++;
         const tr = mk('tr', null, (i === 0 ? 'hi-tfirst' : '') + (S.uid === u ? ' on' : ''));
-        uidCells(tr, i === 0); tr.append(mk('td', i === 0 ? ULABEL[u] : '', 'hi-tu'));
+        uidCell(tr, i === 0);
         const fromDb = ulpDb.has(k); const ul = fromDb ? mode(ulpDb.get(k)) : g.ulpH.size ? mode(g.ulpH) : '–';
         const n = g.p + g.s; const kb = katOf(n); const pill = mk('span', KBY[kb].nm, 'hi-pill'); pill.style.background = KBY[kb].c; pill.style.color = KBY[kb].fg;
         const kc = mk('td', null, 'hi-kc hi-bbc'); kc.append(pill);
@@ -370,7 +371,7 @@
       });
     });
     { const t = Object.values(uTot).reduce((a, o) => [a[0] + o[0], a[1] + o[1]], [0, 0]); const tr = mk('tr', null, 'hi-tfirst dp-ps-tot');
-      tr.append(mk('td', fmt(t[0]), 'num hi-uidc hi-uidv'), mk('td', fmt(t[1]), 'num hi-uidc hi-uidv'), mk('td', 'Total Sumkal', 'hi-tu')); const td = mk('td', ''); td.colSpan = 16; tr.append(td); tb.append(tr); }
+      const td0 = mk('td', null, 'hi-tu hi-uidcell'); td0.append(mk('b', 'Total Sumkal')); const ps = mk('span', null, 'hi-uidps'); ps.append(mk('em', 'P'), fmt(t[0]), mk('em', 'S'), fmt(t[1])); td0.append(ps); tr.append(td0); const td = mk("td", ""); td.colSpan = 13; tr.append(td); tb.append(tr); }
     $('hi-top').replaceChildren(th, tb);
     $('hi-top-note').textContent = '';
   }

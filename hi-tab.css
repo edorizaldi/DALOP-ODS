@@ -119,3 +119,13 @@
 .hi-top tr.hi-sub2 th.hi-uidc + th.hi-uidc { }
 .hi-top .hi-uidc { width: 64px; min-width: 64px; text-align: right !important; }
 .hi-top th[rowspan]:not(.num) { text-align: left !important; }
+/* sel UID dengan kumulatif P / S */
+.hi-top th.hi-uidh { text-align: left !important; vertical-align: bottom; background: none; }
+.hi-top th.hi-uidh small { display: block; font-weight: 500; font-size: 10.5px; color: var(--color-fg-muted); white-space: nowrap; }
+.hi-top td.hi-uidcell { vertical-align: top; }
+.hi-top td.hi-uidcell b { display: block; white-space: nowrap; }
+.hi-top .hi-uidps { display: inline-flex; align-items: baseline; gap: 4px; margin-top: 3px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hi-top .hi-uidps em { font-style: normal; font-size: 10px; font-weight: 700; padding: 0 4px; border-radius: 3px; color: #fff; background: var(--x-c4, #3f5b73); }
+.hi-top .hi-uidps em + * { }
+.hi-top .hi-uidps em:nth-of-type(2) { background: var(--x-c6, #7a96ad); margin-left: 6px; }
+.hi-top td.hi-uidcell + td { border-left: 0; }
