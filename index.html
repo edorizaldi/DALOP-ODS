@@ -21,7 +21,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="acct.css">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
-<script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
+<script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script><script src="k3_kejadian.js"></script>
 <script src="admin-keys.js"></script>
 <script src="shim-auth.js?v=20261103"></script>
 <script src="viewer-key.js"></script>
@@ -1633,7 +1633,7 @@ window.SSD = (() => {
 </script>
 <script>
 (() => {
-  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'workplan', 'penyulang', 'hi', 'hirarki', 'update', 'harian', 'kondisi', 'slides'];
+  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'workplan', 'penyulang', 'hi', 'hirarki', 'update', 'harian', 'kondisi', 'slides', 'k3'];
   window.SSC = ['var(--x-c0)', 'var(--x-c1)', 'var(--x-c2)', 'var(--x-c3)', 'var(--x-c4)', 'var(--x-c5)', 'var(--x-c6)', 'var(--x-c7)'];
   const show = (tab) => {
     if (!TABS.includes(tab)) tab = 'saidi';
@@ -3089,6 +3089,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="hirarki-tab.js"></script>
 <script src="acct.js"></script>
 <script src="workplan-tab.js"></script>
+<script src="k3-tab.js"></script>
 
 </div>
 </body>

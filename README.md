@@ -67,3 +67,9 @@ Menu **Bulanan → Workplan Keandalan**: target dan realisasi action plan keanda
 
 - Sumber: workpaper reliability (.xlsx), sheet **Action Plan** (kolom Unit Induk, lalu Target/Realisasi/% per program, baris subtotal SUMKAL, JAMALI, SULMAPANA, DIT DIST). Periode dibaca dari judul "Realisasi Action Plan s.d &lt;bulan&gt; - &lt;tahun&gt;".
 - `workplan.js`: dataset workplan. Memperbarui data: tab **Update Data Bulanan**, cluster **Data Bulanan** → kartu **Workplan Keandalan** (`upd-workplan.js`). Bila admin sudah login, `workplan.js` dan `info_update.js` disimpan ke repo dalam satu commit.
+
+## Tab Kecelakaan K3L
+Menu **Bulanan → Kecelakaan K3L**: papan kecelakaan dari Master Data RSD SUMKAL 2021–2026 (korban meninggal dan kejadian tahun ini dibanding periode sama tahun lalu, frekuensi, korban, jenis kecelakaan, kejadian per bulan dan per unit induk, tren, plus evaluasi dan rekomendasi).
+
+- Sumber: sheet **Master Data RSD (2021)** s.d. **(2026)** di `2024_Monitoring_K3L_SUMKAL.xlsx`, digabung (satu baris = satu kejadian, nama unit diseragamkan, tanpa kolom kronologi). Data s.d. 12 Oktober 2026.
+- `k3_kejadian.js`: dataset kejadian. `k3-tab.js`: menu, halaman, gaya dan perhitungan tab ini (semua dibuat dari script; di `index.html` cukup memuat script dan menambah `'k3'` ke daftar `TABS`).
