@@ -317,9 +317,9 @@
     { const e = mk('th', null, 'hi-uidh'); e.rowSpan = 2; e.append('UID', mk('small', HP ? `Kumulatif Jan–${BS[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}: P · S` : 'Kumulatif: P · S')); hr.append(e); }
     [ ['#', 'num'], ['Penyulang', ''], ['ULP', '']].forEach(([h, c]) => { const e = mk('th', h, c); e.rowSpan = 2; hr.append(e); });
     const grp = (t, cls, n) => { const e = mk('th', t, cls); e.colSpan = n; hr.append(e); };
-    grp(`${BLN[lastM - 1]} (bulan lalu)`, 'hi-gph hi-gp-prev', 3); grp(`Kumulatif Jan–${BS[lastM - 1]}`, 'hi-gph hi-gp-cum', 3);
+    grp(`Kumulatif Jan–${BS[lastM - 1]} 2026`, 'hi-gph hi-gp-cum', 3); grp(`${BLN[lastM - 1]} (bulan lalu)`, 'hi-gph hi-gp-prev', 3);
     grp(HP ? `Rekap bulan berjalan · ${BLN[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'Rekap bulan berjalan', 'hi-bbh', 4);
-    [['P', 'num hi-pv first'], ['S', 'num hi-pv'], ['Total', 'num hi-pv'], ['P', 'num hi-cm first'], ['S', 'num hi-cm'], ['Total', 'num hi-cm'], ['P', 'num hi-bbc first'], ['S', 'num hi-bbc'], ['Total', 'num hi-bbc'], ['Kelas', 'hi-kh hi-bbc']].forEach(([h, c]) => hr2.append(mk('th', h, c)));
+    [['P', 'num hi-cm first'], ['S', 'num hi-cm'], ['Total', 'num hi-cm'], ['P', 'num hi-pv first'], ['S', 'num hi-pv'], ['Total', 'num hi-pv'], ['P', 'num hi-bbc first'], ['S', 'num hi-bbc'], ['Total', 'num hi-bbc'], ['Kelas', 'hi-kh hi-bbc']].forEach(([h, c]) => hr2.append(mk('th', h, c)));
     th.append(hr, hr2);
     if (!HP) {
       $('hi-top-h').textContent = 'Top 3 penyulang gangguan per UID · bulan berjalan';
@@ -364,8 +364,8 @@
         const pt = pv[0] + pv[1]; const pk = pt ? katOf(pt) : null; const pc0 = mk('td', null, 'hi-mc hi-pv'); const c = mk('span', fmt(pt), 'hi-cell' + (pk ? '' : ' z')); if (pk) { c.style.background = KBY[pk].c; c.style.color = KBY[pk].fg; } c.title = `${BLN[lastM - 1]}: ${pt ? KBY[pk].nm.toLowerCase() : 'tanpa gangguan'}`; pc0.append(c);
         const num = (v, cls) => mk('td', fmt(v), 'num ' + cls + (v ? '' : ' gx-zero'));
         tr.append(mk('td', String(i + 1), 'num hi-rank'), mk('td', g.peny, 'hi-nm'), mk('td', ul, 'hi-u3' + (fromDb ? '' : ' hi-ulph')),
-          num(pv[0], 'hi-pv first'), num(pv[1], 'hi-pv'), pc0,
           num(cv[0], 'hi-cm first'), num(cv[1], 'hi-cm'), mk('td', fmt(cv[0] + cv[1]), 'num hi-cm hi-cmt' + (cv[0] + cv[1] ? '' : ' gx-zero')),
+          num(pv[0], 'hi-pv first'), num(pv[1], 'hi-pv'), pc0,
           num(g.p, 'hi-bbc first'), num(g.s, 'hi-bbc'), mk('td', fmt(n), 'num hi-bbt hi-bbc'), kc);
         tb.append(tr);
       });
