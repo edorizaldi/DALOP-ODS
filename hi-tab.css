@@ -129,3 +129,14 @@
 .hi-top .hi-uidps em + * { }
 .hi-top .hi-uidps em:nth-of-type(2) { background: var(--x-c6, #7a96ad); margin-left: 6px; }
 .hi-top td.hi-uidcell + td { border-left: 0; }
+/* Top 3 penyulang kronis: kepala kelompok dan baris nihil */
+.hi-top th.hi-gp-top { background: color-mix(in srgb, #B3261E 10%, transparent); color: #8f1d17; font-weight: 700; border-left: 2px solid var(--color-border-line); }
+.hi-top tr.hi-sub2 th.hi-tp { background: color-mix(in srgb, #B3261E 5%, transparent); }
+.hi-top tr.hi-sub2 th.hi-tp:not(.num) { text-align: left !important; }
+.hi-top td.hi-nihil { color: var(--color-fg-muted); font-style: italic; }
+.hi-top td.hi-nihil b { font-style: normal; color: #2E8B4E; background: color-mix(in srgb, #2E8B4E 12%, transparent); padding: 1px 8px; border-radius: 999px; margin-right: 4px; }
+.hi-top td.hi-nihil { text-align: left !important; }
+/* Top 3: baris Total Sumkal = 3 penyulang kronis tertinggi seluruh UID */
+.hi-top tr.hi-tot td { background-color: color-mix(in srgb, #13254A 5%, transparent); }
+.hi-top tr.hi-tot.hi-tfirst td { border-top: 2px solid var(--navy, #13254A); }
+.hi-top .hi-nmu { display: block; font-size: 10.5px; color: var(--color-fg-muted); font-weight: 500; }

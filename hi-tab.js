@@ -306,7 +306,7 @@
     if (rows.length > MAX) { const tr = mk('tr'); const td = mk('td', `Menampilkan ${fmt(MAX)} dari ${fmt(rows.length)} penyulang. Pilih UID atau cari nama penyulang / ULP untuk mempersempit.`, 'gx-zero'); td.colSpan = ncol; tr.append(td); tb.append(tr); }
     $('hi-list').replaceChildren(th, tb);
   }
-  // ---------- Top 3 penyulang gangguan per UID, bulan berjalan (laporan harian, sheet Detil Kode), semua UID dalam satu tabel ----------
+  // ---------- Top 3 penyulang kronis per UID, bulan berjalan (laporan harian, sheet Detil Kode), semua UID dalam satu tabel ----------
   function renderTop() {
     if (!S || !IX) return;
     const HP0 = harianPeny(); const lastM = IX.months[IX.months.length - 1];
@@ -315,19 +315,20 @@
     const th = mk('thead'), hr = mk('tr'), hr2 = mk('tr', null, 'hi-sub2');
     // gangguan permanen dan sesaat per UID bulan berjalan, di kiri kolom UID
     { const e = mk('th', null, 'hi-uidh'); e.rowSpan = 2; e.append('UID', mk('small', HP ? `Kumulatif Jan–${BS[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}: P · S` : 'Kumulatif: P · S')); hr.append(e); }
-    [ ['#', 'num'], ['Penyulang', ''], ['ULP', '']].forEach(([h, c]) => { const e = mk('th', h, c); e.rowSpan = 2; hr.append(e); });
     const grp = (t, cls, n) => { const e = mk('th', t, cls); e.colSpan = n; hr.append(e); };
+    grp(HP ? `Top 3 penyulang kronis bulan ini · ${BLN[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'Top 3 penyulang kronis bulan ini', 'hi-gph hi-gp-top', 3);
+    [['#', 'num hi-tp'], ['Penyulang', 'hi-tp'], ['ULP', 'hi-tp']].forEach(([h, c]) => hr2.append(mk('th', h, c)));
     grp(`Kumulatif Jan–${BS[lastM - 1]} 2026`, 'hi-gph hi-gp-cum', 3); grp(`${BLN[lastM - 1]} (bulan lalu)`, 'hi-gph hi-gp-prev', 3);
     grp(HP ? `Rekap bulan berjalan · ${BLN[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'Rekap bulan berjalan', 'hi-bbh', 4);
     [['P', 'num hi-cm first'], ['S', 'num hi-cm'], ['Total', 'num hi-cm'], ['P', 'num hi-pv first'], ['S', 'num hi-pv'], ['Total', 'num hi-pv'], ['P', 'num hi-bbc first'], ['S', 'num hi-bbc'], ['Total', 'num hi-bbc'], ['Kelas', 'hi-kh hi-bbc']].forEach(([h, c]) => hr2.append(mk('th', h, c)));
     th.append(hr, hr2);
     if (!HP) {
-      $('hi-top-h').textContent = 'Top 3 penyulang gangguan per UID · bulan berjalan';
+      $('hi-top-h').textContent = 'Top 3 penyulang kronis per UID · bulan berjalan';
       $('hi-top-note').textContent = HP0 ? `Data laporan harian tersimpan adalah ${BLN[HP0.bulan - 1]} ${HP0.tahun}, bukan bulan berjalan. Unggah laporan harian (sheet Detil Kode) dengan tanggal realisasi bulan ini.` : 'Belum ada unggahan laporan harian dengan sheet Detil Kode.';
       $('hi-top').replaceChildren(th, tb); return;
     }
     const bb = `${BLN[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}`;
-    $('hi-top-h').textContent = `Top 3 penyulang gangguan per UID · ${bb} ${HP.tahun}`;
+    $('hi-top-h').textContent = `Top 3 penyulang kronis per UID · ${bb} ${HP.tahun}`;
     // ULP dan riwayat bulan lalu dari database Event Padam Penyulang (kode J distribusi, semua jenis padam)
     const ulpDb = new Map(), prev = new Map(), cum = new Map();
     IX.feeders.forEach((f) => {
@@ -345,33 +346,34 @@
     if (GPS.status === 'ok') GPS.data.forEach((r) => { if (r.KODE !== 'J' || r.BIDANG !== 'DISTRIBUSI' || +r.BULAN_NO > lastM || (r.PS !== 'Permanen' && r.PS !== 'Sesaat')) return; const o = uTot[r.UNIT] || (uTot[r.UNIT] = [0, 0]); o[r.PS === 'Permanen' ? 0 : 1] += Number(r.JUMLAH); });
     HP.rows.forEach(([u, , , p, sv]) => { const o = uTot[u] || (uTot[u] = [0, 0]); o[0] += p; o[1] += sv; });
     const mode = (m) => [...m].sort((a, b) => b[1] - a[1])[0][0];
-    let nTop = 0;
-    UORD.forEach((u) => {
-      const top = [...G].filter(([, g]) => g.u === u).sort((a, b) => (b[1].p + b[1].s) - (a[1].p + a[1].s) || b[1].p - a[1].p || a[1].peny.localeCompare(b[1].peny)).slice(0, 3);
-      const uPS = uTot[u] || [0, 0];
-      // sel UID: nama UID + kumulatif permanen / sesaat
-      const uidCell = (tr, show) => { const td = mk('td', null, 'hi-tu hi-uidcell'); if (show) { td.append(mk('b', ULABEL[u])); const ps = mk('span', null, 'hi-uidps'); ps.append(mk('em', 'P'), fmt(uPS[0]), mk('em', 'S'), fmt(uPS[1])); td.append(ps); } tr.append(td); };
-      if (!top.length) { const tr = mk('tr', null, 'hi-tfirst'); uidCell(tr, true); const td = mk('td', 'Tidak ada gangguan kode J penyulang pada bulan berjalan.', 'gx-zero'); td.colSpan = 13; tr.append(td); tb.append(tr); return; }
-      top.forEach(([k, g], i) => {
-        nTop++;
-        const tr = mk('tr', null, (i === 0 ? 'hi-tfirst' : '') + (S.uid === u ? ' on' : ''));
-        uidCell(tr, i === 0);
-        const fromDb = ulpDb.has(k); const ul = fromDb ? mode(ulpDb.get(k)) : g.ulpH.size ? mode(g.ulpH) : '–';
-        const n = g.p + g.s; const kb = katOf(n); const pill = mk('span', KBY[kb].nm, 'hi-pill'); pill.style.background = KBY[kb].c; pill.style.color = KBY[kb].fg;
-        const kc = mk('td', null, 'hi-kc hi-bbc'); kc.append(pill);
-        const pv = prev.get(k) || [0, 0], cv = cum.get(k) || [0, 0];
-        // total bulan lalu sebagai kotak warna kelas bulan itu
-        const pt = pv[0] + pv[1]; const pk = pt ? katOf(pt) : null; const pc0 = mk('td', null, 'hi-mc hi-pv'); const c = mk('span', fmt(pt), 'hi-cell' + (pk ? '' : ' z')); if (pk) { c.style.background = KBY[pk].c; c.style.color = KBY[pk].fg; } c.title = `${BLN[lastM - 1]}: ${pt ? KBY[pk].nm.toLowerCase() : 'tanpa gangguan'}`; pc0.append(c);
-        const num = (v, cls) => mk('td', fmt(v), 'num ' + cls + (v ? '' : ' gx-zero'));
-        tr.append(mk('td', String(i + 1), 'num hi-rank'), mk('td', g.peny, 'hi-nm'), mk('td', ul, 'hi-u3' + (fromDb ? '' : ' hi-ulph')),
-          num(cv[0], 'hi-cm first'), num(cv[1], 'hi-cm'), mk('td', fmt(cv[0] + cv[1]), 'num hi-cm hi-cmt' + (cv[0] + cv[1] ? '' : ' gx-zero')),
-          num(pv[0], 'hi-pv first'), num(pv[1], 'hi-pv'), pc0,
-          num(g.p, 'hi-bbc first'), num(g.s, 'hi-bbc'), mk('td', fmt(n), 'num hi-bbt hi-bbc'), kc);
-        tb.append(tr);
-      });
-    });
-    { const t = Object.values(uTot).reduce((a, o) => [a[0] + o[0], a[1] + o[1]], [0, 0]); const tr = mk('tr', null, 'hi-tfirst dp-ps-tot');
-      const td0 = mk('td', null, 'hi-tu hi-uidcell'); td0.append(mk('b', 'Total Sumkal')); const ps = mk('span', null, 'hi-uidps'); ps.append(mk('em', 'P'), fmt(t[0]), mk('em', 'S'), fmt(t[1])); td0.append(ps); tr.append(td0); const td = mk("td", ""); td.colSpan = 13; tr.append(td); tb.append(tr); }
+    const isKr = ([, g]) => g.p + g.s >= 6;
+    const byKr = (a, b) => (b[1].p + b[1].s) - (a[1].p + a[1].s) || b[1].p - a[1].p || a[1].peny.localeCompare(b[1].peny);
+    // satu baris penyulang (kolom setelah UID)
+    const peRow = (tr, k, g, i, showUid) => {
+      const fromDb = ulpDb.has(k); const ul = fromDb ? mode(ulpDb.get(k)) : g.ulpH.size ? mode(g.ulpH) : '–';
+      const n = g.p + g.s; const kb = katOf(n); const pill = mk('span', KBY[kb].nm, 'hi-pill'); pill.style.background = KBY[kb].c; pill.style.color = KBY[kb].fg;
+      const kc = mk('td', null, 'hi-kc hi-bbc'); kc.append(pill);
+      const pv = prev.get(k) || [0, 0], cv = cum.get(k) || [0, 0];
+      // total bulan lalu sebagai kotak warna kelas bulan itu
+      const pt = pv[0] + pv[1]; const pk = pt ? katOf(pt) : null; const pc0 = mk('td', null, 'hi-mc hi-pv'); const c = mk('span', fmt(pt), 'hi-cell' + (pk ? '' : ' z')); if (pk) { c.style.background = KBY[pk].c; c.style.color = KBY[pk].fg; } c.title = `${BLN[lastM - 1]}: ${pt ? KBY[pk].nm.toLowerCase() : 'tanpa gangguan'}`; pc0.append(c);
+      const num = (v, cls) => mk('td', fmt(v), 'num ' + cls + (v ? '' : ' gx-zero'));
+      const nm = mk('td', null, 'hi-nm'); nm.append(g.peny); if (showUid) nm.append(mk('small', ULABEL[g.u], 'hi-nmu'));
+      tr.append(mk('td', String(i + 1), 'num hi-rank'), nm, mk('td', ul, 'hi-u3' + (fromDb ? '' : ' hi-ulph')),
+        num(cv[0], 'hi-cm first'), num(cv[1], 'hi-cm'), mk('td', fmt(cv[0] + cv[1]), 'num hi-cm hi-cmt' + (cv[0] + cv[1] ? '' : ' gx-zero')),
+        num(pv[0], 'hi-pv first'), num(pv[1], 'hi-pv'), pc0,
+        num(g.p, 'hi-bbc first'), num(g.s, 'hi-bbc'), mk('td', fmt(n), 'num hi-bbt hi-bbc'), kc);
+    };
+    // sel UID: nama + kumulatif permanen / sesaat
+    const uidCell = (tr, show, name, ps0) => { const td = mk('td', null, 'hi-tu hi-uidcell'); if (show) { td.append(mk('b', name)); const ps = mk('span', null, 'hi-uidps'); ps.append(mk('em', 'P'), fmt(ps0[0]), mk('em', 'S'), fmt(ps0[1])); td.append(ps); } tr.append(td); };
+    const group = (name, ps0, top, cls, showUid, on) => {
+      if (!top.length) { const tr = mk('tr', null, 'hi-tfirst ' + cls); uidCell(tr, true, name, ps0); const td = mk('td', null, 'hi-nihil'); td.colSpan = 13; td.append(mk('b', 'Nihil'), ` · belum ada penyulang kronis pada ${bb}.`); tr.append(td); tb.append(tr); return; }
+      top.forEach(([k, g], i) => { const tr = mk('tr', null, [(i === 0 ? 'hi-tfirst' : ''), cls, on ? 'on' : ''].filter(Boolean).join(' ')); uidCell(tr, i === 0, name, ps0); peRow(tr, k, g, i, showUid); tb.append(tr); });
+    };
+    // per UID: hanya penyulang kronis bulan berjalan (permanen + sesaat >= 6 kali)
+    UORD.forEach((u) => group(ULABEL[u], uTot[u] || [0, 0], [...G].filter(([, g]) => g.u === u).filter(isKr).sort(byKr).slice(0, 3), '', false, S.uid === u));
+    // Total Sumkal: 3 penyulang kronis tertinggi dari seluruh UID
+    const t = Object.values(uTot).reduce((a, o) => [a[0] + o[0], a[1] + o[1]], [0, 0]);
+    group('Total Sumkal', t, [...G].filter(isKr).sort(byKr).slice(0, 3), 'hi-tot', true, false);
     $('hi-top').replaceChildren(th, tb);
     $('hi-top-note').textContent = '';
   }
