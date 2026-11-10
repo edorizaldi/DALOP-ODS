@@ -52,3 +52,7 @@
 .hi-unit .hi-bbh2 { background: color-mix(in srgb, #2a7fc1 7%, transparent); border-left: 2px solid var(--color-border-line); }
 .hi-unit .hi-cum { background: color-mix(in srgb, #B3261E 7%, transparent); font-weight: 700; border-left: 2px solid var(--color-border-line); }
 .hi-ps-chart { height: 340px; position: relative; margin-bottom: 12px; }
+/* kotak kronis / sakit / sehat di posisi peta (hero) */
+.ss-hero .hi-tiles-hero { position: relative; z-index: 1; grid-template-columns: repeat(3, minmax(0, 1fr)); align-self: center; margin: 0; }
+.ss-hero .hi-tiles-hero .hi-tile { min-height: 150px; }
+@media (max-width: 40rem) { .ss-hero .hi-tiles-hero { grid-template-columns: 1fr; } }
