@@ -17,7 +17,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="hirarki-tab.css">
 <link rel="stylesheet" href="workplan-tab.css">
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261109">
-<link rel="stylesheet" href="hi-tab.css?v=20261109c">
+<link rel="stylesheet" href="hi-tab.css?v=20261110">
 <link rel="stylesheet" href="acct.css">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
@@ -1064,7 +1064,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <div class="dp-head"><h3 id="hi-trend-h">Health index penyulang per bulan</h3><div class="dp-dl"><span class="ss-note" id="hi-trend-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="hi-trend-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
       <p class="ss-g-sel" id="hi-trend-sel"></p>
       <div class="ss-legend" id="hi-legend"></div>
-      <div class="ss-chart dash-skeleton hi-chart" id="hi-chart" data-source="peny_bulanan gangguan_up3"></div>
+      <div class="ss-chart dash-skeleton hi-chart" id="hi-chart" data-source="peny_bulanan gangguan_up3 gangguan_ps"></div>
       <div class="h-preview" id="hi-trend-pv" hidden><span class="ss-note"></span><img alt="Health index penyulang per bulan"></div>
     </div>
     <div class="ss-card" id="hi-unit-card">
@@ -2600,7 +2600,7 @@ SSD.calc('up3_yoy', {
 </script>
 
 <script src="peny-tab.js"></script>
-<script src="hi-tab.js?v=20261110"></script>
+<script src="hi-tab.js?v=20261110b"></script>
 
 <script>
 (() => {

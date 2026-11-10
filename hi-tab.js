@@ -34,8 +34,8 @@
   exp('trend'); exp('unit');
 
   // ---------- indeks data (dibangun ulang hanya bila data berubah) ----------
-  let IX = null, srcB = null, srcP = null;
-  function build(B, GU) {
+  let IX = null, srcB = null, srcP = null, srcG = null;
+  function build(B, GU, GPS) {
     // UP3 -> UID dari database Event Padam Penyulang per UP3 (gangguan_up3); "UID X (UP3 tidak dikenali)" -> X
     const nk = (x) => String(x || '').toUpperCase().replace(/[^A-Z]/g, '');
     const ALIAS = { BELITUNG: 'TANJUNGPANDANBELITUNG', PADANGSIDIMPUAN: 'PADANGSIDEMPUAN' };
@@ -54,7 +54,12 @@
     const months = [...new Set(B.map((r) => +r.bulan))].filter((m) => m >= 1 && m <= 12).sort((a, b) => a - b);
     // unit yang punya data penyulang pada bulan itu; tanpa data, penyulangnya tidak diberi kelas
     const ada = new Set(B.map((r) => +r.bulan + '|' + (u3uid.get(r.up3) || '')));
-    return { feeders, months, ada };
+    // kelengkapan data per penyulang: total kode J distribusi per penyulang dibanding rekap per UID (gangguan_ps)
+    const sumP = {}, sumU = {};
+    B.forEach((r) => { if (r.kode !== 'J' || r.bidang !== 'DISTRIBUSI') return; const k = +r.bulan + '|' + (u3uid.get(r.up3) || ''); sumP[k] = (sumP[k] || 0) + Number(r.kali); });
+    GPS.forEach((r) => { if (r.KODE !== 'J' || r.BIDANG !== 'DISTRIBUSI') return; const k = +r.BULAN_NO + '|' + r.UNIT; sumU[k] = (sumU[k] || 0) + Number(r.JUMLAH); });
+    const cov = (m, u) => { const t = sumU[m + '|' + u]; return t ? (sumP[m + '|' + u] || 0) / t : null; };
+    return { feeders, months, ada, cov };
   }
   // kelas penyulang f pada bulan m: 'k' | 's' | 'h' | null (tanpa gangguan atau belum ada data)
   const kat = (f, m) => {
@@ -66,9 +71,9 @@
 
   let S = null; // keadaan render terakhir untuk daftar penyulang
   function render() {
-    const B = SSD.data('peny_bulanan'), GU = SSD.data('gangguan_up3');
-    if (B.status !== 'ok' || GU.status !== 'ok') return;
-    if (srcB !== B.data || srcP !== GU.data) { srcB = B.data; srcP = GU.data; IX = build(B.data, GU.data); }
+    const B = SSD.data('peny_bulanan'), GU = SSD.data('gangguan_up3'), GPS = SSD.data('gangguan_ps');
+    if (B.status !== 'ok' || GU.status !== 'ok' || GPS.status !== 'ok') return;
+    if (srcB !== B.data || srcP !== GU.data || srcG !== GPS.data) { srcB = B.data; srcP = GU.data; srcG = GPS.data; IX = build(B.data, GU.data, GPS.data); }
     const P = dash.params();
     const { feeders, months } = IX;
     if (!months.length) return;
@@ -124,8 +129,19 @@
     {
       $('hi-trend-h').textContent = `Health index penyulang per bulan · ${where}`;
       $('hi-legend').replaceChildren(...KAT.map((k) => { const sp = mk('span'); const i = mk('i', null, 'ss-sw'); i.style.background = k.c; sp.append(i, `${k.nm} (${k.ket})`); return sp; }));
-      const kosong = months.map((m) => [m, UORD.filter((u) => (!uid || u === uid) && !IX.ada.has(m + '|' + u))]).filter(([, l]) => l.length);
-      $('hi-trend-sel').textContent = 'Klik batang untuk memilih bulan.' + (kosong.length ? ' Belum ada data penyulang: ' + kosong.map(([m, l]) => `${BS[m - 1]} (${l.map(uname).join(', ')})`).join('; ') + '.' : '');
+      // bulan yang data per penyulangnya belum lengkap dibanding rekap Event Padam Penyulang per UID
+      const kurang = months.map((m) => {
+        const us = UORD.filter((u) => !uid || u === uid);
+        const kos = us.filter((u) => !IX.ada.has(m + '|' + u) || IX.cov(m, u) === 0);
+        const sebagian = us.filter((u) => !kos.includes(u)).map((u) => [u, IX.cov(m, u)]).filter(([, c]) => c != null && c < 0.95);
+        return [m, kos, sebagian];
+      }).filter(([, a, b]) => a.length || b.length);
+      $('hi-trend-sel').replaceChildren('Klik batang untuk memilih bulan.');
+      if (kurang.length) {
+        const w = mk('span', null, 'hi-warn'); w.append(' Data per penyulang belum lengkap: ');
+        w.append(kurang.map(([m, a, b]) => `${BLN[m - 1]} — ` + [a.length ? `${a.map(uname).join(', ')} kosong` : '', b.length ? b.map(([u, c]) => `${uname(u)} ${pc(c)}`).join(', ') + ' dari rekap per UID' : ''].filter(Boolean).join('; ')).join(' | ') + '. Angka bulan itu lebih rendah dari kondisi sebenarnya; unggah ulang file APKT bulan tersebut untuk melengkapi.');
+        $('hi-trend-sel').append(w);
+      }
       const ch = $('hi-chart'); ch.classList.remove('dash-skeleton'); ch.replaceChildren();
       const W = Math.max(320, ch.clientWidth || 900), H = 300, mg = { t: 12, r: 8, b: 26, l: 44 };
       const svg = d3.select(ch).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', `Health index penyulang per bulan, ${where}`);

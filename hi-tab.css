@@ -26,3 +26,4 @@
 .hi-list .hi-u3, .hi-unit td:first-child, .hi-unit th:first-child { text-align: left !important; }
 .hi-list td.hi-u3 { min-width: 9em; }
 .hi-cell.z { color: var(--color-fg-muted); background: color-mix(in srgb, var(--color-fg) 4%, transparent); font-weight: 500; }
+.hi-warn { color: var(--cds-chart-status-critical, #B3261E); }
