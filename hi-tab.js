@@ -1,7 +1,7 @@
 // Tab Health Index Penyulang (menu Database).
 // Sumber: database Event Padam Penyulang saja: per penyulang (peny_bulanan) dan per UP3 (gangguan_up3, untuk UID tiap UP3).
-// Kelas per penyulang per bulan dari gangguan kode J bidang Distribusi, jumlah permanen + sesaat (semua jenis padam):
-//   kronis >= 6 kali, sakit 2-5 kali, sehat 1 kali. Penyulang tanpa gangguan kode J distribusi pada bulan itu tidak dihitung.
+// Kelas per penyulang per bulan dari gangguan kode J, jumlah permanen + sesaat, menurut filter bidang (bawaan Distribusi) dan jenis padam (bawaan semua):
+//   kronis >= 6 kali, sakit 2-5 kali, sehat 1 kali. Penyulang tanpa gangguan pada bulan itu tidak dihitung.
 (() => {
   const $ = (id) => document.getElementById(id);
   if (!$('hi')) return;
@@ -22,9 +22,14 @@
   const KBY = Object.fromEntries(KAT.map((k) => [k.id, k]));
   const katOf = (n) => (n >= 6 ? 'k' : n >= 2 ? 's' : n === 1 ? 'h' : null);
   const zero = () => ({ k: 0, s: 0, h: 0, t: 0 });
+  const BIDS = ['DISTRIBUSI', 'TRANSMISI', 'PEMBANGKIT'];
+  const BNAME = { DISTRIBUSI: 'Distribusi', TRANSMISI: 'Transmisi', PEMBANGKIT: 'Pembangkit' };
+  const JENIS = ['Gangguan', 'Pemeliharaan', 'Bencana'];
+  const renderChips = (id, opts, cur, param) => { const el = $(id); el.replaceChildren(...opts.map(([v, l]) => { const b = mk('button', l, 'ss-chip'); b.type = 'button'; b.dataset.v = v; b.dataset.p = param; b.setAttribute('aria-pressed', String(v === cur)); return b; })); };
 
   // ---------- kontrol ----------
   $('hi-f-uid').addEventListener('change', (e) => dash.setParams({ hi_uid: e.target.value || null }));
+  ['hi-f-bidang', 'hi-f-jenis'].forEach((id) => $(id).addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) dash.setParams({ [b.dataset.p]: b.dataset.v || null }); }));
   $('hi-f-bulan').addEventListener('change', (e) => dash.setParams({ hi_bulan: e.target.value ? Number(e.target.value) : null }));
   $('hi-f-kat').addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) dash.setParams({ hi_kat: b.dataset.v }); });
   let q = '';
@@ -43,22 +48,22 @@
     const uidOf = (u3) => { const m = /^UID\s+(\S+)\s+\(UP3 tidak dikenali\)/i.exec(u3) || /UP3 tidak dikenali \((\S+)\)/i.exec(u3); if (m) return m[1].toUpperCase(); return gu.get(nk(u3)) || gu.get(ALIAS[nk(u3)]) || ''; };
     const u3uid = new Map(); B.forEach((r) => { if (!u3uid.has(r.up3)) u3uid.set(r.up3, uidOf(r.up3)); });
     // penyulang = semua penyulang yang tercatat di database Event Padam Penyulang (semua kode, bidang, jenis padam)
-    const F = new Map(); // up3|penyulang -> { u, u3, peny, mo: { m: [p, s] } }
+    const F = new Map(); // up3|penyulang -> { u, u3, peny, raw: { m: { 'BIDANG|Jenis': [p, s] } }, mo: { m: [p, s] } (sesuai filter) }
     B.forEach((r) => {
       const id = r.up3 + '\u0001' + r.penyulang; let f = F.get(id);
-      if (!f) { f = { u: u3uid.get(r.up3) || '', u3: r.up3, peny: r.penyulang, mo: {} }; F.set(id, f); }
-      if (r.kode !== 'J' || r.bidang !== 'DISTRIBUSI' || (r.ps !== 'Permanen' && r.ps !== 'Sesaat')) return;
-      const m = +r.bulan; const o = f.mo[m] || (f.mo[m] = [0, 0]); o[r.ps === 'Permanen' ? 0 : 1] += Number(r.kali);
+      if (!f) { f = { u: u3uid.get(r.up3) || '', u3: r.up3, peny: r.penyulang, raw: {}, mo: {} }; F.set(id, f); }
+      if (r.kode !== 'J' || (r.ps !== 'Permanen' && r.ps !== 'Sesaat')) return;
+      const m = +r.bulan; const rm = f.raw[m] || (f.raw[m] = {}); const kk = r.bidang + '|' + r.jenis_padam; const o = rm[kk] || (rm[kk] = [0, 0]); o[r.ps === 'Permanen' ? 0 : 1] += Number(r.kali);
     });
     const feeders = [...F.values()].filter((f) => UORD.includes(f.u));
     const months = [...new Set(B.map((r) => +r.bulan))].filter((m) => m >= 1 && m <= 12).sort((a, b) => a - b);
     // unit yang punya data penyulang pada bulan itu; tanpa data, penyulangnya tidak diberi kelas
     const ada = new Set(B.map((r) => +r.bulan + '|' + (u3uid.get(r.up3) || '')));
-    // kelengkapan data per penyulang: total kode J distribusi per penyulang dibanding rekap per UID (gangguan_ps)
+    // kelengkapan data per penyulang: total kode J per penyulang dibanding rekap per UID (gangguan_ps), per bidang
     const sumP = {}, sumU = {};
-    B.forEach((r) => { if (r.kode !== 'J' || r.bidang !== 'DISTRIBUSI') return; const k = +r.bulan + '|' + (u3uid.get(r.up3) || ''); sumP[k] = (sumP[k] || 0) + Number(r.kali); });
-    GPS.forEach((r) => { if (r.KODE !== 'J' || r.BIDANG !== 'DISTRIBUSI') return; const k = +r.BULAN_NO + '|' + r.UNIT; sumU[k] = (sumU[k] || 0) + Number(r.JUMLAH); });
-    const cov = (m, u) => { const t = sumU[m + '|' + u]; return t ? (sumP[m + '|' + u] || 0) / t : null; };
+    B.forEach((r) => { if (r.kode !== 'J') return; const k = +r.bulan + '|' + (u3uid.get(r.up3) || '') + '|' + r.bidang; sumP[k] = (sumP[k] || 0) + Number(r.kali); });
+    GPS.forEach((r) => { if (r.KODE !== 'J') return; const k = +r.BULAN_NO + '|' + r.UNIT + '|' + r.BIDANG; sumU[k] = (sumU[k] || 0) + Number(r.JUMLAH); });
+    const cov = (m, u, bids) => { let t = 0, p = 0; bids.forEach((b) => { t += sumU[m + '|' + u + '|' + b] || 0; p += sumP[m + '|' + u + '|' + b] || 0; }); return t ? p / t : null; };
     return { feeders, months, ada, cov };
   }
   // kelas penyulang f pada bulan m: 'k' | 's' | 'h' | null (tanpa gangguan atau belum ada data)
@@ -76,6 +81,17 @@
     if (srcB !== B.data || srcP !== GU.data || srcG !== GPS.data) { srcB = B.data; srcP = GU.data; srcG = GPS.data; IX = build(B.data, GU.data, GPS.data); }
     const P = dash.params();
     const { feeders, months } = IX;
+    // filter bidang (bawaan Distribusi) dan jenis padam (bawaan semua): hitung ulang permanen/sesaat per penyulang per bulan
+    const bidang = P.hi_bidang === 'SEMUA' ? null : BIDS.includes(P.hi_bidang) ? P.hi_bidang : 'DISTRIBUSI';
+    const jenis = JENIS.includes(P.hi_jenis) ? P.hi_jenis : null;
+    const fkey = (bidang || '*') + '|' + (jenis || '*');
+    if (IX.fkey !== fkey) {
+      IX.fkey = fkey;
+      feeders.forEach((f) => { f.mo = {}; Object.entries(f.raw).forEach(([m, o]) => { const v = [0, 0]; Object.entries(o).forEach(([kk, ps]) => { const [b, j] = kk.split('|'); if ((bidang && b !== bidang) || (jenis && j !== jenis)) return; v[0] += ps[0]; v[1] += ps[1]; }); if (v[0] + v[1]) f.mo[m] = v; }); });
+    }
+    const fTxt = `${jenis && jenis !== 'Gangguan' ? 'padam' : 'gangguan'} kode J${bidang ? ' bidang ' + BNAME[bidang] : ' semua bidang'}${jenis ? ', jenis padam ' + jenis : ''}`;
+    renderChips('hi-f-bidang', [['SEMUA', 'Semua'], ['DISTRIBUSI', 'Distribusi'], ['TRANSMISI', 'Transmisi'], ['PEMBANGKIT', 'Pembangkit']], bidang || 'SEMUA', 'hi_bidang');
+    renderChips('hi-f-jenis', [['', 'Semua'], ...JENIS.map((j) => [j, j])], jenis || '', 'hi_jenis');
     if (!months.length) return;
     // UP3 belum ditampilkan (nama UP3 dikosongkan dulu); pilihan hanya UID dan bulan
     const uid = UORD.includes(P.hi_uid) ? P.hi_uid : null;
@@ -98,7 +114,7 @@
     {
       const tk = $('hi-take'); tk.classList.remove('dash-skeleton'); tk.replaceChildren();
       const Bb = (t) => mk('b', t);
-      tk.append(`${BLN[bm - 1]} 2026, ${where}: `, Bb(`${fmt(cur.t)} penyulang`), ' mengalami gangguan kode J distribusi, terdiri dari ', Bb(`${fmt(cur.k)} kronis (${pc(cur.t ? cur.k / cur.t : 0)})`), ', ', Bb(`${fmt(cur.s)} sakit`), ' dan ', Bb(`${fmt(cur.h)} sehat`), '. ');
+      tk.append(`${BLN[bm - 1]} 2026, ${where}: `, Bb(`${fmt(cur.t)} penyulang`), ` mengalami ${fTxt}, terdiri dari `, Bb(`${fmt(cur.k)} kronis (${pc(cur.t ? cur.k / cur.t : 0)})`), ', ', Bb(`${fmt(cur.s)} sakit`), ' dan ', Bb(`${fmt(cur.h)} sehat`), '. ');
       if (prv) { const d = cur.k - prv.k; tk.append(`Kronis ${d > 0 ? 'naik' : d < 0 ? 'turun' : 'tetap'} `, Bb(d ? `${fmt(Math.abs(d))} penyulang` : ''), ` dibanding ${BLN[prevM - 1]}. `); }
       if (!uid) {
         const top = UORD.map((u) => [u, count(scoped.filter((f) => f.u === u), bm)]).filter(([, o]) => o.t).sort((a, b) => b[1].k - a[1].k)[0];
@@ -132,8 +148,9 @@
       // bulan yang data per penyulangnya belum lengkap dibanding rekap Event Padam Penyulang per UID
       const kurang = months.map((m) => {
         const us = UORD.filter((u) => !uid || u === uid);
-        const kos = us.filter((u) => !IX.ada.has(m + '|' + u) || IX.cov(m, u) === 0);
-        const sebagian = us.filter((u) => !kos.includes(u)).map((u) => [u, IX.cov(m, u)]).filter(([, c]) => c != null && c < 0.95);
+        const bids = bidang ? [bidang] : BIDS;
+        const kos = us.filter((u) => !IX.ada.has(m + '|' + u) || IX.cov(m, u, bids) === 0);
+        const sebagian = us.filter((u) => !kos.includes(u)).map((u) => [u, IX.cov(m, u, bids)]).filter(([, c]) => c != null && c < 0.95);
         return [m, kos, sebagian];
       }).filter(([, a, b]) => a.length || b.length);
       $('hi-trend-sel').replaceChildren('Klik batang untuk memilih bulan.');
@@ -189,15 +206,15 @@
       $('hi-unit-note').textContent = `Diurutkan dari porsi penyulang kronis terbesar. Klik baris untuk memilih UID${uid ? '; klik lagi atau klik baris total untuk kembali ke semua UID' : ''}.`;
     }
 
-    S = { scoped, bm, where, uid, months, katSel: ['k', 's', 'h', 'ks', 'all'].includes(P.hi_kat) ? P.hi_kat : 'ks' };
+    S = { fTxt, scoped, bm, where, uid, months, katSel: ['k', 's', 'h', 'ks', 'all'].includes(P.hi_kat) ? P.hi_kat : 'ks' };
     renderList();
-    $('hi-note').textContent = 'Sumber: database Event Padam Penyulang saja (gangguan per penyulang dari APKT); tidak memakai Database Penyulang. Kelas per penyulang per bulan dari gangguan kode J bidang Distribusi, jumlah permanen + sesaat, semua jenis padam: kronis ≥ 6 kali, sakit 2–5 kali, sehat 1 kali. Penyulang tanpa gangguan kode J distribusi pada bulan itu tidak dihitung; total = penyulang yang mengalami gangguan. Rekap per UP3 belum ditampilkan. Unit yang belum punya data penyulang pada suatu bulan tidak diberi kelas di bulan itu.';
+    $('hi-note').textContent = `Sumber: database Event Padam Penyulang saja (gangguan per penyulang dari APKT); tidak memakai Database Penyulang. Kelas per penyulang per bulan dari jumlah gangguan permanen + sesaat kode J, mengikuti filter bidang (bawaan Distribusi) dan jenis padam (bawaan semua): kronis ≥ 6 kali, sakit 2–5 kali, sehat 1 kali. Penyulang tanpa gangguan pada bulan itu tidak dihitung; total = penyulang yang mengalami gangguan. Rekap per UP3 belum ditampilkan. Pemeriksaan kelengkapan data dibandingkan rekap Event Padam Penyulang per UID untuk bidang terpilih (semua jenis padam).`;
   }
 
   // daftar penyulang dengan riwayat kelas per bulan
   function renderList() {
     if (!S) return;
-    const { scoped, bm, where, uid, months, katSel } = S;
+    const { scoped, bm, where, uid, months, katSel, fTxt } = S; const fTxtS = fTxt;
     const opts = [['ks', 'Kronis + sakit'], ['k', 'Kronis'], ['s', 'Sakit'], ['h', 'Sehat'], ['all', 'Semua']];
     $('hi-f-kat').replaceChildren(...opts.map(([v, l]) => { const b = mk('button', l, 'ss-chip'); b.type = 'button'; b.dataset.v = v; b.setAttribute('aria-pressed', String(v === katSel)); return b; }));
     const want = katSel === 'ks' ? ['k', 's'] : katSel === 'all' ? ['k', 's', 'h'] : [katSel];
@@ -223,7 +240,7 @@
         const km = kat(f, m); const mo = f.mo[m]; const n = mo ? mo[0] + mo[1] : 0; if (km === 'k') nK++;
         const td = mk('td', null, 'hi-mc'); const nd = !IX.ada.has(m + '|' + f.u); const c = mk('span', km ? fmt(n) : nd ? '–' : '0', 'hi-cell' + (km ? '' : nd ? ' na' : ' z'));
         if (km) { c.style.background = KBY[km].c; c.style.color = KBY[km].fg; }
-        c.title = `${BLN[m - 1]}: ${km ? KBY[km].nm.toLowerCase() + (mo ? ` (${fmt(mo[0])} permanen, ${fmt(mo[1])} sesaat)` : '') : nd ? 'belum ada data' : 'tanpa gangguan kode J distribusi'}`;
+        c.title = `${BLN[m - 1]}: ${km ? KBY[km].nm.toLowerCase() + (mo ? ` (${fmt(mo[0])} permanen, ${fmt(mo[1])} sesaat)` : '') : nd ? 'belum ada data' : 'tanpa ' + fTxtS}`;
         if (m === bm) td.classList.add('cur'); td.append(c); tr.append(td);
       });
       tr.append(mk('td', `${fmt(nK)} dari ${upto.length}`, 'num'));
