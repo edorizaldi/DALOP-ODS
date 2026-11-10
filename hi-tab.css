@@ -117,5 +117,5 @@
 .hi-top td.hi-uidv { font-weight: 700; }
 .hi-top .hi-uidc + .hi-tu, .hi-top td.hi-uidc + td.hi-tu { border-left: 2px solid var(--color-border-line); }
 .hi-top tr.hi-sub2 th.hi-uidc + th.hi-uidc { }
-.hi-top .hi-uidc { width: 52px; min-width: 52px; text-align: right !important; }
+.hi-top .hi-uidc { width: 64px; min-width: 64px; text-align: right !important; }
 .hi-top th[rowspan]:not(.num) { text-align: left !important; }

@@ -314,7 +314,7 @@
     const tb = mk('tbody');
     const th = mk('thead'), hr = mk('tr'), hr2 = mk('tr', null, 'hi-sub2');
     // gangguan permanen dan sesaat per UID bulan berjalan, di kiri kolom UID
-    { const e = mk('th', HP ? `Gangguan UID · ${BS[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'Gangguan UID', 'hi-uidh'); e.colSpan = 2; hr.append(e); hr2.append(mk('th', 'P', 'num hi-uidc'), mk('th', 'S', 'num hi-uidc')); }
+    { const e = mk('th', HP ? `Kumulatif UID · Jan–${BS[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'Kumulatif UID', 'hi-uidh'); e.colSpan = 2; hr.append(e); hr2.append(mk('th', 'P', 'num hi-uidc'), mk('th', 'S', 'num hi-uidc')); }
     [['UID', ''], ['#', 'num'], ['Penyulang', ''], ['ULP', '']].forEach(([h, c]) => { const e = mk('th', h, c); e.rowSpan = 2; hr.append(e); });
     const grp = (t, cls, n) => { const e = mk('th', t, cls); e.colSpan = n; hr.append(e); };
     grp(`${BLN[lastM - 1]} (bulan lalu)`, 'hi-gph hi-gp-prev', 3); grp(`Kumulatif Jan–${BS[lastM - 1]}`, 'hi-gph hi-gp-cum', 3);
@@ -339,7 +339,11 @@
     });
     const G = new Map();
     HP.rows.forEach(([u, ulp, peny, p, sv]) => { const k = u + '|' + nn(peny); const g = G.get(k) || { u, peny, p: 0, s: 0, ulpH: new Map() }; g.p += p; g.s += sv; if (ulp) g.ulpH.set(ulp, (g.ulpH.get(ulp) || 0) + p + sv); G.set(k, g); });
-    const uTot = {}; HP.rows.forEach(([u, , , p, sv]) => { const o = uTot[u] || (uTot[u] = [0, 0]); o[0] += p; o[1] += sv; });
+    // kumulatif per UID = database Event Padam Penyulang (kode J, Distribusi, Jan s.d. bulan lalu) + laporan harian sheet Detil Kode (bulan berjalan)
+    const uTot = {};
+    const GPS = SSD.data('gangguan_ps');
+    if (GPS.status === 'ok') GPS.data.forEach((r) => { if (r.KODE !== 'J' || r.BIDANG !== 'DISTRIBUSI' || +r.BULAN_NO > lastM || (r.PS !== 'Permanen' && r.PS !== 'Sesaat')) return; const o = uTot[r.UNIT] || (uTot[r.UNIT] = [0, 0]); o[r.PS === 'Permanen' ? 0 : 1] += Number(r.JUMLAH); });
+    HP.rows.forEach(([u, , , p, sv]) => { const o = uTot[u] || (uTot[u] = [0, 0]); o[0] += p; o[1] += sv; });
     const mode = (m) => [...m].sort((a, b) => b[1] - a[1])[0][0];
     let nTop = 0;
     UORD.forEach((u) => {
