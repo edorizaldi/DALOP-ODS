@@ -27,3 +27,10 @@
 .hi-list td.hi-u3 { min-width: 9em; }
 .hi-cell.z { color: var(--color-fg-muted); background: color-mix(in srgb, var(--color-fg) 4%, transparent); font-weight: 500; }
 .hi-warn { color: var(--cds-chart-status-critical, #B3261E); }
+.hi-list th.hi-bbh { text-align: center; border-left: 2px solid var(--color-border-line); }
+.hi-list .hi-bb.first { border-left: 2px solid var(--color-border-line); }
+.hi-list td.hi-bb { background: color-mix(in srgb, #2a7fc1 6%, transparent); }
+.hi-list td.hi-bbt { font-weight: 700; }
+.hi-list th.hi-kh, .hi-list td.hi-kc { text-align: center; border-left: 2px solid var(--color-border-line); white-space: nowrap; }
+.hi-list .hi-k0 { font-size: 11.5px; }
+.hi-list thead tr:first-child th[rowspan] { vertical-align: bottom; }

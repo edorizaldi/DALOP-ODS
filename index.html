@@ -17,7 +17,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="hirarki-tab.css">
 <link rel="stylesheet" href="workplan-tab.css">
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261109">
-<link rel="stylesheet" href="hi-tab.css?v=20261110">
+<link rel="stylesheet" href="hi-tab.css?v=20261110d">
 <link rel="stylesheet" href="acct.css">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
@@ -1077,8 +1077,8 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
     </div>
     <div class="ss-card" id="hi-list-card">
       <div class="ss-sechead">
-        <div><h3 id="hi-list-h">Penyulang kronis dan sakit</h3><p class="ss-note" id="hi-list-note"></p></div>
-        <div class="hi-list-ctl"><div class="ss-chips" id="hi-f-kat" role="group" aria-label="Kelas penyulang"></div><input class="ss-search" id="hi-search" type="search" placeholder="Cari penyulang" aria-label="Cari penyulang"></div>
+        <div><h3 id="hi-list-h">Penyulang</h3><p class="ss-note" id="hi-list-note"></p></div>
+        <div class="hi-list-ctl"><input class="ss-search" id="hi-search" type="search" placeholder="Cari penyulang atau ULP" aria-label="Cari penyulang atau ULP"></div>
       </div>
       <div class="ss-tablewrap gx-scroll hi-scroll" data-source="peny_bulanan gangguan_up3"><table class="ss-table gx-table hi-list" id="hi-list"></table></div>
     </div>
@@ -1472,7 +1472,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <label class="h-drop" id="h-drop" tabindex="0">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
         <b>Tarik file Excel harian ke sini, atau klik untuk memilih</b>
-        <span class="ss-note">Format .xlsx seperti SAIDI_SAIFI.xlsx, sheet "prognosa saidi saifi"</span>
+        <span class="ss-note">Format .xlsx seperti SAIDI_SAIFI.xlsx: sheet "Prognosa Saidi Saifi" untuk infografis, sheet "Detil Kode" (opsional) untuk gangguan per penyulang bulan berjalan di tab Health Index Penyulang</span>
         <input type="file" id="h-file" accept=".xlsx" hidden>
       </label>
       <p class="h-up-err" id="h-up-err" hidden></p>
@@ -2602,7 +2602,7 @@ SSD.calc('up3_yoy', {
 </script>
 
 <script src="peny-tab.js"></script>
-<script src="hi-tab.js?v=20261110c"></script>
+<script src="hi-tab.js?v=20261110d"></script>
 
 <script>
 (() => {
@@ -2800,13 +2800,13 @@ SSD.onData(draw);
 window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false; draw(); } };
 // data yang diunggah langsung lewat tombol Update disimpan di penyimpanan dashboard (harian/latest)
 (async()=>{ try{ const c=window.claude; if(!c||!c.use) return; const db=await c.use('db'); if(!db) return; window.SSHarianDB=db;
-  db.doc('harian/latest').onSnapshot((s)=>{ if(s&&s.exists){ const v=s.data(); if(v&&Array.isArray(v.rows)&&v.rows.some(r=>r.seri==='meta')){ if(window.SSHarianSaved&&String(window.SSHarianSaved.diunggah||'')>String(v.diunggah||'')) return; window.SSHarianSaved=v; window.SSHarian.apply(v.rows); const e=document.getElementById('h-src-note'); if(e) e.textContent=`Data dari unggahan ${String(v.diunggah||'').slice(0,10)} (${v.file||'file'}).`; const mt=v.rows.find(r=>r.seri==='meta'); if(window.SSDbInfo&&v.diunggah) window.SSDbInfo.harian(v.diunggah, 'Realisasi s.d. '+(mt&&mt.realisasi_sd||''), (v.file||'file Excel')+' (diunggah di dashboard)'); } } },()=>{});
+  db.doc('harian/latest').onSnapshot((s)=>{ if(s&&s.exists){ const v=s.data(); if(v&&Array.isArray(v.rows)&&v.rows.some(r=>r.seri==='meta')){ if(window.SSHarianSaved&&String(window.SSHarianSaved.diunggah||'')>String(v.diunggah||'')) return; window.SSHarianSaved=v; window.SSHarian.apply(v.rows); document.dispatchEvent(new Event('ss-harian-saved')); const e=document.getElementById('h-src-note'); if(e) e.textContent=`Data dari unggahan ${String(v.diunggah||'').slice(0,10)} (${v.file||'file'}).`; const mt=v.rows.find(r=>r.seri==='meta'); if(window.SSDbInfo&&v.diunggah) window.SSDbInfo.harian(v.diunggah, 'Realisasi s.d. '+(mt&&mt.realisasi_sd||''), (v.file||'file Excel')+' (diunggah di dashboard)'); } } },()=>{});
 } catch(e){} })();
 // harian_latest.js di <head> bisa tersimpan di cache browser (sampai ±10 menit); ambil versi terbaru dari server lalu pakai bila lebih baru
 (async()=>{ try{ const r=await fetch('harian_latest.js?t='+Date.now(),{cache:'no-store'}); if(!r.ok) return; const t=await r.text(); const i=t.indexOf('=');
   const v=JSON.parse(t.slice(i+1).trim().replace(/;\s*$/,'')); const cur=window.SSHarianSaved||window.__HARIAN;
   if(!v||!Array.isArray(v.rows)||!v.rows.some(x=>x.seri==='meta')||(cur&&String(cur.diunggah||'')>=String(v.diunggah||''))) return;
-  window.__HARIAN=v; window.SSHarianSaved=v; window.SSHarian.apply(v.rows);
+  window.__HARIAN=v; window.SSHarianSaved=v; window.SSHarian.apply(v.rows); document.dispatchEvent(new Event('ss-harian-saved'));
   const e=document.getElementById('h-src-note'); if(e) e.textContent=`Data dari unggahan ${String(v.diunggah||'').slice(0,10)} (${v.file||'file'}).`;
   const mt=v.rows.find(x=>x.seri==='meta'); if(window.SSDbInfo&&v.diunggah) window.SSDbInfo.harian(v.diunggah,'Realisasi s.d. '+(mt&&mt.realisasi_sd||''),(v.file||'file Excel')+' (diunggah di dashboard)');
 } catch(e){} })();
@@ -2865,6 +2865,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 </script>
 
 <script src="apkt-parser.js"></script>
+<script src="harian-detil.js?v=20261110"></script>
 <script>
 (() => {
   const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -2932,15 +2933,22 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
       box(`SAIFI Sumkal ${BLN[m]}`, `${f3.format(s.saifi.SUMKAL[m])} / ${f3.format(s.saifiT.SUMKAL[m])}`),
       box('Capaian SAIFI', capF != null ? f2.format(capF * 100) + '%' : '—', capF != null ? (capF >= 1 ? 'ok' : 'bad') : ''),
       box(`ENS ${BLN[m]}`, f0.format(s.ens.SUMKAL[m] || 0) + ' kWh'),
-      box(`Total event ${BLN[m]}`, f0.format(s.tot.SUMKAL[m] || 0)));
+      box(`Total event ${BLN[m]}`, f0.format(s.tot.SUMKAL[m] || 0)),
+      box('Detil Kode (per penyulang)', pending.detil ? `${f0.format(pending.detil.j)} kejadian kode J · ${f0.format(new Set(pending.detil.rows.map((r) => r[0] + '|' + r[2])).size)} penyulang · ${pending.detil.dari.slice(8)}–${pending.detil.sampai.slice(8)}/${pending.detil.sampai.slice(5, 7)}` : pending.adaDetil ? 'tidak terbaca: ' + pending.detilErr : 'sheet tidak ada', pending.detil ? 'ok' : ''));
   }
   async function handle(file) {
     if (!file) return; $('h-up-err').hidden = true; $('h-up-msg').textContent = '';
     if (!/\.xlsx$/i.test(file.name)) { $('h-up-err').textContent = 'Pilih file .xlsx.'; $('h-up-err').hidden = false; return; }
     if (!window.APKT) { $('h-up-err').textContent = 'Pembaca Excel belum termuat. Muat ulang halaman lalu coba lagi.'; $('h-up-err').hidden = false; return; }
     try {
-      const parsed = parse(await APKT.readTable(file));
-      pending = { file: file.name, parsed };
+      // sheet Prognosa (atau sheet pertama) untuk infografis; sheet Detil Kode (bila ada) untuk gangguan per penyulang bulan berjalan
+      const sheets = APKT.readSheets ? await APKT.readSheets(file) : [{ name: '', rows: await APKT.readTable(file) }];
+      const prog = sheets.find((x) => /^PROGNOSA/i.test(String(x.name).trim())) || sheets[0];
+      const parsed = parse(prog.rows);
+      const ds = sheets.find((x) => /^DE?TA?IL\s*KODE/i.test(String(x.name).replace(/\s+/g, ' ').trim()));
+      let detil = null, detilErr = '';
+      if (ds && window.SSHarianDetil) { try { detil = window.SSHarianDetil.parse(ds.rows); } catch (x) { detilErr = x.message || String(x); } }
+      pending = { file: file.name, parsed, detil, detilErr, adaDetil: !!ds };
       const d = new Date(); d.setDate(d.getDate() - 1);
       const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const lastDay = new Date(parsed.year, parsed.last, 0).getDate();
@@ -2966,9 +2974,13 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
     if (db) {
       msg.textContent = 'Menyimpan ke database dashboard…';
       const doc = { rows, tanggal: tgl, file: pending.file, diunggah: new Date().toISOString() };
-      try { await db.doc('harian/latest').set(doc); saved = true; window.SSHarianDB = db; window.SSHarianSaved = doc; }
+      // gangguan per penyulang bulan berjalan (sheet Detil Kode); tanpa sheet itu, pakai data unggahan sebelumnya pada bulan yang sama
+      const prevD = window.SSHarianSaved && window.SSHarianSaved.penyulang;
+      if (pending.detil) doc.penyulang = pending.detil; else if (prevD && prevD.bulan === mo && prevD.tahun === y) doc.penyulang = prevD;
+      try { await db.doc('harian/latest').set(doc); saved = true; window.SSHarianDB = db; window.SSHarianSaved = doc; document.dispatchEvent(new Event('ss-harian-saved')); }
       catch (e) { saved = false; why = e && e.code === 'no-token' ? 'belum login admin' : e && e.code === 'gh-401' ? 'login admin sudah tidak berlaku; keluar lalu login lagi' : ((e && e.message) || String(e)); }
     } else why = 'belum login admin';
+    if (!saved && pending.detil) { window.SSHarianSaved = { ...(window.SSHarianSaved || {}), rows, tanggal: tgl, file: pending.file, penyulang: pending.detil }; document.dispatchEvent(new Event('ss-harian-saved')); }
     msg.textContent = saved
       ? `Infografis diperbarui ke realisasi s.d. ${da} ${BLN[mo - 1]} ${y} dan disimpan ke database dashboard. Semua yang membuka dashboard melihat data ini setelah GitHub Pages diperbarui (1–2 menit); tombol Download juga memakai data baru.`
       : `Infografis di layar ini sudah memakai data baru (realisasi s.d. ${da} ${BLN[mo - 1]} ${y}), tetapi BELUM TERSIMPAN (${why}). Bila halaman ditutup, data kembali ke unggahan sebelumnya. Klik "Login admin" (kanan bawah), lalu klik Terapkan ke infografis lagi.`;

@@ -31,7 +31,6 @@
   $('hi-f-uid').addEventListener('change', (e) => dash.setParams({ hi_uid: e.target.value || null }));
   ['hi-f-bidang', 'hi-f-jenis'].forEach((id) => $(id).addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) dash.setParams({ [b.dataset.p]: b.dataset.v || null }); }));
   $('hi-f-bulan').addEventListener('change', (e) => dash.setParams({ hi_bulan: e.target.value ? Number(e.target.value) : null }));
-  $('hi-f-kat').addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) dash.setParams({ hi_kat: b.dataset.v }); });
   let q = '';
   $('hi-search').addEventListener('input', (e) => { q = e.target.value.trim().toLowerCase(); renderList(); });
   const ctx = { name: '' };
@@ -206,49 +205,74 @@
       $('hi-unit-note').textContent = `Diurutkan dari porsi penyulang kronis terbesar. Klik baris untuk memilih UID${uid ? '; klik lagi atau klik baris total untuk kembali ke semua UID' : ''}.`;
     }
 
-    S = { fTxt, scoped, bm, where, uid, months, katSel: ['k', 's', 'h', 'ks', 'all'].includes(P.hi_kat) ? P.hi_kat : 'ks' };
+    S = { fTxt, scoped, bm, where, uid, months, bidang };
     renderList();
     $('hi-note').textContent = `Sumber: database Event Padam Penyulang saja (gangguan per penyulang dari APKT); tidak memakai Database Penyulang. Kelas per penyulang per bulan dari jumlah gangguan permanen + sesaat kode J, mengikuti filter bidang (bawaan Distribusi) dan jenis padam (bawaan semua): kronis ≥ 6 kali, sakit 2–5 kali, sehat 1 kali. Penyulang tanpa gangguan pada bulan itu tidak dihitung; total = penyulang yang mengalami gangguan. Rekap per UP3 belum ditampilkan. Pemeriksaan kelengkapan data dibandingkan rekap Event Padam Penyulang per UID untuk bidang terpilih (semua jenis padam).`;
   }
 
-  // daftar penyulang dengan riwayat kelas per bulan
+  // ---------- daftar penyulang: riwayat kelas Jan s.d. bulan terpilih + rekap bulan berjalan (laporan harian, sheet Detil Kode) ----------
+  // nama penyulang dibandingkan tanpa awalan (FEEDER, PENYULANG, …) dan tanpa tanda baca, dalam UID yang sama
+  const PRE = /^(MV\s*-?\s*CABLE|CELL|FEEDER|PENYULANG|PNY|PYL|F)[\s_.\-]+/;
+  const nn = (x) => String(x || '').toUpperCase().trim().replace(PRE, '').replace(/[^A-Z0-9]/g, '');
+  const harianPeny = () => { const d = (window.SSHarianSaved && window.SSHarianSaved.penyulang) || (window.__HARIAN && window.__HARIAN.penyulang) || null; return d && Array.isArray(d.rows) && d.rows.length ? d : null; };
   function renderList() {
     if (!S) return;
-    const { scoped, bm, where, uid, months, katSel, fTxt } = S; const fTxtS = fTxt;
-    const opts = [['ks', 'Kronis + sakit'], ['k', 'Kronis'], ['s', 'Sakit'], ['h', 'Sehat'], ['all', 'Semua']];
-    $('hi-f-kat').replaceChildren(...opts.map(([v, l]) => { const b = mk('button', l, 'ss-chip'); b.type = 'button'; b.dataset.v = v; b.setAttribute('aria-pressed', String(v === katSel)); return b; }));
-    const want = katSel === 'ks' ? ['k', 's'] : katSel === 'all' ? ['k', 's', 'h'] : [katSel];
-    let rows = scoped.map((f) => ({ f, k: kat(f, bm), o: f.mo[bm] || [0, 0] })).filter((r) => r.k && want.includes(r.k));
-    if (q) rows = rows.filter((r) => r.f.peny.toLowerCase().includes(q));
-    rows.sort((a, b) => (b.o[0] + b.o[1]) - (a.o[0] + a.o[1]) || b.o[0] - a.o[0] || a.f.peny.localeCompare(b.f.peny));
-    const label = opts.find(([v]) => v === katSel)[1].toLowerCase();
-    $('hi-list-h').textContent = `Penyulang ${label} · ${where} · ${BLN[bm - 1]} 2026 (${fmt(rows.length)})`;
+    const { scoped, bm, where, uid, months, bidang } = S;
     const upto = months.filter((m) => m <= bm);
-    $('hi-list-note').textContent = `Riwayat: kelas penyulang per bulan Jan–${BS[bm - 1]} (angka = kali gangguan permanen + sesaat). Bln kronis = jumlah bulan berstatus kronis.`;
-    const th = mk('thead'), hr = mk('tr');
-    [['Penyulang', ''], ['UID', 'hi-u3'], ['P', 'num'], ['S', 'num'], ['Total', 'num'], ['Kelas', ''], ...upto.map((m) => [BS[m - 1], 'hi-mh']), ['Bln kronis', 'num']].forEach(([h, c]) => hr.append(mk('th', h, c)));
-    th.append(hr);
-    const tb = mk('tbody'); const MAX = 500;
-    if (!rows.length) { const tr = mk('tr'); const td = mk('td', 'Tidak ada penyulang pada pilihan ini.', 'gx-zero'); td.colSpan = 7 + upto.length; tr.append(td); tb.append(tr); }
-    rows.slice(0, MAX).forEach(({ f, k, o }) => {
-      const tr = mk('tr');
-      const u3 = mk('td', uname(f.u), 'hi-u3');
-      const kc = mk('td'); const pill = mk('span', KBY[k].nm, 'hi-pill'); pill.style.background = KBY[k].c; pill.style.color = KBY[k].fg; kc.append(pill);
-      tr.append(mk('td', f.peny, 'hi-nm'), u3, mk('td', fmt(o[0]), 'num' + (o[0] ? '' : ' gx-zero')), mk('td', fmt(o[1]), 'num' + (o[1] ? '' : ' gx-zero')), mk('td', fmt(o[0] + o[1]), 'num'), kc);
-      let nK = 0;
-      upto.forEach((m) => {
-        const km = kat(f, m); const mo = f.mo[m]; const n = mo ? mo[0] + mo[1] : 0; if (km === 'k') nK++;
-        const td = mk('td', null, 'hi-mc'); const nd = !IX.ada.has(m + '|' + f.u); const c = mk('span', km ? fmt(n) : nd ? '–' : '0', 'hi-cell' + (km ? '' : nd ? ' na' : ' z'));
-        if (km) { c.style.background = KBY[km].c; c.style.color = KBY[km].fg; }
-        c.title = `${BLN[m - 1]}: ${km ? KBY[km].nm.toLowerCase() + (mo ? ` (${fmt(mo[0])} permanen, ${fmt(mo[1])} sesaat)` : '') : nd ? 'belum ada data' : 'tanpa ' + fTxtS}`;
-        if (m === bm) td.classList.add('cur'); td.append(c); tr.append(td);
-      });
-      tr.append(mk('td', `${fmt(nK)} dari ${upto.length}`, 'num'));
-      tb.append(tr);
+    const HP = harianPeny();
+    const hpOn = !!HP && (!bidang || bidang === 'DISTRIBUSI'); // sheet Detil Kode = gangguan kode J penyulang distribusi
+    const bbTxt = HP ? `${BS[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'bulan berjalan';
+    // gabungkan penyulang per UID + nama (UP3 belum ditampilkan)
+    const G = new Map();
+    const row = (u, name) => { const k = u + '|' + nn(name); let g = G.get(k); if (!g) { g = { u, peny: name, mo: {}, ulp: new Map(), bb: null }; G.set(k, g); } return g; };
+    scoped.forEach((f) => {
+      if (!upto.some((m) => f.mo[m])) return;
+      const g = row(f.u, f.peny);
+      upto.forEach((m) => { const o = f.mo[m]; if (!o) return; const v = g.mo[m] || (g.mo[m] = [0, 0]); v[0] += o[0]; v[1] += o[1]; });
     });
-    if (rows.length > MAX) { const tr = mk('tr'); const td = mk('td', `Menampilkan ${fmt(MAX)} dari ${fmt(rows.length)} penyulang. Pilih UID/UP3 atau cari nama penyulang untuk mempersempit.`, 'gx-zero'); td.colSpan = 7 + upto.length; tr.append(td); tb.append(tr); }
+    if (hpOn) HP.rows.forEach(([u, ulp, peny, p, sv]) => {
+      if (uid && u !== uid) return;
+      const g = row(u, peny); const v = g.bb || (g.bb = [0, 0]); v[0] += p; v[1] += sv;
+      if (ulp) g.ulp.set(ulp, (g.ulp.get(ulp) || 0) + p + sv);
+    });
+    let rows = [...G.values()];
+    if (q) rows = rows.filter((g) => g.peny.toLowerCase().includes(q) || [...g.ulp.keys()].some((x) => x.toLowerCase().includes(q)));
+    const tb0 = (g) => (g.bb ? g.bb[0] + g.bb[1] : -1); const tm = (g) => { const o = g.mo[bm]; return o ? o[0] + o[1] : 0; };
+    rows.sort((a, b2) => tb0(b2) - tb0(a) || tm(b2) - tm(a) || a.peny.localeCompare(b2.peny));
+    $('hi-list-h').textContent = `Penyulang · ${where} (${fmt(rows.length)})`;
+    $('hi-list-note').textContent = `Kolom ${BS[0]}–${BS[bm - 1]}: kelas per bulan dari database Event Padam Penyulang (angka = kali gangguan permanen + sesaat). Rekap ${bbTxt}: dari laporan harian (sheet Detil Kode)` + (HP ? `, unggahan s.d. ${+HP.sampai.slice(8)} ${BLN[HP.bulan - 1]} ${HP.tahun}` : ', belum ada unggahan dengan sheet Detil Kode') + (HP && !hpOn ? '; hanya untuk bidang Distribusi' : '') + '. Kelas = status penyulang pada bulan berjalan. ULP dari laporan harian.';
+    const th = mk('thead'), h1 = mk('tr'), h2 = mk('tr');
+    const th1 = (t, cls, rs, cs) => { const e = mk('th', t, cls); if (rs) e.rowSpan = rs; if (cs) e.colSpan = cs; h1.append(e); return e; };
+    th1('Penyulang', '', 2); th1('ULP', 'hi-u3', 2); th1('UID', 'hi-u3', 2); upto.forEach((m) => th1(BS[m - 1], 'hi-mh', 2));
+    th1(`Rekap ${bbTxt}`, 'hi-bbh', 0, 3); th1('Kelas', 'hi-kh', 2);
+    ['P', 'S', 'Total'].forEach((t, i) => h2.append(mk('th', t, 'num hi-bb' + (i === 0 ? ' first' : ''))));
+    th.append(h1, h2);
+    const tb = mk('tbody'); const MAX = 600; const ncol = 6 + upto.length;
+    if (!rows.length) { const tr = mk('tr'); const td = mk('td', 'Tidak ada penyulang pada pilihan ini.', 'gx-zero'); td.colSpan = ncol; tr.append(td); tb.append(tr); }
+    rows.slice(0, MAX).forEach((g) => {
+      const tr = mk('tr');
+      const ulp = [...g.ulp].sort((a, b2) => b2[1] - a[1]).map(([x]) => x);
+      const uc = mk('td', ulp.length ? ulp[0] : '–', 'hi-u3' + (ulp.length ? '' : ' gx-zero')); if (ulp.length > 1) uc.title = 'ULP: ' + ulp.join(', ');
+      tr.append(mk('td', g.peny, 'hi-nm'), uc, mk('td', uname(g.u), 'hi-u3'));
+      upto.forEach((m) => {
+        const o = g.mo[m]; const n = o ? o[0] + o[1] : 0; const nd = !IX.ada.has(m + '|' + g.u); const km = n ? katOf(n) : null;
+        const td = mk('td', null, 'hi-mc'); const c = mk('span', km ? fmt(n) : nd ? '–' : '0', 'hi-cell' + (km ? '' : nd ? ' na' : ' z'));
+        if (km) { c.style.background = KBY[km].c; c.style.color = KBY[km].fg; }
+        c.title = `${BLN[m - 1]}: ${km ? KBY[km].nm.toLowerCase() + ` (${fmt(o[0])} permanen, ${fmt(o[1])} sesaat)` : nd ? 'belum ada data' : 'tanpa gangguan'}`;
+        td.append(c); tr.append(td);
+      });
+      const bb = g.bb; const nb = bb ? bb[0] + bb[1] : 0;
+      if (hpOn) tr.append(mk('td', fmt(bb ? bb[0] : 0), 'num hi-bb first' + (bb && bb[0] ? '' : ' gx-zero')), mk('td', fmt(bb ? bb[1] : 0), 'num hi-bb' + (bb && bb[1] ? '' : ' gx-zero')), mk('td', fmt(nb), 'num hi-bb hi-bbt' + (nb ? '' : ' gx-zero')));
+      else { for (let i = 0; i < 3; i++) tr.append(mk('td', '–', 'num hi-bb gx-zero' + (i === 0 ? ' first' : ''))); }
+      const kc = mk('td', null, 'hi-kc'); const kb = hpOn && nb ? katOf(nb) : null;
+      if (kb) { const pill = mk('span', KBY[kb].nm, 'hi-pill'); pill.style.background = KBY[kb].c; pill.style.color = KBY[kb].fg; kc.append(pill); }
+      else kc.append(mk('span', hpOn ? 'Tanpa gangguan' : '–', 'gx-zero hi-k0'));
+      tr.append(kc); tb.append(tr);
+    });
+    if (rows.length > MAX) { const tr = mk('tr'); const td = mk('td', `Menampilkan ${fmt(MAX)} dari ${fmt(rows.length)} penyulang. Pilih UID atau cari nama penyulang / ULP untuk mempersempit.`, 'gx-zero'); td.colSpan = ncol; tr.append(td); tb.append(tr); }
     $('hi-list').replaceChildren(th, tb);
   }
+  document.addEventListener('ss-harian-saved', () => { try { renderList(); } catch (e) { console.error(e); } });
 
   SSD.onData(() => { try { render(); } catch (e) { console.error(e); } });
 })();
