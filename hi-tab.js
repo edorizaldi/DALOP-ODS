@@ -313,11 +313,13 @@
     const HP = HP0 && HP0.tahun === 2026 && HP0.bulan > lastM ? HP0 : null;
     const tb = mk('tbody');
     const th = mk('thead'), hr = mk('tr'), hr2 = mk('tr', null, 'hi-sub2');
-    [['UID', ''], ['#', 'num'], ['Penyulang', ''], ['ULP', '']].forEach(([h, c]) => { const e = mk('th', h, c); e.rowSpan = 2; hr.append(e); });
+    // gangguan permanen dan sesaat per UID bulan berjalan, di kiri kolom UID
+    { const e = mk('th', null, 'hi-uidh'); e.rowSpan = 2; e.append('UID', mk('small', HP ? `Kumulatif Jan–${BS[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}: P · S` : 'Kumulatif: P · S')); hr.append(e); }
+    [ ['#', 'num'], ['Penyulang', ''], ['ULP', '']].forEach(([h, c]) => { const e = mk('th', h, c); e.rowSpan = 2; hr.append(e); });
     const grp = (t, cls, n) => { const e = mk('th', t, cls); e.colSpan = n; hr.append(e); };
-    grp(`${BLN[lastM - 1]} (bulan lalu)`, 'hi-gph hi-gp-prev', 3); grp(`Kumulatif Jan–${BS[lastM - 1]}`, 'hi-gph hi-gp-cum', 3);
+    grp(`Kumulatif Jan–${BS[lastM - 1]} 2026`, 'hi-gph hi-gp-cum', 3); grp(`${BLN[lastM - 1]} (bulan lalu)`, 'hi-gph hi-gp-prev', 3);
     grp(HP ? `Rekap bulan berjalan · ${BLN[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'Rekap bulan berjalan', 'hi-bbh', 4);
-    [['P', 'num hi-pv first'], ['S', 'num hi-pv'], ['Total', 'num hi-pv'], ['P', 'num hi-cm first'], ['S', 'num hi-cm'], ['Total', 'num hi-cm'], ['P', 'num hi-bbc first'], ['S', 'num hi-bbc'], ['Total', 'num hi-bbc'], ['Kelas', 'hi-kh hi-bbc']].forEach(([h, c]) => hr2.append(mk('th', h, c)));
+    [['P', 'num hi-cm first'], ['S', 'num hi-cm'], ['Total', 'num hi-cm'], ['P', 'num hi-pv first'], ['S', 'num hi-pv'], ['Total', 'num hi-pv'], ['P', 'num hi-bbc first'], ['S', 'num hi-bbc'], ['Total', 'num hi-bbc'], ['Kelas', 'hi-kh hi-bbc']].forEach(([h, c]) => hr2.append(mk('th', h, c)));
     th.append(hr, hr2);
     if (!HP) {
       $('hi-top-h').textContent = 'Top 3 penyulang gangguan per UID · bulan berjalan';
@@ -337,15 +339,23 @@
     });
     const G = new Map();
     HP.rows.forEach(([u, ulp, peny, p, sv]) => { const k = u + '|' + nn(peny); const g = G.get(k) || { u, peny, p: 0, s: 0, ulpH: new Map() }; g.p += p; g.s += sv; if (ulp) g.ulpH.set(ulp, (g.ulpH.get(ulp) || 0) + p + sv); G.set(k, g); });
+    // kumulatif per UID = database Event Padam Penyulang (kode J, Distribusi, Jan s.d. bulan lalu) + laporan harian sheet Detil Kode (bulan berjalan)
+    const uTot = {};
+    const GPS = SSD.data('gangguan_ps');
+    if (GPS.status === 'ok') GPS.data.forEach((r) => { if (r.KODE !== 'J' || r.BIDANG !== 'DISTRIBUSI' || +r.BULAN_NO > lastM || (r.PS !== 'Permanen' && r.PS !== 'Sesaat')) return; const o = uTot[r.UNIT] || (uTot[r.UNIT] = [0, 0]); o[r.PS === 'Permanen' ? 0 : 1] += Number(r.JUMLAH); });
+    HP.rows.forEach(([u, , , p, sv]) => { const o = uTot[u] || (uTot[u] = [0, 0]); o[0] += p; o[1] += sv; });
     const mode = (m) => [...m].sort((a, b) => b[1] - a[1])[0][0];
     let nTop = 0;
     UORD.forEach((u) => {
       const top = [...G].filter(([, g]) => g.u === u).sort((a, b) => (b[1].p + b[1].s) - (a[1].p + a[1].s) || b[1].p - a[1].p || a[1].peny.localeCompare(b[1].peny)).slice(0, 3);
-      if (!top.length) { const tr = mk('tr', null, 'hi-tfirst'); tr.append(mk('td', ULABEL[u], 'hi-tu')); const td = mk('td', 'Tidak ada gangguan kode J penyulang pada bulan berjalan.', 'gx-zero'); td.colSpan = 13; tr.append(td); tb.append(tr); return; }
+      const uPS = uTot[u] || [0, 0];
+      // sel UID: nama UID + kumulatif permanen / sesaat
+      const uidCell = (tr, show) => { const td = mk('td', null, 'hi-tu hi-uidcell'); if (show) { td.append(mk('b', ULABEL[u])); const ps = mk('span', null, 'hi-uidps'); ps.append(mk('em', 'P'), fmt(uPS[0]), mk('em', 'S'), fmt(uPS[1])); td.append(ps); } tr.append(td); };
+      if (!top.length) { const tr = mk('tr', null, 'hi-tfirst'); uidCell(tr, true); const td = mk('td', 'Tidak ada gangguan kode J penyulang pada bulan berjalan.', 'gx-zero'); td.colSpan = 13; tr.append(td); tb.append(tr); return; }
       top.forEach(([k, g], i) => {
         nTop++;
         const tr = mk('tr', null, (i === 0 ? 'hi-tfirst' : '') + (S.uid === u ? ' on' : ''));
-        tr.append(mk('td', i === 0 ? ULABEL[u] : '', 'hi-tu'));
+        uidCell(tr, i === 0);
         const fromDb = ulpDb.has(k); const ul = fromDb ? mode(ulpDb.get(k)) : g.ulpH.size ? mode(g.ulpH) : '–';
         const n = g.p + g.s; const kb = katOf(n); const pill = mk('span', KBY[kb].nm, 'hi-pill'); pill.style.background = KBY[kb].c; pill.style.color = KBY[kb].fg;
         const kc = mk('td', null, 'hi-kc hi-bbc'); kc.append(pill);
@@ -354,12 +364,14 @@
         const pt = pv[0] + pv[1]; const pk = pt ? katOf(pt) : null; const pc0 = mk('td', null, 'hi-mc hi-pv'); const c = mk('span', fmt(pt), 'hi-cell' + (pk ? '' : ' z')); if (pk) { c.style.background = KBY[pk].c; c.style.color = KBY[pk].fg; } c.title = `${BLN[lastM - 1]}: ${pt ? KBY[pk].nm.toLowerCase() : 'tanpa gangguan'}`; pc0.append(c);
         const num = (v, cls) => mk('td', fmt(v), 'num ' + cls + (v ? '' : ' gx-zero'));
         tr.append(mk('td', String(i + 1), 'num hi-rank'), mk('td', g.peny, 'hi-nm'), mk('td', ul, 'hi-u3' + (fromDb ? '' : ' hi-ulph')),
-          num(pv[0], 'hi-pv first'), num(pv[1], 'hi-pv'), pc0,
           num(cv[0], 'hi-cm first'), num(cv[1], 'hi-cm'), mk('td', fmt(cv[0] + cv[1]), 'num hi-cm hi-cmt' + (cv[0] + cv[1] ? '' : ' gx-zero')),
+          num(pv[0], 'hi-pv first'), num(pv[1], 'hi-pv'), pc0,
           num(g.p, 'hi-bbc first'), num(g.s, 'hi-bbc'), mk('td', fmt(n), 'num hi-bbt hi-bbc'), kc);
         tb.append(tr);
       });
     });
+    { const t = Object.values(uTot).reduce((a, o) => [a[0] + o[0], a[1] + o[1]], [0, 0]); const tr = mk('tr', null, 'hi-tfirst dp-ps-tot');
+      const td0 = mk('td', null, 'hi-tu hi-uidcell'); td0.append(mk('b', 'Total Sumkal')); const ps = mk('span', null, 'hi-uidps'); ps.append(mk('em', 'P'), fmt(t[0]), mk('em', 'S'), fmt(t[1])); td0.append(ps); tr.append(td0); const td = mk("td", ""); td.colSpan = 13; tr.append(td); tb.append(tr); }
     $('hi-top').replaceChildren(th, tb);
     $('hi-top-note').textContent = '';
   }
