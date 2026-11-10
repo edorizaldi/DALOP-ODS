@@ -182,31 +182,8 @@
       });
     }
 
-    // tabel per UID
-    {
-      $('hi-unit-h').textContent = `Health index per UID · ${BLN[bm - 1]} 2026`;
-      const rows = UORD.map((k) => ({ key: k, ...count(feeders.filter((f) => f.u === k), bm) })).filter((o) => o.t).sort((a, b) => (b.k / b.t) - (a.k / a.t) || b.k - a.k);
-      const th = mk('thead'), hr = mk('tr');
-      [['UID', ''], ...KAT.map((k) => [k.nm, 'num']), ['Total', 'num'], ['% kronis', 'num'], ['Komposisi', '']].forEach(([h, c], i) => { const t = mk('th', h, c); if (i >= 1 && i <= KAT.length) t.style.boxShadow = `inset 0 3px 0 ${KAT[i - 1].c}`; hr.append(t); });
-      th.append(hr);
-      const tb = mk('tbody');
-      const line = (name, o, cls, onPick) => {
-        const tr = mk('tr', null, cls || ''); tr.append(mk('td', name));
-        KAT.forEach((k) => tr.append(mk('td', fmt(o[k.id]), 'num' + (o[k.id] ? '' : ' gx-zero'))));
-        tr.append(mk('td', fmt(o.t), 'num'), mk('td', pc(o.t ? o.k / o.t : 0), 'num hi-pk'));
-        const bc = mk('td'); if (o.t) { const b = mk('div', null, 'gx-mini gx-mini4 hi-bar'); KAT.forEach((k) => { const i = mk('i'); i.style.background = k.c; i.style.width = (o[k.id] / o.t * 100) + '%'; b.append(i); }); bc.append(b); }
-        tr.append(bc);
-        if (onPick) { tr.classList.add('gx-click'); tr.tabIndex = 0; tr.addEventListener('click', onPick); tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') onPick(); }); }
-        return tr;
-      };
-      rows.forEach((o) => tb.append(line(ULABEL[o.key], o, uid === o.key ? 'on' : '', () => dash.setParams({ hi_uid: uid === o.key ? null : o.key }))));
-      const tot = rows.reduce((a, o) => { KAT.forEach((k) => { a[k.id] += o[k.id]; }); a.t += o.t; return a; }, zero());
-      tb.append(line('Total Sumkal', tot, 'dp-ps-tot', uid ? () => dash.setParams({ hi_uid: null }) : null));
-      $('hi-unit').replaceChildren(th, tb);
-      $('hi-unit-note').textContent = `Diurutkan dari porsi penyulang kronis terbesar. Klik baris untuk memilih UID${uid ? '; klik lagi atau klik baris total untuk kembali ke semua UID' : ''}.`;
-    }
-
     S = { fTxt, scoped, bm, where, uid, months, bidang };
+    renderPS();
     renderList(); renderTop();
     $('hi-note').textContent = `Sumber: database Event Padam Penyulang saja (gangguan per penyulang dari APKT); tidak memakai Database Penyulang. Kelas per penyulang per bulan dari jumlah gangguan permanen + sesaat kode J, mengikuti filter bidang (bawaan Distribusi) dan jenis padam (bawaan semua): kronis ≥ 6 kali, sakit 2–5 kali, sehat 1 kali. Penyulang tanpa gangguan pada bulan itu tidak dihitung; total = penyulang yang mengalami gangguan. Rekap per UP3 belum ditampilkan. Pemeriksaan kelengkapan data dibandingkan rekap Event Padam Penyulang per UID untuk bidang terpilih (semua jenis padam).`;
   }
@@ -320,7 +297,47 @@
     $('hi-top').replaceChildren(th, tb);
     $('hi-top-note').textContent = `Tiga penyulang dengan gangguan kode J (permanen + sesaat) terbanyak di tiap UID, ${bb} ${HP.tahun}, dari laporan harian (sheet Detil Kode, No. Laporan unik). Kelas = status bulan berjalan; kolom ${BS[lastM - 1]} = kali gangguan bulan lalu (database Event Padam Penyulang, kode J distribusi). ULP dari database Event Padam Penyulang (huruf miring: dari laporan harian). Tabel ini selalu menampilkan semua UID; UID terpilih disorot.`;
   }
-  document.addEventListener('ss-harian-saved', () => { try { renderList(); renderTop(); } catch (e) { console.error(e); } });
+  // ---------- rekap event permanen dan sesaat per UID: Jan s.d. bulan terpilih (database Event Padam Penyulang) + bulan berjalan (laporan harian) ----------
+  function renderPS() {
+    if (!S || !IX) return;
+    const { bm, uid, months, bidang } = S;
+    const GPS = SSD.data('gangguan_ps'); if (GPS.status !== 'ok') return;
+    const upto = months.filter((m) => m <= bm);
+    const v = {};
+    GPS.data.forEach((r) => {
+      if (r.KODE !== 'J' || (bidang && r.BIDANG !== bidang) || (r.PS !== 'Permanen' && r.PS !== 'Sesaat')) return;
+      const k = r.UNIT + '|' + (r.PS === 'Permanen' ? 0 : 1) + '|' + (+r.BULAN_NO); v[k] = (v[k] || 0) + Number(r.JUMLAH);
+    });
+    const HP0 = harianPeny(); const lastM = months[months.length - 1];
+    const HP = HP0 && HP0.tahun === 2026 && HP0.bulan > lastM && bm === lastM && (!bidang || bidang === 'DISTRIBUSI') ? HP0 : null;
+    const hb = {}; if (HP) HP.rows.forEach(([u, , , p, sv]) => { const o = hb[u] || (hb[u] = [0, 0]); o[0] += p; o[1] += sv; });
+    const bbTxt = HP ? `${BS[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : '';
+    $('hi-unit-h').textContent = `Rekap event permanen dan sesaat per UID · Jan–${BS[bm - 1]}${HP ? ' + ' + bbTxt : ''} 2026`;
+    const th = mk('thead'), hr = mk('tr');
+    [['UID', ''], ['', ''], ...upto.map((m) => [BS[m - 1], 'num']), ...(HP ? [[bbTxt, 'num hi-bbh2']] : []), ['Kumulatif', 'num hi-cum']].forEach(([h, c]) => hr.append(mk('th', h, c)));
+    th.append(hr);
+    const tb = mk('tbody');
+    const get = (u, i, m) => (u ? v[u + '|' + i + '|' + m] || 0 : UORD.reduce((a, x) => a + (v[x + '|' + i + '|' + m] || 0), 0));
+    const getB = (u, i) => (u ? (hb[u] || [0, 0])[i] : UORD.reduce((a, x) => a + (hb[x] || [0, 0])[i], 0));
+    const block = (u, name) => {
+      [['Permanen', 0], ['Sesaat', 1], ['Total', -1]].forEach(([lbl, i], j) => {
+        const tr = mk('tr', null, [j === 0 ? 'hi-tfirst' : '', i < 0 ? 'hi-psum' : '', !u ? 'dp-ps-tot' : '', u && u === uid ? 'on' : ''].filter(Boolean).join(' '));
+        tr.append(mk('td', j === 0 ? name : '', 'hi-tu'));
+        const lc = mk('td', null, 'hi-pl'); if (i >= 0) { const sw = mk('i', null, 'ss-sw'); sw.style.background = i === 0 ? '#B3261E' : '#E8A39C'; lc.append(sw); } lc.append(lbl); tr.append(lc);
+        let cum = 0;
+        upto.forEach((m) => { const n = i < 0 ? get(u, 0, m) + get(u, 1, m) : get(u, i, m); cum += n; tr.append(mk('td', fmt(n), 'num' + (n ? '' : ' gx-zero'))); });
+        if (HP) { const n = i < 0 ? getB(u, 0) + getB(u, 1) : getB(u, i); cum += n; tr.append(mk('td', fmt(n), 'num hi-bbh2' + (n ? '' : ' gx-zero'))); }
+        tr.append(mk('td', fmt(cum), 'num hi-cum'));
+        if (u) { tr.classList.add('gx-click'); tr.addEventListener('click', () => dash.setParams({ hi_uid: uid === u ? null : u })); }
+        tb.append(tr);
+      });
+    };
+    UORD.forEach((u) => block(u, ULABEL[u]));
+    block(null, 'Total Sumkal');
+    $('hi-unit').replaceChildren(th, tb);
+    $('hi-unit-note').textContent = `Event gangguan kode J${bidang ? ' bidang ' + BNAME[bidang] : ' semua bidang'}, semua jenis padam (filter jenis padam tidak berlaku di tabel ini). Jan–${BS[bm - 1]}: database Event Padam Penyulang (rekap per UID).` + (HP ? ` ${bbTxt}: laporan harian, sheet Detil Kode (No. Laporan unik).` : (HP0 && bm === lastM && HP0.bulan > lastM ? ' Bulan berjalan dari laporan harian hanya untuk bidang Distribusi.' : '')) + ' Kumulatif = jumlah kolom yang tampil. Klik baris untuk memilih UID.';
+  }
+  document.addEventListener('ss-harian-saved', () => { try { renderList(); renderTop(); renderPS(); } catch (e) { console.error(e); } });
 
   SSD.onData(() => { try { render(); } catch (e) { console.error(e); } });
 })();

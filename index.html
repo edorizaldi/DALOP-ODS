@@ -17,7 +17,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="hirarki-tab.css">
 <link rel="stylesheet" href="workplan-tab.css">
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261109">
-<link rel="stylesheet" href="hi-tab.css?v=20261110g">
+<link rel="stylesheet" href="hi-tab.css?v=20261110h">
 <link rel="stylesheet" href="acct.css">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
@@ -1070,10 +1070,10 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <div class="h-preview" id="hi-trend-pv" hidden><span class="ss-note"></span><img alt="Health index penyulang per bulan"></div>
     </div>
     <div class="ss-card" id="hi-unit-card">
-      <div class="dp-head"><h3 id="hi-unit-h">Health index per unit</h3><div class="dp-dl"><span class="ss-note" id="hi-unit-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="hi-unit-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
+      <div class="dp-head"><h3 id="hi-unit-h">Rekap event permanen dan sesaat per UID</h3><div class="dp-dl"><span class="ss-note" id="hi-unit-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="hi-unit-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
       <p class="ss-note" id="hi-unit-note"></p>
-      <div class="ss-g-wrap" data-source="peny_bulanan gangguan_up3"><table class="ss-table gx-table hi-unit" id="hi-unit"></table></div>
-      <div class="h-preview" id="hi-unit-pv" hidden><span class="ss-note"></span><img alt="Health index per unit"></div>
+      <div class="ss-g-wrap" data-source="gangguan_ps harian_latest"><table class="ss-table gx-table hi-unit" id="hi-unit"></table></div>
+      <div class="h-preview" id="hi-unit-pv" hidden><span class="ss-note"></span><img alt="Rekap event permanen dan sesaat per UID"></div>
     </div>
     <div class="ss-card" id="hi-top-card">
       <div class="dp-head"><h3 id="hi-top-h">Top 3 penyulang gangguan per UID · bulan berjalan</h3><div class="dp-dl"><span class="ss-note" id="hi-top-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="hi-top-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
@@ -2608,7 +2608,7 @@ SSD.calc('up3_yoy', {
 </script>
 
 <script src="peny-tab.js"></script>
-<script src="hi-tab.js?v=20261110g"></script>
+<script src="hi-tab.js?v=20261110h"></script>
 
 <script>
 (() => {

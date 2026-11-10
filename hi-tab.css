@@ -43,3 +43,11 @@
 .hi-top td.hi-bbt { font-weight: 700; }
 .hi-top th.hi-kh, .hi-top td.hi-kc, .hi-top th.hi-mh, .hi-top td.hi-mc { text-align: center !important; }
 .hi-top td.hi-ulph { font-style: italic; color: var(--color-fg-muted); }
+/* rekap event permanen dan sesaat per UID */
+.hi-unit td.hi-tu { font-weight: 700; white-space: nowrap; text-align: left !important; }
+.hi-unit td.hi-pl { text-align: left !important; white-space: nowrap; }
+.hi-unit .ss-sw { margin-right: 6px; }
+.hi-unit tr.hi-tfirst td { border-top: 2px solid var(--color-border-line); }
+.hi-unit tr.hi-psum td { font-weight: 700; }
+.hi-unit .hi-bbh2 { background: color-mix(in srgb, #2a7fc1 7%, transparent); border-left: 2px solid var(--color-border-line); }
+.hi-unit .hi-cum { background: color-mix(in srgb, #B3261E 7%, transparent); font-weight: 700; border-left: 2px solid var(--color-border-line); }
