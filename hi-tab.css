@@ -39,7 +39,7 @@
 .hi-top td.hi-tu { font-weight: 700; vertical-align: middle; white-space: nowrap; text-align: left !important; }
 .hi-top tr.hi-tfirst td { border-top: 2px solid var(--color-border-line); }
 .hi-top td.hi-rank { color: var(--color-fg-muted); width: 2.5em; }
-.hi-top td.hi-nm, .hi-top td.hi-u3, .hi-top th:nth-child(3), .hi-top th:nth-child(4) { text-align: left !important; }
+.hi-top td.hi-nm, .hi-top td.hi-u3 { text-align: left !important; }
 .hi-top td.hi-bbt { font-weight: 700; }
 .hi-top th.hi-kh, .hi-top td.hi-kc, .hi-top th.hi-mh, .hi-top td.hi-mc { text-align: center !important; }
 .hi-top td.hi-ulph { font-style: italic; color: var(--color-fg-muted); }
@@ -111,3 +111,11 @@
 .hi-report .ss-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
 .hi-report .hi-tiles2 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 #hi-top-note:empty, #hi-list-note:empty { display: none; }
+/* Top 3: gangguan permanen / sesaat per UID (kiri kolom UID) */
+.hi-top th.hi-uidh { text-align: center !important; background: color-mix(in srgb, #13254A 8%, transparent); }
+.hi-top .hi-uidc { background: color-mix(in srgb, #13254A 4%, transparent); }
+.hi-top td.hi-uidv { font-weight: 700; }
+.hi-top .hi-uidc + .hi-tu, .hi-top td.hi-uidc + td.hi-tu { border-left: 2px solid var(--color-border-line); }
+.hi-top tr.hi-sub2 th.hi-uidc + th.hi-uidc { }
+.hi-top .hi-uidc { width: 52px; min-width: 52px; text-align: right !important; }
+.hi-top th[rowspan]:not(.num) { text-align: left !important; }
