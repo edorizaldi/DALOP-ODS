@@ -1,0 +1,37 @@
+/* Tab Health Index Penyulang */
+#hi { --ss-acc: #B3261E; }
+.hi-def { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.hi-def span { display: inline-flex; align-items: center; gap: 6px; }
+.hi-def i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+.hi-def b { color: var(--color-fg); }
+.hi-def .hi-k i { background: #B3261E; } .hi-def .hi-s i { background: #E9A23B; } .hi-def .hi-h i { background: #3E9A5B; }
+.hi-tile { border-top: 4px solid var(--hi-c); }
+.hi-tile.k { --hi-c: #B3261E; } .hi-tile.s { --hi-c: #E9A23B; } .hi-tile.h { --hi-c: #3E9A5B; }
+.hi-tile.k .ss-big > span:first-child { color: #B3261E; }
+.hi-chg { font-weight: 600; white-space: nowrap; }
+.hi-chg.flat { color: var(--color-fg-muted); }
+.hi-chart { height: 300px; position: relative; }
+.hi-unit td.hi-pk { font-weight: 700; }
+.hi-unit .hi-bar { width: 100%; min-width: 120px; height: 12px; }
+.gx-mini4 i { display: block; height: 100%; }
+.hi-list-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.hi-scroll { max-height: 34rem; }
+.hi-list td.hi-nm { font-weight: 600; white-space: nowrap; }
+.hi-list th.hi-mh { text-align: center; padding-left: 2px; padding-right: 2px; font-size: 11px; }
+.hi-list td.hi-mc { padding: 3px 2px; text-align: center; }
+.hi-list td.hi-mc.cur { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-fg) 35%, transparent); border-radius: 4px; }
+.hi-cell { display: inline-grid; place-items: center; min-width: 26px; height: 20px; border-radius: 4px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hi-cell.na { color: var(--color-fg-muted); background: color-mix(in srgb, var(--color-fg) 6%, transparent); font-weight: 400; }
+.hi-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-weight: 700; font-size: 11.5px; white-space: nowrap; }
+.hi-list .hi-u3, .hi-unit td:first-child, .hi-unit th:first-child { text-align: left !important; }
+.hi-list td.hi-u3 { min-width: 9em; }
+.hi-cell.z { color: var(--color-fg-muted); background: color-mix(in srgb, var(--color-fg) 4%, transparent); font-weight: 500; }
+.hi-warn { color: var(--cds-chart-status-critical, #B3261E); }
+.hi-list th.hi-bbh { text-align: center; border-left: 2px solid var(--color-border-line); }
+.hi-list .hi-bb.first { border-left: 2px solid var(--color-border-line); }
+.hi-list td.hi-bb { background: color-mix(in srgb, #2a7fc1 6%, transparent); }
+.hi-list td.hi-bbt { font-weight: 700; }
+.hi-list th.hi-kh, .hi-list td.hi-kc { text-align: center; border-left: 2px solid var(--color-border-line); white-space: nowrap; }
+.hi-list .hi-k0 { font-size: 11.5px; }
+.hi-list thead tr:first-child th[rowspan] { vertical-align: bottom; }
+.hi-list td.hi-ulph { font-style: italic; color: var(--color-fg-muted); }
