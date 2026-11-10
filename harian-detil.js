@@ -1,6 +1,7 @@
 // Laporan harian: sheet "Detil Kode" -> gangguan kode J per penyulang bulan berjalan (dipakai tab Health Index Penyulang).
 // No. Laporan unik (baris pertama yang muncul), KODE = J, P/S = P (permanen) atau S (sesaat).
-// Hasil: { tahun, bulan, dari, sampai, baris, unik, j, rows: [[UID, ULP, PENYULANG, permanen, sesaat], ...] }
+// parse(rows) -> { baris, unik, ev, bulan }; forMonth(det, tgl) -> { tahun, bulan, dari, sampai, j, rows: [[UID, ULP, PENYULANG, permanen, sesaat], ...] }
+// untuk bulan dari tanggal realisasi (bulan berjalan), kejadian s.d. tanggal itu.
 (function () {
   const UNITS = ['ACEH', 'SUMUT', 'SUMBAR', 'RKR', 'S2JB', 'BABEL', 'LAMPUNG', 'KALBAR', 'KALSELTENG', 'KALTIMRA'];
   const ALIAS = { KSKT: 'KALSELTENG', RIAU: 'RKR', RIAUKEPRI: 'RKR', BANGKABELITUNG: 'BABEL', KALSELTENG: 'KALSELTENG' };
@@ -36,17 +37,22 @@
       if (d) bulan.set(d.slice(0, 7), (bulan.get(d.slice(0, 7)) || 0) + 1);
       ev.push([u, cL >= 0 ? ulpName(r[cL]) : '', peny, ps === 'P', d]);
     }
-    // bulan berjalan = bulan dengan kejadian terbanyak; kejadian di luar bulan itu (mis. akhir bulan lalu) tidak dihitung
-    const ym = [...bulan].sort((a, b) => b[1] - a[1])[0];
-    if (!ym) throw new Error('sheet Detil Kode: tidak ada kejadian kode J dengan penyulang dan tanggal');
-    const [tahun, bln] = ym[0].split('-').map(Number);
+    if (!ev.length) throw new Error('sheet Detil Kode: tidak ada kejadian kode J dengan penyulang');
+    const per = [...bulan].sort((x, y) => (x[0] < y[0] ? -1 : 1));
+    return { baris, unik: seen.size, ev, bulan: per };
+  }
+  // gangguan per penyulang untuk bulan berjalan = bulan dari tanggal realisasi tgl (YYYY-MM-DD), kejadian s.d. tgl
+  function forMonth(det, tgl) {
+    const ym = String(tgl || '').slice(0, 7); if (!ym) return null;
     const agg = new Map(); let j = 0, dari = '', sampai = '';
-    ev.forEach(([u, ulp, peny, isP, d]) => {
-      if (!d || d.slice(0, 7) !== ym[0]) return;
+    det.ev.forEach(([u, ulp, peny, isP, d]) => {
+      if (!d || d.slice(0, 7) !== ym || d > tgl) return;
       j++; if (!dari || d < dari) dari = d; if (!sampai || d > sampai) sampai = d;
       const k = u + '\u0001' + ulp + '\u0001' + peny; const o = agg.get(k) || [0, 0]; o[isP ? 0 : 1]++; agg.set(k, o);
     });
-    return { tahun, bulan: bln, dari, sampai, baris, unik: seen.size, j, rows: [...agg].map(([k, o]) => [...k.split('\u0001'), o[0], o[1]]) };
+    if (!j) return null;
+    const [tahun, bln] = ym.split('-').map(Number);
+    return { tahun, bulan: bln, dari, sampai, baris: det.baris, unik: det.unik, j, rows: [...agg].map(([k, o]) => [...k.split('\u0001'), o[0], o[1]]) };
   }
-  window.SSHarianDetil = { parse };
+  window.SSHarianDetil = { parse, forMonth };
 })();

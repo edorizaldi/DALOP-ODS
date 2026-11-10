@@ -34,3 +34,4 @@
 .hi-list th.hi-kh, .hi-list td.hi-kc { text-align: center; border-left: 2px solid var(--color-border-line); white-space: nowrap; }
 .hi-list .hi-k0 { font-size: 11.5px; }
 .hi-list thead tr:first-child th[rowspan] { vertical-align: bottom; }
+.hi-list td.hi-ulph { font-style: italic; color: var(--color-fg-muted); }

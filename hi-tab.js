@@ -50,7 +50,8 @@
     const F = new Map(); // up3|penyulang -> { u, u3, peny, raw: { m: { 'BIDANG|Jenis': [p, s] } }, mo: { m: [p, s] } (sesuai filter) }
     B.forEach((r) => {
       const id = r.up3 + '\u0001' + r.penyulang; let f = F.get(id);
-      if (!f) { f = { u: u3uid.get(r.up3) || '', u3: r.up3, peny: r.penyulang, raw: {}, mo: {} }; F.set(id, f); }
+      if (!f) { f = { u: u3uid.get(r.up3) || '', u3: r.up3, peny: r.penyulang, raw: {}, mo: {}, ulp: new Map() }; F.set(id, f); }
+      const ul = String(r.ulp || '').replace(/^ULP\s+/i, '').trim().toUpperCase(); if (ul) f.ulp.set(ul, (f.ulp.get(ul) || 0) + Number(r.kali));
       if (r.kode !== 'J' || (r.ps !== 'Permanen' && r.ps !== 'Sesaat')) return;
       const m = +r.bulan; const rm = f.raw[m] || (f.raw[m] = {}); const kk = r.bidang + '|' + r.jenis_padam; const o = rm[kk] || (rm[kk] = [0, 0]); o[r.ps === 'Permanen' ? 0 : 1] += Number(r.kali);
     });
@@ -219,28 +220,30 @@
     if (!S) return;
     const { scoped, bm, where, uid, months, bidang } = S;
     const upto = months.filter((m) => m <= bm);
-    const HP = harianPeny();
+    // bulan berjalan = bulan setelah bulan terakhir di database Event Padam Penyulang (mis. November)
+    const HP0 = harianPeny(); const lastM = months[months.length - 1];
+    const HP = HP0 && HP0.tahun === 2026 && HP0.bulan > lastM ? HP0 : null;
     const hpOn = !!HP && (!bidang || bidang === 'DISTRIBUSI'); // sheet Detil Kode = gangguan kode J penyulang distribusi
-    const bbTxt = HP ? `${BS[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'bulan berjalan';
+    const bbTxt = HP ? `${BLN[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}` : 'bulan berjalan';
     // gabungkan penyulang per UID + nama (UP3 belum ditampilkan)
     const G = new Map();
-    const row = (u, name) => { const k = u + '|' + nn(name); let g = G.get(k); if (!g) { g = { u, peny: name, mo: {}, ulp: new Map(), bb: null }; G.set(k, g); } return g; };
+    const row = (u, name) => { const k = u + '|' + nn(name); let g = G.get(k); if (!g) { g = { u, peny: name, mo: {}, ulp: new Map(), ulpH: new Map(), bb: null }; G.set(k, g); } return g; };
     scoped.forEach((f) => {
       if (!upto.some((m) => f.mo[m])) return;
-      const g = row(f.u, f.peny);
+      const g = row(f.u, f.peny); f.ulp.forEach((n, x) => g.ulp.set(x, (g.ulp.get(x) || 0) + n));
       upto.forEach((m) => { const o = f.mo[m]; if (!o) return; const v = g.mo[m] || (g.mo[m] = [0, 0]); v[0] += o[0]; v[1] += o[1]; });
     });
     if (hpOn) HP.rows.forEach(([u, ulp, peny, p, sv]) => {
       if (uid && u !== uid) return;
       const g = row(u, peny); const v = g.bb || (g.bb = [0, 0]); v[0] += p; v[1] += sv;
-      if (ulp) g.ulp.set(ulp, (g.ulp.get(ulp) || 0) + p + sv);
+      if (ulp) g.ulpH.set(ulp, (g.ulpH.get(ulp) || 0) + p + sv);
     });
     let rows = [...G.values()];
-    if (q) rows = rows.filter((g) => g.peny.toLowerCase().includes(q) || [...g.ulp.keys()].some((x) => x.toLowerCase().includes(q)));
+    if (q) rows = rows.filter((g) => g.peny.toLowerCase().includes(q) || [...g.ulp.keys(), ...g.ulpH.keys()].some((x) => x.toLowerCase().includes(q)));
     const tb0 = (g) => (g.bb ? g.bb[0] + g.bb[1] : -1); const tm = (g) => { const o = g.mo[bm]; return o ? o[0] + o[1] : 0; };
     rows.sort((a, b2) => tb0(b2) - tb0(a) || tm(b2) - tm(a) || a.peny.localeCompare(b2.peny));
     $('hi-list-h').textContent = `Penyulang · ${where} (${fmt(rows.length)})`;
-    $('hi-list-note').textContent = `Kolom ${BS[0]}–${BS[bm - 1]}: kelas per bulan dari database Event Padam Penyulang (angka = kali gangguan permanen + sesaat). Rekap ${bbTxt}: dari laporan harian (sheet Detil Kode)` + (HP ? `, unggahan s.d. ${+HP.sampai.slice(8)} ${BLN[HP.bulan - 1]} ${HP.tahun}` : ', belum ada unggahan dengan sheet Detil Kode') + (HP && !hpOn ? '; hanya untuk bidang Distribusi' : '') + '. Kelas = status penyulang pada bulan berjalan. ULP dari laporan harian.';
+    $('hi-list-note').textContent = `Kolom ${BS[0]}–${BS[bm - 1]}: kelas per bulan dari database Event Padam Penyulang (angka = kali gangguan permanen + sesaat). Rekap ${bbTxt}: dari laporan harian (sheet Detil Kode)` + (HP ? `, unggahan s.d. ${+HP.sampai.slice(8)} ${BLN[HP.bulan - 1]} ${HP.tahun}` : HP0 ? '' : ', belum ada unggahan dengan sheet Detil Kode') + (HP && !hpOn ? '; hanya untuk bidang Distribusi' : '') + (HP0 && !HP ? ` (data laporan harian tersimpan adalah ${BLN[HP0.bulan - 1]} ${HP0.tahun}, bukan bulan berjalan; unggah ulang laporan harian dengan tanggal realisasi bulan ini)` : '') + '. Kelas = status penyulang pada bulan berjalan. ULP dari database Event Padam Penyulang (huruf miring: dari laporan harian, bila database belum memuat ULP).';
     const th = mk('thead'), h1 = mk('tr'), h2 = mk('tr');
     const th1 = (t, cls, rs, cs) => { const e = mk('th', t, cls); if (rs) e.rowSpan = rs; if (cs) e.colSpan = cs; h1.append(e); return e; };
     th1('Penyulang', '', 2); th1('ULP', 'hi-u3', 2); th1('UID', 'hi-u3', 2); upto.forEach((m) => th1(BS[m - 1], 'hi-mh', 2));
@@ -251,8 +254,10 @@
     if (!rows.length) { const tr = mk('tr'); const td = mk('td', 'Tidak ada penyulang pada pilihan ini.', 'gx-zero'); td.colSpan = ncol; tr.append(td); tb.append(tr); }
     rows.slice(0, MAX).forEach((g) => {
       const tr = mk('tr');
-      const ulp = [...g.ulp].sort((a, b2) => b2[1] - a[1]).map(([x]) => x);
-      const uc = mk('td', ulp.length ? ulp[0] : '–', 'hi-u3' + (ulp.length ? '' : ' gx-zero')); if (ulp.length > 1) uc.title = 'ULP: ' + ulp.join(', ');
+      // ULP dari database Event Padam Penyulang; bila belum ada (data lama tanpa ULP), dari laporan harian
+      const fromDb = g.ulp.size > 0; const ulp = [...(fromDb ? g.ulp : g.ulpH)].sort((a, b2) => b2[1] - a[1]).map(([x]) => x);
+      const uc = mk('td', ulp.length ? ulp[0] : '–', 'hi-u3' + (ulp.length ? (fromDb ? '' : ' hi-ulph') : ' gx-zero'));
+      if (ulp.length) uc.title = (fromDb ? 'ULP dari database Event Padam Penyulang' : 'ULP dari laporan harian (database Event Padam Penyulang belum memuat ULP)') + (ulp.length > 1 ? ': ' + ulp.join(', ') : '');
       tr.append(mk('td', g.peny, 'hi-nm'), uc, mk('td', uname(g.u), 'hi-u3'));
       upto.forEach((m) => {
         const o = g.mo[m]; const n = o ? o[0] + o[1] : 0; const nd = !IX.ada.has(m + '|' + g.u); const km = n ? katOf(n) : null;

@@ -17,7 +17,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="hirarki-tab.css">
 <link rel="stylesheet" href="workplan-tab.css">
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261109">
-<link rel="stylesheet" href="hi-tab.css?v=20261110d">
+<link rel="stylesheet" href="hi-tab.css?v=20261110e">
 <link rel="stylesheet" href="acct.css">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
@@ -2602,7 +2602,7 @@ SSD.calc('up3_yoy', {
 </script>
 
 <script src="peny-tab.js"></script>
-<script src="hi-tab.js?v=20261110d"></script>
+<script src="hi-tab.js?v=20261110f"></script>
 
 <script>
 (() => {
@@ -2865,7 +2865,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 </script>
 
 <script src="apkt-parser.js"></script>
-<script src="harian-detil.js?v=20261110"></script>
+<script src="harian-detil.js?v=20261110b"></script>
 <script>
 (() => {
   const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -2934,7 +2934,8 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
       box('Capaian SAIFI', capF != null ? f2.format(capF * 100) + '%' : '—', capF != null ? (capF >= 1 ? 'ok' : 'bad') : ''),
       box(`ENS ${BLN[m]}`, f0.format(s.ens.SUMKAL[m] || 0) + ' kWh'),
       box(`Total event ${BLN[m]}`, f0.format(s.tot.SUMKAL[m] || 0)),
-      box('Detil Kode (per penyulang)', pending.detil ? `${f0.format(pending.detil.j)} kejadian kode J · ${f0.format(new Set(pending.detil.rows.map((r) => r[0] + '|' + r[2])).size)} penyulang · ${pending.detil.dari.slice(8)}–${pending.detil.sampai.slice(8)}/${pending.detil.sampai.slice(5, 7)}` : pending.adaDetil ? 'tidak terbaca: ' + pending.detilErr : 'sheet tidak ada', pending.detil ? 'ok' : ''));
+      (() => { const tg = $('h-up-tgl').value; const dm = pending.detil && tg ? window.SSHarianDetil.forMonth(pending.detil, tg) : null;
+        return box(`Detil Kode ${tg ? BLN[+tg.slice(5, 7) - 1] : ''} (per penyulang)`, dm ? `${f0.format(dm.j)} kejadian kode J · ${f0.format(new Set(dm.rows.map((r) => r[0] + '|' + r[2])).size)} penyulang · ${+dm.dari.slice(8)}–${+dm.sampai.slice(8)} ${BLN[dm.bulan - 1]}` : pending.detil ? 'tidak ada kejadian di bulan tanggal realisasi' : pending.adaDetil ? 'tidak terbaca: ' + pending.detilErr : 'sheet tidak ada', dm ? 'ok' : 'bad'); })());
   }
   async function handle(file) {
     if (!file) return; $('h-up-err').hidden = true; $('h-up-msg').textContent = '';
@@ -2976,11 +2977,13 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
       const doc = { rows, tanggal: tgl, file: pending.file, diunggah: new Date().toISOString() };
       // gangguan per penyulang bulan berjalan (sheet Detil Kode); tanpa sheet itu, pakai data unggahan sebelumnya pada bulan yang sama
       const prevD = window.SSHarianSaved && window.SSHarianSaved.penyulang;
-      if (pending.detil) doc.penyulang = pending.detil; else if (prevD && prevD.bulan === mo && prevD.tahun === y) doc.penyulang = prevD;
+      const dm = pending.detil ? window.SSHarianDetil.forMonth(pending.detil, tgl) : null;
+      if (dm) doc.penyulang = dm; else if (prevD && prevD.bulan === mo && prevD.tahun === y) doc.penyulang = prevD;
       try { await db.doc('harian/latest').set(doc); saved = true; window.SSHarianDB = db; window.SSHarianSaved = doc; document.dispatchEvent(new Event('ss-harian-saved')); }
       catch (e) { saved = false; why = e && e.code === 'no-token' ? 'belum login admin' : e && e.code === 'gh-401' ? 'login admin sudah tidak berlaku; keluar lalu login lagi' : ((e && e.message) || String(e)); }
     } else why = 'belum login admin';
-    if (!saved && pending.detil) { window.SSHarianSaved = { ...(window.SSHarianSaved || {}), rows, tanggal: tgl, file: pending.file, penyulang: pending.detil }; document.dispatchEvent(new Event('ss-harian-saved')); }
+    const dmL = !saved && pending.detil ? window.SSHarianDetil.forMonth(pending.detil, tgl) : null;
+    if (dmL) { window.SSHarianSaved = { ...(window.SSHarianSaved || {}), rows, tanggal: tgl, file: pending.file, penyulang: dmL }; document.dispatchEvent(new Event('ss-harian-saved')); }
     msg.textContent = saved
       ? `Infografis diperbarui ke realisasi s.d. ${da} ${BLN[mo - 1]} ${y} dan disimpan ke database dashboard. Semua yang membuka dashboard melihat data ini setelah GitHub Pages diperbarui (1–2 menit); tombol Download juga memakai data baru.`
       : `Infografis di layar ini sudah memakai data baru (realisasi s.d. ${da} ${BLN[mo - 1]} ${y}), tetapi BELUM TERSIMPAN (${why}). Bila halaman ditutup, data kembali ke unggahan sebelumnya. Klik "Login admin" (kanan bawah), lalu klik Terapkan ke infografis lagi.`;
@@ -2996,6 +2999,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
   ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
   drop.addEventListener('drop', (e) => { const f = e.dataTransfer && e.dataTransfer.files; if (f && f[0]) handle(f[0]); });
   $('h-up-apply').addEventListener('click', apply);
+  $('h-up-tgl').addEventListener('change', review);
   $('h-up-cancel').addEventListener('click', () => { pending = null; review(); $('h-up-msg').textContent = ''; });
 })();
 </script>
