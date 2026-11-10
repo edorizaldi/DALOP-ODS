@@ -35,7 +35,7 @@
   $('hi-search').addEventListener('input', (e) => { q = e.target.value.trim().toLowerCase(); renderList(); });
   const ctx = { name: '' };
   const exp = (id) => $(`hi-${id}-dl`).addEventListener('click', () => window.SSExport({ card: `hi-${id}-card`, btn: `hi-${id}-dl`, msg: `hi-${id}-msg`, preview: `hi-${id}-pv`, filename: `Health_Index_Penyulang_${id}_${ctx.name.replace(/[^A-Za-z0-9]+/g, '_')}.png` }));
-  exp('trend'); exp('unit');
+  exp('trend'); exp('unit'); exp('top');
 
   // ---------- indeks data (dibangun ulang hanya bila data berubah) ----------
   let IX = null, srcB = null, srcP = null, srcG = null;
@@ -207,7 +207,7 @@
     }
 
     S = { fTxt, scoped, bm, where, uid, months, bidang };
-    renderList();
+    renderList(); renderTop();
     $('hi-note').textContent = `Sumber: database Event Padam Penyulang saja (gangguan per penyulang dari APKT); tidak memakai Database Penyulang. Kelas per penyulang per bulan dari jumlah gangguan permanen + sesaat kode J, mengikuti filter bidang (bawaan Distribusi) dan jenis padam (bawaan semua): kronis ≥ 6 kali, sakit 2–5 kali, sehat 1 kali. Penyulang tanpa gangguan pada bulan itu tidak dihitung; total = penyulang yang mengalami gangguan. Rekap per UP3 belum ditampilkan. Pemeriksaan kelengkapan data dibandingkan rekap Event Padam Penyulang per UID untuk bidang terpilih (semua jenis padam).`;
   }
 
@@ -277,7 +277,50 @@
     if (rows.length > MAX) { const tr = mk('tr'); const td = mk('td', `Menampilkan ${fmt(MAX)} dari ${fmt(rows.length)} penyulang. Pilih UID atau cari nama penyulang / ULP untuk mempersempit.`, 'gx-zero'); td.colSpan = ncol; tr.append(td); tb.append(tr); }
     $('hi-list').replaceChildren(th, tb);
   }
-  document.addEventListener('ss-harian-saved', () => { try { renderList(); } catch (e) { console.error(e); } });
+  // ---------- Top 3 penyulang gangguan per UID, bulan berjalan (laporan harian, sheet Detil Kode), semua UID dalam satu tabel ----------
+  function renderTop() {
+    if (!S || !IX) return;
+    const HP0 = harianPeny(); const lastM = IX.months[IX.months.length - 1];
+    const HP = HP0 && HP0.tahun === 2026 && HP0.bulan > lastM ? HP0 : null;
+    const tb = mk('tbody');
+    const th = mk('thead'), hr = mk('tr'); [['UID', ''], ['#', 'num'], ['Penyulang', ''], ['ULP', ''], ['P', 'num'], ['S', 'num'], ['Total', 'num'], ['Kelas', 'hi-kh'], [`${BS[lastM - 1]}`, 'hi-mh']].forEach(([h, c]) => hr.append(mk('th', h, c))); th.append(hr);
+    if (!HP) {
+      $('hi-top-h').textContent = 'Top 3 penyulang gangguan per UID · bulan berjalan';
+      $('hi-top-note').textContent = HP0 ? `Data laporan harian tersimpan adalah ${BLN[HP0.bulan - 1]} ${HP0.tahun}, bukan bulan berjalan. Unggah laporan harian (sheet Detil Kode) dengan tanggal realisasi bulan ini.` : 'Belum ada unggahan laporan harian dengan sheet Detil Kode.';
+      $('hi-top').replaceChildren(th, tb); return;
+    }
+    const bb = `${BLN[HP.bulan - 1]} s.d. ${+HP.sampai.slice(8)}`;
+    $('hi-top-h').textContent = `Top 3 penyulang gangguan per UID · ${bb} ${HP.tahun}`;
+    // ULP dan riwayat bulan lalu dari database Event Padam Penyulang (kode J distribusi, semua jenis padam)
+    const ulpDb = new Map(), prev = new Map();
+    IX.feeders.forEach((f) => {
+      const k = f.u + '|' + nn(f.peny);
+      if (f.ulp.size) { const o = ulpDb.get(k) || new Map(); f.ulp.forEach((n, x) => o.set(x, (o.get(x) || 0) + n)); ulpDb.set(k, o); }
+      const r = f.raw[lastM]; if (r) { let n = 0; Object.entries(r).forEach(([kk, ps]) => { if (kk.startsWith('DISTRIBUSI|')) n += ps[0] + ps[1]; }); if (n) prev.set(k, (prev.get(k) || 0) + n); }
+    });
+    const G = new Map();
+    HP.rows.forEach(([u, ulp, peny, p, sv]) => { const k = u + '|' + nn(peny); const g = G.get(k) || { u, peny, p: 0, s: 0, ulpH: new Map() }; g.p += p; g.s += sv; if (ulp) g.ulpH.set(ulp, (g.ulpH.get(ulp) || 0) + p + sv); G.set(k, g); });
+    const mode = (m) => [...m].sort((a, b) => b[1] - a[1])[0][0];
+    let nTop = 0;
+    UORD.forEach((u) => {
+      const top = [...G].filter(([, g]) => g.u === u).sort((a, b) => (b[1].p + b[1].s) - (a[1].p + a[1].s) || b[1].p - a[1].p || a[1].peny.localeCompare(b[1].peny)).slice(0, 3);
+      if (!top.length) { const tr = mk('tr', null, 'hi-tfirst'); tr.append(mk('td', ULABEL[u], 'hi-tu')); const td = mk('td', 'Tidak ada gangguan kode J penyulang pada bulan berjalan.', 'gx-zero'); td.colSpan = 8; tr.append(td); tb.append(tr); return; }
+      top.forEach(([k, g], i) => {
+        nTop++;
+        const tr = mk('tr', null, (i === 0 ? 'hi-tfirst' : '') + (S.uid === u ? ' on' : ''));
+        tr.append(mk('td', i === 0 ? ULABEL[u] : '', 'hi-tu'));
+        const fromDb = ulpDb.has(k); const ul = fromDb ? mode(ulpDb.get(k)) : g.ulpH.size ? mode(g.ulpH) : '–';
+        const n = g.p + g.s; const kb = katOf(n); const pill = mk('span', KBY[kb].nm, 'hi-pill'); pill.style.background = KBY[kb].c; pill.style.color = KBY[kb].fg;
+        const kc = mk('td', null, 'hi-kc'); kc.append(pill);
+        const pv = prev.get(k) || 0; const pk = pv ? katOf(pv) : null; const pc0 = mk('td', null, 'hi-mc'); const c = mk('span', pv ? fmt(pv) : '0', 'hi-cell' + (pk ? '' : ' z')); if (pk) { c.style.background = KBY[pk].c; c.style.color = KBY[pk].fg; } c.title = `${BLN[lastM - 1]}: ${pv ? fmt(pv) + ' kali gangguan' : 'tanpa gangguan'}`; pc0.append(c);
+        tr.append(mk('td', String(i + 1), 'num hi-rank'), mk('td', g.peny, 'hi-nm'), mk('td', ul, 'hi-u3' + (fromDb ? '' : ' hi-ulph')), mk('td', fmt(g.p), 'num' + (g.p ? '' : ' gx-zero')), mk('td', fmt(g.s), 'num' + (g.s ? '' : ' gx-zero')), mk('td', fmt(n), 'num hi-bbt'), kc, pc0);
+        tb.append(tr);
+      });
+    });
+    $('hi-top').replaceChildren(th, tb);
+    $('hi-top-note').textContent = `Tiga penyulang dengan gangguan kode J (permanen + sesaat) terbanyak di tiap UID, ${bb} ${HP.tahun}, dari laporan harian (sheet Detil Kode, No. Laporan unik). Kelas = status bulan berjalan; kolom ${BS[lastM - 1]} = kali gangguan bulan lalu (database Event Padam Penyulang, kode J distribusi). ULP dari database Event Padam Penyulang (huruf miring: dari laporan harian). Tabel ini selalu menampilkan semua UID; UID terpilih disorot.`;
+  }
+  document.addEventListener('ss-harian-saved', () => { try { renderList(); renderTop(); } catch (e) { console.error(e); } });
 
   SSD.onData(() => { try { render(); } catch (e) { console.error(e); } });
 })();
