@@ -7,7 +7,7 @@
   const PPTX_URL = 'https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js';
   const JSZIP_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
   const CFG = 'paparan.json', DIR = 'paparan/', MAX_MB = 15;
-  const CORE_JS = 'slides-core.js?v=20261112', THUMBS_JS = 'slides-thumbs.js?v=20261112';
+  const CORE_JS = 'slides-core.js?v=20261112b', THUMBS_JS = 'slides-thumbs.js?v=20261112b';
   const SETS = ['kumulatif', 'bulanan', 'target', 'gangguan_ps', 'kc_bulanan', 'gangguan_dupont', 'workplan', 'info_update'];
   const CORE = [
     ['Kinerja SAIDI per UID', 'Peta UID, target dan realisasi s.d. cutoff, rekap Sumkal, tren kumulatif.'],
@@ -18,6 +18,7 @@
     ['Penyebab gangguan penyulang', 'Rincian penyebab, komposisi, Dalam Investigasi per UID, insight.'],
     ['Realisasi Action Plan (Workplan Keandalan)', '5 program action plan Sumkal dan tabel target, realisasi, capaian per unit induk.'],
     ['Kondisi kelistrikan sistem grid', 'Tab Kondisi Sistem: DMP, beban puncak, cadangan dan status 4 sistem grid pada tanggal terakhir yang terisi, peta status, monitoring sistem siaga dan defisit.'],
+    ['Kondisi kelistrikan sistem isolated', 'Tab Kondisi Sistem: jumlah sistem isolated, jam nyala, status, DMP/BP/cadangan per unit induk pada tanggal terakhir yang terisi, peta status, monitoring sistem isolated siaga dan defisit.'],
   ];
   const DEFAULT = () => CORE.map((_, i) => ({ k: 'core', n: i + 1 }));
   let cutoff = null, busy = false, cat = null, D0 = null;
