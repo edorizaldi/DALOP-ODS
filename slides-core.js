@@ -186,8 +186,9 @@
       5: () => slide5(pres, ctx3),
       6: () => slide6(pres, ctx3),
       7: () => slideWorkplan(pres, { C, HEX, D, A }),
+      8: () => slideKondisi(pres, { C, A }),
     };
-    // plan: urutan slide paparan. {k:'core', n:1..7} slide data; {k:'img', data, w, h} slide gambar;
+    // plan: urutan slide paparan. {k:'core', n:1..8} slide data; {k:'img', data, w, h} slide gambar;
     // {k:'pptx'} slide kosong sebagai tempat slide dari file PowerPoint (diisi oleh SSPptxMerge).
     const P = plan || [1, 2, 3, 4, 5, 6].map((n) => ({ k: 'core', n }));
     return (async () => {
@@ -686,7 +687,170 @@
     s.addNotes(`Sumber: database dashboard Sumkal, tab Workplan Keandalan: ${info.sumber || 'sheet Action Plan'}, ${info.periode || ''}. % capaian = realisasi ÷ target.`);
   }
 
-  const api = { build, compute, months };
+  // ---------- slide Kondisi Kelistrikan Sistem Grid (tab Kondisi Sistem) ----------
+  // Data: A.kondisi = { meta, day, mon, upd, map } (kondisi_data.js + kondisi_update.js), tidak mengikuti bulan cutoff.
+  // Tanggal = tanggal terakhir yang terisi untuk semua sistem grid utama (kalau tidak ada, tanggal terakhir yang terisi).
+  const GMAIN = [
+    { n: 'SUMATRA', t: 'SUMATRA', uid: 'UIP3B Sumatera', units: ['ACEH', 'SUMUT', 'SUMBAR', 'RIAU DAN KEPULAUAN RIAU', 'S2JB', 'LAMPUNG', 'BANGKA BELITUNG'], pin: [101.2, -0.6], side: 'l', y: 2.28 },
+    { n: 'BATAM-BINTAN', t: 'BATAM–BINTAN', uid: 'PLN Batam', units: [], pin: [104.05, 1.08], side: 'l', y: 3.45 },
+    { n: 'KHATULISTIWA', t: 'KHATULISTIWA', uid: 'UIP3B Kalimantan', units: ['KALIMANTAN BARAT'], pin: [110.6, 0.1], side: 'r', y: 2.28 },
+    { n: 'INTERKONEKSI KALIMANTAN', t: 'INTERKONEKSI KALIMANTAN', uid: 'UIP3B Kalimantan', units: ['KALSELTENG', 'KALTIMRA'], pin: [114.4, -1.6], side: 'r', y: 3.45 },
+  ];
+  const KUNAME = { ACEH: 'UID Aceh', SUMUT: 'UID Sumut', SUMBAR: 'UID Sumbar', 'RIAU DAN KEPULAUAN RIAU': 'UID RKR', S2JB: 'UID S2JB', 'BANGKA BELITUNG': 'UID Babel', LAMPUNG: 'UID Lampung', 'KALIMANTAN BARAT': 'UID Kalbar', KALSELTENG: 'UID KSKT', KALTIMRA: 'UID Kaltimra' };
+  const STC = { NORMAL: { f: '2E8B57', t: 'FFFFFF' }, SIAGA: { f: 'FFC81E', t: '13254A' }, DEFISIT: { f: 'D7261E', t: 'FFFFFF' }, '': { f: 'B0BEC5', t: '13254A' } };
+  function kondisiSnap(K) {
+    if (!K || !K.day || !K.day.length) return null;
+    const meta = K.meta || {}; const Y = +meta.tahun || 2026, M = +meta.bulan || 1;
+    const SC = ['NORMAL', 'SIAGA', 'DEFISIT'];
+    const sid = (r) => (r.s + '_' + r.u + '_' + r.n).replace(/[^A-Za-z0-9_.~:@+-]/g, '_').slice(0, 180);
+    const base = new Date(Y, M - 1, 0); const ov = {};
+    (K.upd || []).forEach((v) => { if (!v || !v.key) return; const off = typeof v.tanggal === 'string' && /^\d{4}-\d\d-\d\d$/.test(v.tanggal) ? Math.round((new Date(v.tanggal + 'T00:00:00') - base) / 864e5) : v.off; if (typeof off === 'number') (ov[v.key] = ov[v.key] || {})[off] = v; });
+    const at = (r, k) => { const o = (ov[sid(r)] || {})[k]; if (o) return { dmp: o.dmp, bp: o.bp, cad: o.cad, st: o.st || '' }; const i = k - 1; if (i < 0 || r.dmp[i] == null) return null; return { dmp: r.dmp[i], bp: r.bp[i], cad: r.cad[i], st: SC[r.sc[i]] || '' }; };
+    const lastOf = (r) => { let l = 0; r.dmp.forEach((v, i) => { if (v != null) l = i + 1; }); Object.keys(ov[sid(r)] || {}).forEach((k) => { if (+k > l) l = +k; }); return l; };
+    const grids = GMAIN.map((g) => K.day.find((r) => r.s === 'GRID' && r.n === g.n)).filter(Boolean);
+    let day = grids.length ? Math.min(...grids.map(lastOf)) : 0;
+    if (!day) day = Math.max(0, ...K.day.map(lastOf));
+    if (!day) return null;
+    const dt = new Date(Y, M - 1, day);
+    const iso = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    const tgl = `${dt.getDate()} ${BLN[dt.getMonth()]} ${dt.getFullYear()}`;
+    const streak = (r, st) => { let n = 0; for (let k = day; k >= 1; k--) { const v = at(r, k); if (!v || v.st !== st) break; n++; } return n; };
+    const key = (r) => r.s + '|' + r.u + '|' + r.n;
+    const monOf = (r) => { let m = null; (K.mon || []).forEach((x) => { if (x.key === key(r) && x.t <= iso && (!m || x.t >= m.t)) m = x; }); return m; };
+    const G = {}; GMAIN.forEach((g) => { const r = K.day.find((x) => x.s === 'GRID' && x.n === g.n); G[g.n] = r ? { r, v: at(r, day) } : { r: null, v: null }; });
+    const totR = K.day.find((r) => r.n === 'TOTAL SISTEM GRID'); let tot = totR ? at(totR, day) : null;
+    if (!tot) { const hs = GMAIN.filter((g) => g.n !== 'BATAM-BINTAN' && G[g.n].v).map((g) => G[g.n].v); const d = hs.reduce((a, v) => a + (+v.dmp || 0), 0), b = hs.reduce((a, v) => a + (+v.bp || 0), 0); tot = hs.length ? { dmp: d, bp: b, cad: d - b, st: d - b < 0 ? 'DEFISIT' : '' } : null; }
+    const iso2 = K.day.filter((r) => r.s === 'ISOLATED');
+    const isoNow = iso2.map((r) => ({ r, v: at(r, day) })).filter((x) => x.v);
+    const cnt = (a, s) => a.filter((x) => x.v && x.v.st === s).length;
+    const gridArr = GMAIN.map((g) => G[g.n]).filter((x) => x.v);
+    const sd = [];
+    GMAIN.forEach((g) => { const x = G[g.n]; if (x.v && (x.v.st === 'SIAGA' || x.v.st === 'DEFISIT')) sd.push({ jenis: 'Grid', uid: g.uid, nm: g.t.charAt(0) + g.t.slice(1).toLowerCase().replace(/([ –-])(\w)/g, (a, p, c) => p + c.toUpperCase()), r: x.r, v: x.v }); });
+    isoNow.filter((x) => x.v.st === 'DEFISIT').forEach((x) => sd.push({ jenis: 'Isolated', uid: KUNAME[x.r.u] || x.r.u, nm: x.r.n, r: x.r, v: x.v }));
+    sd.forEach((x) => { x.lama = streak(x.r, x.v.st); x.mon = monOf(x.r); });
+    sd.sort((a, b) => (a.jenis === b.jenis ? 0 : a.jenis === 'Grid' ? -1 : 1) || (a.v.st === b.v.st ? 0 : a.v.st === 'DEFISIT' ? -1 : 1) || b.lama - a.lama || a.nm.localeCompare(b.nm));
+    const defAll = [...gridArr.map((x) => ({ r: x.r, v: x.v })), ...isoNow].filter((x) => x.v.st === 'DEFISIT');
+    const def4 = defAll.filter((x) => streak(x.r, 'DEFISIT') > 4).length;
+    return { day, iso, tgl, G, tot, sd, def4, nDef: defAll.length,
+      grid: { siaga: cnt(gridArr, 'SIAGA'), defisit: cnt(gridArr, 'DEFISIT') },
+      isol: { n: iso2.length, lt24: iso2.filter((r) => r.j < 24).length, siaga: cnt(isoNow, 'SIAGA'), defisit: cnt(isoNow, 'DEFISIT'), units: new Set(iso2.map((r) => r.u)).size } };
+  }
+  // peta Sumatera–Kalimantan diwarnai menurut status sistem grid (canvas → PNG; hanya di browser)
+  function kondisiMap(MAPD, S) {
+    if (!MAPD || typeof document === 'undefined' || typeof Path2D === 'undefined') return null;
+    // batas peta dari titik-titik path (hanya perintah M/L/Z absolut) agar laut kosong di tepi terpotong
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    Object.keys(MAPD).filter((u) => u[0] !== '_').forEach((u) => { const n = (MAPD[u].d.match(/-?\d+(?:\.\d+)?/g) || []).map(Number); for (let i = 0; i + 1 < n.length; i += 2) { x0 = Math.min(x0, n[i]); x1 = Math.max(x1, n[i]); y0 = Math.min(y0, n[i + 1]); y1 = Math.max(y1, n[i + 1]); } });
+    const pd = 6; const vb = x1 > x0 ? [x0 - pd, y0 - pd, x1 - x0 + 2 * pd, y1 - y0 + 2 * pd] : (MAPD._vb || [0, 0, 1000, 536]); const sc = 3;
+    const cv = document.createElement('canvas'); cv.width = Math.round(vb[2] * sc); cv.height = Math.round(vb[3] * sc);
+    const g = cv.getContext('2d'); g.setTransform(sc, 0, 0, sc, -vb[0] * sc, -vb[1] * sc);
+    const owner = {}; GMAIN.forEach((x) => x.units.forEach((u) => { owner[u] = x.n; }));
+    Object.keys(MAPD).filter((u) => u[0] !== '_').forEach((u) => {
+      const v = S.G[owner[u]] && S.G[owner[u]].v; const p = new Path2D(MAPD[u].d);
+      g.fillStyle = '#' + STC[v ? v.st : ''].f; g.fill(p);
+      g.strokeStyle = '#FFFFFF'; g.lineWidth = 1.4; g.lineJoin = 'round'; g.stroke(p);
+    });
+    Object.values(MAPD._prov || {}).forEach((d) => { g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 0.8; g.stroke(new Path2D(d)); });
+    return { data: cv.toDataURL('image/png'), vb };
+  }
+  async function slideKondisi(pres, ctx) {
+    const { C, A } = ctx; const W = 'Arial';
+    const S = kondisiSnap(A.kondisi);
+    const s = pres.addSlide({ masterName: 'KINERJA_UID' });
+    const T = (text, o, name) => s.addText(text, { fontFace: W, margin: 0, isTextBox: true, ...o, objectName: name });
+    const R = (x, y, w, h, fill, line, name, o) => s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w, h, rectRadius: Math.min(0.12, h / 2), fill: { color: fill }, line: { color: line || fill, width: 1.25 }, objectName: name, ...(o || {}) });
+    const mw = (v) => (v == null || v === '' || !isFinite(+v) ? '–' : nf(+v, 2) + ' MW');
+    const stl = (st) => (st ? st : 'TIDAK ADA DATA');
+    T('KONDISI KELISTRIKAN', { x: 2.6, y: 0.12, w: 8.1, h: 0.55, fontSize: 30, bold: true, color: C.text1, align: 'center', valign: 'middle' }, 'Judul');
+    T('SISTEM GRID SUMATERA & KALIMANTAN', { x: 2.6, y: 0.64, w: 8.1, h: 0.32, fontSize: 16, bold: true, color: C.text1, align: 'center', valign: 'middle' }, 'Subjudul');
+    R(4.85, 1.0, 3.6, 0.36, C.accent1, null, 'Tanggal latar', { rectRadius: 0.18 });
+    T(S ? S.tgl : 'Belum ada data', { x: 4.85, y: 1.0, w: 3.6, h: 0.36, fontSize: 14, bold: true, color: C.background1, align: 'center', valign: 'middle' }, 'Tanggal');
+    if (!S) { T('Database Kondisi Sistem belum berisi data.', { x: 1, y: 3.4, w: 11.3, h: 0.6, fontSize: 18, color: C.text1, align: 'center' }, 'Keterangan'); return; }
+    const icon = (n) => A.icons && (A.icons[n + '|FFFFFF'] || A.icons['FaCircle|FFFFFF']);
+
+    // angka kunci total grid
+    const KY = 1.45, KH = 0.6;
+    R(0.3, KY, 12.73, KH, 'FFFFFF', 'B9CFEA', 'Angka kunci latar', { shadow: { type: 'outer', color: '0A3C78', opacity: 0.15, blur: 4, offset: 2, angle: 90 } });
+    const tot = S.tot || {};
+    const kp = [['FaBolt', 'TOTAL DMP', mw(tot.dmp)], ['FaChartLine', 'TOTAL BEBAN PUNCAK', mw(tot.bp)], ['FaChartBar', 'CADANGAN', mw(tot.cad)]];
+    kp.forEach(([ic, l, v], i) => {
+      const x = 0.42 + i * 2.95;
+      s.addShape(pres.shapes.OVAL, { x, y: KY + 0.07, w: 0.46, h: 0.46, fill: { color: C.accent1 }, line: { color: C.accent1 }, objectName: `Angka ${l} ikon latar` });
+      const im = icon(ic); if (im) s.addImage({ data: im, x: x + 0.11, y: KY + 0.18, w: 0.24, h: 0.24, altText: l, objectName: `Angka ${l} ikon` });
+      T([{ text: l, options: { fontSize: 9, bold: true, color: '5B6B86', breakLine: true } }, { text: v, options: { fontSize: 16, bold: true, color: l === 'CADANGAN' && +tot.cad < 0 ? 'D7261E' : C.text1 } }], { x: x + 0.56, y: KY + 0.04, w: 2.3, h: KH - 0.08, valign: 'middle' }, `Angka ${l}`);
+      if (i) s.addShape(pres.shapes.LINE, { x: x - 0.08, y: KY + 0.12, w: 0, h: KH - 0.24, line: { color: 'C9D6EA', width: 1 }, objectName: `Pemisah ${i}` });
+    });
+    const st0 = tot.st || ''; const sc0 = STC[st0] || STC[''];
+    R(9.3, KY + 0.08, 2.0, KH - 0.16, sc0.f, null, 'Status total latar');
+    T([{ text: 'STATUS KELISTRIKAN', options: { fontSize: 8, bold: true, breakLine: true } }, { text: stl(st0), options: { fontSize: 16, bold: true } }], { x: 9.3, y: KY + 0.08, w: 2.0, h: KH - 0.16, color: sc0.t, align: 'center', valign: 'middle' }, 'Status total');
+    const info = S.nDef ? `${nf(S.nDef, 0)} sistem defisit${S.def4 ? `, ${nf(S.def4, 0)} di atas 4 hari` : ''}` : 'Tidak ada sistem defisit';
+    T(info, { x: 11.4, y: KY + 0.06, w: 1.55, h: KH - 0.12, fontSize: 9.5, bold: true, color: C.text1, valign: 'middle' }, 'Info defisit');
+
+    // peta + kotak per sistem grid
+    const MP = kondisiMap(A.kondisi.map, S);
+    const vb = (MP && MP.vb) || [0, 0, 1000, 536]; const MY = 2.14, MH = 2.32; const MWd = MH * vb[2] / vb[3]; const MX = (13.333 - MWd) / 2;
+    if (MP) s.addImage({ data: MP.data, x: MX, y: MY, w: MWd, h: MH, altText: 'Peta status sistem grid Sumatera dan Kalimantan', objectName: 'Peta' });
+    const pt = ([lon, lat]) => ({ x: MX + (((lon - 94.6) * 40) - vb[0]) * MWd / vb[2], y: MY + (((7 - lat) * 40) - vb[1]) * MH / vb[3] });
+    const BW = 3.2, BH = 1.0;
+    GMAIN.forEach((g) => {
+      const x0 = g.side === 'l' ? 0.3 : 13.033 - BW; const y0 = g.y; const v = S.G[g.n].v; const st = v ? v.st : ''; const c = STC[st] || STC[''];
+      const p = pt(g.pin); const ax = g.side === 'l' ? x0 + BW : x0, ay = y0 + 0.5;
+      s.addShape(pres.shapes.LINE, { x: Math.min(ax, p.x), y: Math.min(ay, p.y), w: Math.max(0.01, Math.abs(p.x - ax)), h: Math.max(0.01, Math.abs(p.y - ay)), flipV: (p.x - ax) * (p.y - ay) < 0, line: { color: c.f === 'FFC81E' ? 'E0A800' : c.f, width: 1.75 }, objectName: `Penunjuk ${g.t}` });
+      s.addShape(pres.shapes.OVAL, { x: p.x - 0.09, y: p.y - 0.09, w: 0.18, h: 0.18, fill: { color: 'FFFFFF' }, line: { color: c.f === 'FFC81E' ? 'E0A800' : c.f, width: 2.5 }, objectName: `Titik ${g.t}` });
+      R(x0, y0, BW, BH, 'FFFFFF', c.f === 'FFC81E' ? 'E0A800' : c.f, `Kotak ${g.t}`, { line: { color: c.f === 'FFC81E' ? 'E0A800' : c.f, width: 1.75 } });
+      R(x0 + 0.25, y0 - 0.12, BW - 0.5, 0.3, c.f, null, `Kotak ${g.t} judul latar`, { rectRadius: 0.15 });
+      T(g.t, { x: x0 + 0.25, y: y0 - 0.12, w: BW - 0.5, h: 0.3, fontSize: g.t.length > 16 ? 11 : 13, bold: true, italic: true, color: c.t, align: 'center', valign: 'middle' }, `Kotak ${g.t} judul`);
+      const lab = { fontSize: 9, color: C.text1 }; const val = { fontSize: 9, bold: true, color: C.text1, align: 'right' };
+      const cad = v ? +v.cad : null;
+      s.addTable([
+        [{ text: 'DMP', options: lab }, { text: v ? mw(v.dmp) : '–', options: val }],
+        [{ text: 'Beban Puncak', options: lab }, { text: v ? mw(v.bp) : '–', options: val }],
+        [{ text: 'Cadangan', options: lab }, { text: v ? mw(v.cad) : '–', options: { ...val, color: cad != null && cad < 0 ? 'D7261E' : C.text1 } }],
+      ], { x: x0 + 0.15, y: y0 + 0.19, w: BW - 0.3, colW: [1.25, BW - 1.55], rowH: [0.17, 0.17, 0.17], fontFace: W, margin: [0, 0.03, 0, 0.03], border: { type: 'none' }, valign: 'middle', objectName: `Kotak ${g.t} angka` });
+      s.addShape(pres.shapes.LINE, { x: x0 + 0.15, y: y0 + 0.72, w: BW - 0.3, h: 0, line: { color: 'C9D6EA', width: 0.75 }, objectName: `Kotak ${g.t} garis` });
+      T('Status :', { x: x0 + 0.18, y: y0 + 0.75, w: 1.0, h: 0.22, fontSize: 10, bold: true, color: C.text1, valign: 'middle' }, `Kotak ${g.t} status label`);
+      R(x0 + 1.2, y0 + 0.75, BW - 1.38, 0.22, c.f, null, `Kotak ${g.t} status latar`, { rectRadius: 0.11 });
+      T(stl(st), { x: x0 + 1.2, y: y0 + 0.75, w: BW - 1.38, h: 0.22, fontSize: 10.5, bold: true, italic: true, color: c.t, align: 'center', valign: 'middle' }, `Kotak ${g.t} status`);
+    });
+    // monitoring sistem siaga dan defisit
+    const TY = 4.55;
+    R(0.3, TY, 12.73, 0.32, '0D3A8C', null, 'Monitoring judul latar', { rectRadius: 0.06 });
+    T(`MONITORING SISTEM SIAGA DAN DEFISIT · ${S.tgl.toUpperCase()}`, { x: 0.45, y: TY, w: 7.2, h: 0.32, fontSize: 12, bold: true, color: 'FFFFFF', valign: 'middle' }, 'Monitoring judul');
+    T(`Grid: ${S.grid.siaga} siaga, ${S.grid.defisit} defisit  ·  Isolated: ${nf(S.isol.siaga, 0)} siaga, ${S.isol.defisit} defisit`, { x: 7.6, y: TY, w: 5.3, h: 0.32, fontSize: 10, bold: true, color: 'FFE58A', align: 'right', valign: 'middle' }, 'Monitoring ringkas');
+    const MAXR = 8; const rows = S.sd.slice(0, MAXR);
+    const hd = { bold: true, color: '0A2A82', fill: { color: 'EAF5FC' }, align: 'center', valign: 'middle', fontSize: 8 };
+    const fdi = (iso) => { if (!/^\d{4}-\d\d-\d\d$/.test(iso || '')) return ''; const [a, b, c] = iso.split('-').map(Number); return `${c} ${BLN[b - 1].slice(0, 3)} ${a}`; };
+    const pen = (x) => { if (!x.mon) return 'Belum ada laporan di Monit Defisit'; const t = String(x.mon.pen || '–').split(/\n+/).map((z) => z.trim()).filter(Boolean).join('; '); return t.length > 100 ? t.slice(0, 97).replace(/\s+\S*$/, '') + ' …' : t; };
+    const body = rows.map((x, i) => {
+      const b = { color: '0B2246', fill: { color: i % 2 ? 'F6FAFE' : 'FFFFFF' }, fontSize: 7.5, valign: 'middle' }; const c = STC[x.v.st];
+      return [{ text: String(i + 1), options: { ...b, align: 'center' } }, { text: x.jenis, options: { ...b, align: 'center' } }, { text: x.uid, options: b }, { text: x.nm, options: { ...b, bold: true } },
+        { text: x.v.st.charAt(0) + x.v.st.slice(1).toLowerCase(), options: { ...b, bold: true, align: 'center', fill: { color: c.f }, color: c.t } },
+        { text: `${x.lama} hari`, options: { ...b, align: 'center' } }, { text: nf(+x.v.cad, 2), options: { ...b, align: 'right', color: +x.v.cad < 0 ? 'D7261E' : '0B2246', bold: +x.v.cad < 0 } },
+        { text: pen(x), options: { ...b, fontSize: 7, color: x.mon ? '0B2246' : '8A94A6' } }, { text: x.mon ? (fdi(x.mon.est) || 'Belum ditentukan') : '–', options: { ...b, align: 'center' } }];
+    });
+    if (!body.length) body.push([{ text: 'Tidak ada sistem grid siaga/defisit dan sistem isolated defisit pada tanggal ini.', options: { colspan: 9, color: '5B6B86', fontSize: 9, align: 'center' } }]);
+    const head = ['No', 'Jenis', 'UID / Unit', 'Nama sistem', 'Status', 'Lama', 'Cad. (MW)', 'Penyebab (laporan Monit Defisit terakhir)', 'Estimasi normal'].map((t) => ({ text: t, options: hd }));
+    const avail = 6.6 - (TY + 0.36); const rh = Math.min(0.24, (avail - 0.22) / Math.max(1, body.length));
+    s.addTable([head, ...body], { x: 0.3, y: TY + 0.36, w: 12.73, colW: [0.35, 0.68, 1.25, 2.1, 0.72, 0.6, 0.75, 5.18, 1.1], rowH: [0.22, ...Array(body.length).fill(rh)], border: { type: 'solid', color: 'CFE0EE', pt: 0.5 }, fontFace: W, margin: [0, 0.04, 0, 0.05], objectName: 'Tabel monitoring siaga dan defisit' });
+    const more = S.sd.length - rows.length;
+    const note = `Tabel: sistem grid siaga/defisit dan sistem isolated defisit. ${nf(S.isol.siaga, 0)} sistem isolated siaga tidak dirinci.${more > 0 ? ` ${more} sistem lain tidak muat di tabel.` : ''} Lama = hari berturut-turut dengan status yang sama s.d. ${S.tgl}.`;
+
+    // ringkasan bawah
+    const BY = 6.68, BHh = 0.5;
+    R(0.3, BY, 12.73, BHh, 'FFFFFF', 'B9CFEA', 'Ringkasan latar');
+    const lt = S.isol.lt24, n = S.isol.n;
+    const cells = [['4', 'Sistem grid', '(7 subsistem)'], [nf(n, 0), 'Sistem isolated', ''], [nf(lt, 0), 'Isolated < 24 jam', `(${nf(n ? lt / n * 100 : 0, 1)}%)`], [nf(S.nDef, 0), 'Sistem defisit', `(${S.grid.defisit} grid, ${S.isol.defisit} isolated)`], [nf(S.grid.siaga + S.isol.siaga, 0), 'Sistem siaga', `(${S.grid.siaga} grid, ${nf(S.isol.siaga, 0)} isolated)`], [String(S.isol.units), 'Unit induk', '']];
+    const cw = 12.73 / cells.length;
+    cells.forEach(([v, l, sub], i) => {
+      const x = 0.3 + i * cw;
+      T([{ text: v + ' ', options: { fontSize: 18, bold: true, color: i === 3 && S.nDef ? 'D7261E' : C.accent1 } }, { text: l, options: { fontSize: 9.5, bold: true, color: C.text1, breakLine: !!sub } }, ...(sub ? [{ text: sub, options: { fontSize: 7.5, color: '5B6B86' } }] : [])], { x: x + 0.1, y: BY + 0.02, w: cw - 0.2, h: BHh - 0.04, valign: 'middle', align: 'center' }, `Ringkasan ${l}`);
+      if (i) s.addShape(pres.shapes.LINE, { x, y: BY + 0.1, w: 0, h: BHh - 0.2, line: { color: 'C9D6EA', width: 1 }, objectName: `Ringkasan pemisah ${i}` });
+    });
+    T(`Sumber: database Kondisi Sistem dashboard (NERDA HARIAN dan Monit Defisit), ${S.tgl}. ${note}`, { x: 0.3, y: 7.2, w: 12.73, h: 0.22, fontSize: 7, color: '5B6B86', valign: 'middle' }, 'Sumber');
+    s.addNotes(`Sumber: database Kondisi Sistem (tab Kondisi Sistem), data tanggal ${S.tgl} (tanggal terakhir yang terisi untuk semua sistem grid utama). Total grid dari baris TOTAL SISTEM GRID. ${note}`);
+  }
+
+  const api = { build, compute, months, kondisiSnap };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.SSSlides = api;
 })(typeof window !== 'undefined' ? window : globalThis);
