@@ -3,8 +3,8 @@
 // Works in the browser (File/Blob) and in Node 20+ (fs.openAsBlob) for tests.
 const APKT = (() => {
   const BULAN = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
-  const NEED = { UNIT: 'UNIT', BULAN: 'BULAN', BIDANG: 'BIDANG', JENIS: 'JENIS PADAM', LAP: 'NO. LAPORAN', KODE: 'KODE', TGL: 'WAKTU PADAM (TANGGAL)', ULP: 'ULP', PENY: 'PENYULANG', PS: 'P/S', FAS: 'FASILITAS', SUBF: 'SUB FASILITAS', EQ: 'EQUIPMENT', CAUSE: 'CAUSE' };
-  const OPTIONAL = new Set(['TGL', 'ULP', 'PENY', 'PS', 'FAS', 'SUBF', 'EQ', 'CAUSE']);
+  const NEED = { UNIT: 'UNIT', BULAN: 'BULAN', BIDANG: 'BIDANG', JENIS: 'JENIS PADAM', LAP: 'NO. LAPORAN', KODE: 'KODE', TGL: 'WAKTU PADAM (TANGGAL)', ULP: 'ULP', PENY: 'PENYULANG', PS: 'P/S', FAS: 'FASILITAS', SUBF: 'SUB FASILITAS', EQ: 'EQUIPMENT', CAUSE: 'CAUSE', LAMA: 'LAMA PADAM (JAM)' };
+  const OPTIONAL = new Set(['TGL', 'ULP', 'PENY', 'PS', 'FAS', 'SUBF', 'EQ', 'CAUSE', 'LAMA']);
   const normH = (s) => String(s == null ? '' : s).replace(/\s+/g, ' ').trim().toUpperCase();
   const HEAD = new Set(Object.values(NEED));
   const unesc = (s) => (s.indexOf('&') < 0 ? s : s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&#(\d+);/g, (m, d) => String.fromCharCode(+d)).replace(/&#x([0-9a-f]+);/gi, (m, h) => String.fromCharCode(parseInt(h, 16))).replace(/&amp;/g, '&'));
@@ -124,7 +124,7 @@ const APKT = (() => {
     // pass 2: sheet; store raw refs for needed columns
     const N = Object.keys(NEED);
     let cols = null; // col index -> field
-    const store = { UNIT: [], BULAN: [], BIDANG: [], JENIS: [], LAP: [], KODE: [], TGL: [], ULP: [], PENY: [], PS: [], FAS: [], SUBF: [], EQ: [], CAUSE: [] };
+    const store = { UNIT: [], BULAN: [], BIDANG: [], JENIS: [], LAP: [], KODE: [], TGL: [], ULP: [], PENY: [], PS: [], FAS: [], SUBF: [], EQ: [], CAUSE: [], LAMA: [] };
     const needSS = new Set();
     const cellRe = /<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g;
     const rowRe = /<row\b[^>]*>([\s\S]*?)<\/row>/g;
@@ -176,6 +176,8 @@ const APKT = (() => {
     const ss = await sharedStrings(blob, ents, (i) => needSS.has(i), onProgress, 'Mencocokkan teks (3/3)');
     const S = (v) => (v == null ? '' : typeof v === 'object' ? ss.get(v.s) ?? '' : typeof v === 'number' ? String(v) : String(v));
     const U = (v) => S(v).trim().toUpperCase();
+    // lama padam (jam) per kejadian; teks berkoma ("0,62") juga dibaca, nilai kosong/negatif = 0
+    const jamOf = (v) => { if (v == null) return 0; const x = typeof v === 'number' ? v : Number(S(v).trim().replace(/\s/g, '').replace(',', '.')); return isFinite(x) && x > 0 ? x : 0; };
     const seen = new Set(); const per = {}; let unknownMonth = 0, missingLap = 0;
     for (let i = 0; i < nrows; i++) {
       const b = U(store.BULAN[i]); const m = BULAN.indexOf(b) + 1;
@@ -192,11 +194,11 @@ const APKT = (() => {
       p.agg.set(key, (p.agg.get(key) || 0) + 1);
       const dkey = key + '\u0001' + U(store.ULP[i]) + '\u0001' + U(store.PENY[i]) + '\u0001' + U(store.PS[i]);
       p.det.set(dkey, (p.det.get(dkey) || 0) + 1);
-      if (U(store.KODE[i]) === 'J') { const T = (v) => S(v).trim(); const pk = [U(store.UNIT[i]), U(store.ULP[i]), U(store.BIDANG[i]), U(store.JENIS[i]), T(store.FAS[i]), T(store.SUBF[i]), T(store.EQ[i]), T(store.CAUSE[i]), U(store.PS[i])].join('\u0001'); p.dp.set(pk, (p.dp.get(pk) || 0) + 1); }
+      if (U(store.KODE[i]) === 'J') { const T = (v) => S(v).trim(); const pk = [U(store.UNIT[i]), U(store.ULP[i]), U(store.BIDANG[i]), U(store.JENIS[i]), T(store.FAS[i]), T(store.SUBF[i]), T(store.EQ[i]), T(store.CAUSE[i]), U(store.PS[i])].join('\u0001'); const o = p.dp.get(pk) || [0, 0]; o[0]++; o[1] += jamOf(store.LAMA[i]); p.dp.set(pk, o); }
     }
     const perMonth = {};
-    for (const [m, p] of Object.entries(per)) perMonth[m] = { mentah: p.mentah, dup: p.dup, unik: p.unik, tgl_min: p.tgl_min, tgl_max: p.tgl_max, rows: [...p.agg].map(([k, n]) => [...k.split('\u0001'), n]).sort((a, b) => (a.slice(0, 4).join() < b.slice(0, 4).join() ? -1 : 1)), detail: [...p.det].map(([k, n]) => [...k.split('\u0001'), n]), dupont: [...p.dp].map(([k, n]) => [...k.split('\u0001'), n]) };
-    return { rows: nrows, perMonth, unknownMonth, missingLap, hasDetail: cols ? [...cols.values()].includes('ULP') : false, hasDupont: cols ? [...cols.values()].includes('FAS') && [...cols.values()].includes('CAUSE') : false };
+    for (const [m, p] of Object.entries(per)) perMonth[m] = { mentah: p.mentah, dup: p.dup, unik: p.unik, tgl_min: p.tgl_min, tgl_max: p.tgl_max, rows: [...p.agg].map(([k, n]) => [...k.split('\u0001'), n]).sort((a, b) => (a.slice(0, 4).join() < b.slice(0, 4).join() ? -1 : 1)), detail: [...p.det].map(([k, n]) => [...k.split('\u0001'), n]), dupont: [...p.dp].map(([k, o]) => [...k.split('\u0001'), o[0], Math.round(o[1] * 1e4) / 1e4]) };
+    return { rows: nrows, perMonth, unknownMonth, missingLap, hasDetail: cols ? [...cols.values()].includes('ULP') : false, hasDupont: cols ? [...cols.values()].includes('FAS') && [...cols.values()].includes('CAUSE') : false, hasLama: cols ? [...cols.values()].includes('LAMA') : false };
   }
 
   // Small workbook (e.g. database penyulang): first sheet as an array of rows of plain values.

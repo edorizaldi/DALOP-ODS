@@ -244,8 +244,10 @@ const SSUP = (() => {
         if (!f.matched) { const id = f.up3 + '|' + f.penyulang; const t = tidakNew.get(id) || { up3: f.up3, penyulang: f.penyulang, uid: f.uid, ulp: new Map() }; t.ulp.set(ulp, (t.ulp.get(ulp) || 0) + n); tidakNew.set(id, t); }
       }
       for (const [kk, n] of aggU) { const [kode, bidang, jenis, unit, u3] = kk.split('\u0001'); gu.push({ KODE: kode, BIDANG: bidang, JENIS_PADAM: jenis, UNIT: unit, UP3: u3, BULAN_NO: m, JUMLAH: n }); }
-      if (apkt.hasDupont && p.dupont) { const aggD = new Map(); for (const d of p.dupont) { const n = d[d.length - 1]; const [unit, ulp, bidang, jenis, fas, sub, eq, cause] = d; const ps = d.length > 9 ? psKey(d[8]) || '' : ''; const kd = [unit, namer(unit, ulp), bidang, jenis, fas, sub, eq, cause, ps].join('\u0001'); aggD.set(kd, (aggD.get(kd) || 0) + n); }
-        for (const [kk, n] of aggD) { const [unit, u3, bidang, jenis, fas, sub, eq, cause, ps] = kk.split('\u0001'); gdp.push({ UNIT: unit, UP3: u3, BULAN_NO: m, BIDANG: bidang, JENIS_PADAM: jenis, FASILITAS: fas, SUB_FASILITAS: sub, EQUIPMENT: eq, CAUSE: cause, PS: ps, JUMLAH: n }); } }
+      if (apkt.hasDupont && p.dupont) { const aggD = new Map(); // baris dupont: [unit, ulp, bidang, jenis, fas, sub, eq, cause, ps, jumlah, jam] (format lama tanpa ps/jam tetap dibaca)
+        const lama = !!apkt.hasLama;
+        for (const d of p.dupont) { const n11 = d.length >= 11; const n = n11 ? d[9] : d[d.length - 1]; const jam = n11 ? Number(d[10]) || 0 : 0; const [unit, ulp, bidang, jenis, fas, sub, eq, cause] = d; const ps = d.length > 9 ? psKey(d[8]) || '' : ''; const kd = [unit, namer(unit, ulp), bidang, jenis, fas, sub, eq, cause, ps].join('\u0001'); const o = aggD.get(kd) || [0, 0]; o[0] += n; o[1] += jam; aggD.set(kd, o); }
+        for (const [kk, o] of aggD) { const [unit, u3, bidang, jenis, fas, sub, eq, cause, ps] = kk.split('\u0001'); gdp.push({ UNIT: unit, UP3: u3, BULAN_NO: m, BIDANG: bidang, JENIS_PADAM: jenis, FASILITAS: fas, SUB_FASILITAS: sub, EQUIPMENT: eq, CAUSE: cause, PS: ps, JUMLAH: o[0], JAM: lama ? Math.round(o[1] * 100) / 100 : '' }); } }
       for (const [kk, n] of aggS) { const [kode, bidang, unit, u3, ps] = kk.split('\u0001'); gps.push({ KODE: kode, BIDANG: bidang, UNIT: unit, UP3: u3, BULAN_NO: m, PS: ps, JUMLAH: n }); }
       for (const [kk, n] of aggP) { const [u3, peny, jenis, ps, kode, bidang, ulpN] = kk.split('\u0001'); pb.push({ up3: u3, penyulang: peny, bulan: m, jenis_padam: jenis, ps, kode, bidang, kali: n, ulp: ulpN }); }
     }
@@ -375,7 +377,7 @@ const SSUP = (() => {
     peny_bulanan: ['up3', 'penyulang', 'bulan', 'jenis_padam', 'ps', 'kode', 'bidang', 'kali', 'ulp'],
     peny_profil: ['up3', 'uid', 'penyulang', 'ulp', 'jenis', 'tipe', 'kepemilikan', 'status', 'tahun_buat', 'lat', 'lon', 'di_database'],
     gangguan_ps: ['KODE', 'BIDANG', 'UNIT', 'UP3', 'BULAN_NO', 'PS', 'JUMLAH'],
-    gangguan_dupont: ['UNIT', 'UP3', 'BULAN_NO', 'BIDANG', 'JENIS_PADAM', 'FASILITAS', 'SUB_FASILITAS', 'EQUIPMENT', 'CAUSE', 'PS', 'JUMLAH'],
+    gangguan_dupont: ['UNIT', 'UP3', 'BULAN_NO', 'BIDANG', 'JENIS_PADAM', 'FASILITAS', 'SUB_FASILITAS', 'EQUIPMENT', 'CAUSE', 'PS', 'JUMLAH', 'JAM'],
     kc_bulanan: ['UID', 'UP3', 'KODE', 'JENIS', 'BULAN_NO', 'JUMLAH'],
   };
   return { kcParse, parseLaporan, unitsFrom, matchUnit, saidiMerge, gangguanMerge, parsePenyulangDb, penyulangMerge, toCSV, asText, COLS, C, BULAN, k };
