@@ -212,6 +212,11 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 .dp-tx { display: grid; gap: 2px; min-width: 0; }
 .dp-tx b { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: inherit; }
 .dp-tx span { font-size: 11px; white-space: nowrap; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+.dp-tree.has-jam .dp-node { height: 68px; }
+.dp-tree.has-jam .dp-col { padding-top: calc(var(--dp-off, 0) * 76px); }
+.dp-tx span.dp-jam { color: #0B6E79; font-weight: 600; }
+.dp-root .dp-tx span.dp-jam { color: #8FE3EA; }
+.dp-node.on .dp-tx span.dp-jam { color: #0A5A63; }
 .dp-more { font-size: 11.5px; color: var(--color-fg-muted); padding: 2px 4px; }
 .rk-table th, .rk-table td { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .rk-table th:nth-child(-n+3), .rk-table td.rk-no, .rk-table td.rk-kpi, .rk-table td.rk-item { text-align: left; }
@@ -2888,7 +2893,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 })();
 </script>
 
-<script src="apkt-parser.js"></script>
+<script src="apkt-parser.js?v=20261112"></script>
 <script src="harian-detil.js?v=20261110b"></script>
 <script>
 (() => {
@@ -3077,8 +3082,8 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script>document.getElementById('g-rc-dl').addEventListener('click', () => { const c = window.SSGRc || { scope: '', per: '' }; window.SSExport({ hideCols: ['Perubahan', 'Porsi'], card: 'g-rincian-card', btn: 'g-rc-dl', msg: 'g-rc-msg', preview: 'g-rc-pv', caption: `Jumlah No. Laporan unik per bulan · ${c.scope} · ${c.per}. % Distribusi = laporan bidang Distribusi ÷ total laporan.`, filename: `Rincian_Bulanan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
 <script src="gangguan-ps-tab.js?v=20261109"></script>
 <script src="kc-tab.js"></script>
-<script src="dp-tab.js"></script>
-<script src="upd-core.js?v=20261108b"></script>
+<script src="dp-tab.js?v=20261112"></script>
+<script src="upd-core.js?v=20261112"></script>
 <script src="upd-bulanan.js?v=20261108b"></script>
 <script src="upd-aset.js"></script>
 <script src="upd-workplan.js"></script>

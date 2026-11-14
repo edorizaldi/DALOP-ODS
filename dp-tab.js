@@ -42,6 +42,8 @@
   const MAXN = 10;
   const nf = new Intl.NumberFormat('id-ID');
   const fmt = (v) => nf.format(Math.round(v));
+  // lama padam (jam): 1 desimal di bawah 100 jam, bulat di atasnya
+  const fmtJ = (v) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: v < 100 ? 1 : 0, minimumFractionDigits: v < 100 && v > 0 ? 1 : 0 }).format(v);
   const pc = (v) => new Intl.NumberFormat('id-ID', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(v);
   const uname = (u) => UNAME[u] || u;
   const nice = (s, i) => (s === '' ? '(kosong)' : i <= 1 && /^[A-Z ]+$/.test(s) ? s.charAt(0) + s.slice(1).toLowerCase() : s);
@@ -95,7 +97,7 @@
       if (D.status === 'error') { tree.replaceChildren(mk('div', 'Failed to load', 'ss-fail')); tree.classList.remove('dash-skeleton'); }
       return;
     }
-    const all0 = D.data.map((r) => ({ u: r.UNIT, p: r.UP3, m: Number(r.BULAN_NO), v: LV.map((l) => r[l.f] == null ? '' : String(r[l.f])), s: r.PS ? String(r.PS) : '', n: Number(r.JUMLAH) }));
+    const all0 = D.data.map((r) => ({ u: r.UNIT, p: r.UP3, m: Number(r.BULAN_NO), v: LV.map((l) => r[l.f] == null ? '' : String(r[l.f])), s: r.PS ? String(r.PS) : '', n: Number(r.JUMLAH), j: r.JAM == null || r.JAM === '' ? null : Number(r.JAM) }));
     // bidang: bawaan Distribusi (sama dengan slide Penyebab gangguan penyulang di Desain Paparan); Semua = Distribusi + Transmisi + Pembangkit
     const bids = BID.filter(([k]) => k === 'ALL' || all0.some((r) => r.v[0] === k));
     const Pb = dash.params().dp_bidang;
@@ -125,19 +127,25 @@
     const nk = [bid, sel.u, sel.p, sel.m].join('|'); if (nk !== fkey) { fkey = nk; path = []; }
     const rows = all.filter((r) => (!sel.u || r.u === sel.u) && (!sel.p || r.p === sel.p) && (!sel.m || r.m === sel.m));
     const T = rows.reduce((a, r) => a + r.n, 0);
+    // lama padam (jam): hanya baris yang punya kolom JAM (diisi dari kolom LAMA PADAM (JAM) file APKT)
+    const TJ = rows.reduce((a, r) => a + (r.j || 0), 0), TJn = rows.reduce((a, r) => a + (r.j != null ? r.n : 0), 0);
+    const rMon = [...new Set(rows.map((r) => r.m))].sort((a, b) => a - b);
+    const jMon = rMon.filter((m) => rows.some((r) => r.m === m && r.j != null));
+    const hasJam = jMon.length > 0, missJ = rMon.filter((m) => !jMon.includes(m));
+    const span = (ms) => { const out = []; ms.forEach((m) => { const l = out[out.length - 1]; if (l && l[1] === m - 1) l[1] = m; else out.push([m, m]); }); return out.map(([a, b]) => (a === b ? BLN[a - 1] : BLN[a - 1] + '–' + BLN[b - 1])).join(', '); };
     const where = sel.p ? 'UP3 ' + sel.p : sel.u ? uname(sel.u) : 'Sumkal';
     const per = sel.m ? BLN[sel.m - 1] + ' 2026' : `${BS[months[0] - 1]}–${BS[months[months.length - 1] - 1]} 2026`;
 
     // susun level demi level mengikuti jalur terpilih
     const levels = []; let cur = rows;
     for (let i = 0; i < LV.length; i++) {
-      const agg = new Map(), aP = new Map(), aS = new Map();
-      cur.forEach((r) => { agg.set(r.v[i], (agg.get(r.v[i]) || 0) + r.n); if (r.s === 'Permanen') aP.set(r.v[i], (aP.get(r.v[i]) || 0) + r.n); else if (r.s === 'Sesaat') aS.set(r.v[i], (aS.get(r.v[i]) || 0) + r.n); });
+      const agg = new Map(), aP = new Map(), aS = new Map(), aJ = new Map(), aJn = new Map();
+      cur.forEach((r) => { agg.set(r.v[i], (agg.get(r.v[i]) || 0) + r.n); if (r.j != null) { aJ.set(r.v[i], (aJ.get(r.v[i]) || 0) + r.j); aJn.set(r.v[i], (aJn.get(r.v[i]) || 0) + r.n); } if (r.s === 'Permanen') aP.set(r.v[i], (aP.get(r.v[i]) || 0) + r.n); else if (r.s === 'Sesaat') aS.set(r.v[i], (aS.get(r.v[i]) || 0) + r.n); });
       const items = [...agg].sort((a, b) => b[1] - a[1]);
       if (!items.length) break;
       let pick = path[i];
       if (pick == null || !agg.has(pick)) { pick = items[0][0]; path = path.slice(0, i); path[i] = pick; }
-      levels.push({ items, pick, parentN: cur.reduce((a, r) => a + r.n, 0), aP, aS });
+      levels.push({ items, pick, parentN: cur.reduce((a, r) => a + r.n, 0), aP, aS, aJ, aJn });
       cur = cur.filter((r) => r.v[i] === pick);
     }
     path = path.slice(0, levels.length);
@@ -266,7 +274,7 @@
       }
     }
     // pohon
-    tree.classList.remove('dash-skeleton');
+    tree.classList.remove('dash-skeleton'); tree.classList.toggle('has-jam', hasJam);
     const canvas = mk('div', null, 'dp-canvas');
     const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svgEl.setAttribute('class', 'dp-links'); svgEl.setAttribute('aria-hidden', 'true');
     canvas.append(svgEl);
@@ -275,6 +283,7 @@
     const root = mk('div', null, 'dp-node dp-root');
     const ri = mk('span', null, 'dp-ic'); ri.append(icon(ROOTICON));
     const rt = mk('div', null, 'dp-tx'); rt.append(mk('b', 'Gangguan kode J'), mk('span', `${fmt(T)} · 100%`));
+    if (hasJam) rt.append(mk('span', `${fmtJ(TJ)} jam padam`, 'dp-jam'));
     root.append(ri, rt); rootCol.append(root); canvas.append(rootCol);
     const heads = mk('div', null, 'dp-heads'); heads.append(mk('span', 'Total'));
     let offset = 0; // baris awal kolom = posisi node terpilih di kolom sebelumnya
@@ -289,9 +298,10 @@
         const b = mk('button', null, 'dp-node' + (on ? ' on' : '')); b.type = 'button';
         b.setAttribute('aria-pressed', String(on));
         const nP = l.aP.get(k) || 0, nS = l.aS.get(k) || 0;
-        b.title = `${LV[i].name}: ${nice(k, i)}\n${fmt(n)} gangguan kode J\n${pc(n / Math.max(1, T))} dari total kode J · ${pc(n / Math.max(1, l.parentN))} dari level sebelumnya` + (hasPS ? `\nPermanen ${fmt(nP)} · Sesaat ${fmt(nS)}` : '');
+        b.title = `${LV[i].name}: ${nice(k, i)}\n${fmt(n)} gangguan kode J\n${pc(n / Math.max(1, T))} dari total kode J · ${pc(n / Math.max(1, l.parentN))} dari level sebelumnya` + (hasPS ? `\nPermanen ${fmt(nP)} · Sesaat ${fmt(nS)}` : '') + (hasJam ? `\nLama padam ${fmtJ(l.aJ.get(k) || 0)} jam` + ((l.aJn.get(k) || 0) ? ` · rata-rata ${fmtJ((l.aJ.get(k) || 0) / l.aJn.get(k))} jam per gangguan` : '') + (missJ.length ? ` (tanpa ${span(missJ)})` : '') : '');
         const ic = mk('span', null, 'dp-ic'); ic.append(icon(i === 5 ? causeIcon(k) : ICON[i]));
         const tx = mk('div', null, 'dp-tx'); tx.append(mk('b', nice(k, i)), mk('span', `${fmt(n)} · ${pc(n / Math.max(1, T))}`));
+        if (hasJam) tx.append(mk('span', `${fmtJ(l.aJ.get(k) || 0)} jam padam`, 'dp-jam'));
         if (hasPS && i === 5) { const ps = mk('span', null, 'dp-ps'); const pp = (nP + nS) ? Math.round(nP / (nP + nS) * 100) : 0; ps.append(mk('i', 'P'), ` ${pp}%  `, mk('i', 'S', 'dp-ps-s'), ` ${(nP + nS) ? 100 - pp : 0}%`); ps.title = `Permanen ${fmt(nP)} · Sesaat ${fmt(nS)}`; tx.append(ps); }
         b.append(ic, tx);
         b.addEventListener('click', () => { path = path.slice(0, i); path[i] = k; redraw(); });
@@ -303,7 +313,8 @@
     });
     const wrap = mk('div', null, 'dp-scroll'); wrap.style.setProperty('--dp-n', levels.length + 1); wrap.append(heads, canvas);
     tree.replaceChildren(wrap);
-    $('dp-path').textContent = levels.length ? 'Jalur terpilih: ' + ['Gangguan kode J', ...levels.map((l) => nice(l.pick, levels.indexOf(l)))].join(' → ') + '. Klik kotak lain untuk membuka cabangnya.' : '';
+    $('dp-path').textContent = (levels.length ? 'Jalur terpilih: ' + ['Gangguan kode J', ...levels.map((l) => nice(l.pick, levels.indexOf(l)))].join(' → ') + '. Klik kotak lain untuk membuka cabangnya.' : '')
+      + (hasJam ? ` Tiap kotak: jumlah gangguan · porsi dari total, lalu lama padam (jam) dari kolom LAMA PADAM (JAM) file APKT.${missJ.length ? ` Lama padam ${span(missJ)} 2026 belum tersedia, jadi jam hanya dari ${span(jMon)}; unggah ulang file APKT bulan itu di Update Data Bulanan untuk melengkapinya.` : ''}` : rows.length ? ' Lama padam (jam) belum tersedia untuk pilihan ini; unggah ulang file APKT di Update Data Bulanan untuk mengisinya.' : '');
     requestAnimationFrame(drawLinks);
     psTable(rows, levels, where, per, hasPS);
   };
