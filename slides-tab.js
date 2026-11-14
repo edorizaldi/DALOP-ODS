@@ -7,6 +7,7 @@
   const PPTX_URL = 'https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js';
   const JSZIP_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
   const CFG = 'paparan.json', DIR = 'paparan/', MAX_MB = 15;
+  const CORE_JS = 'slides-core.js?v=20261112b', THUMBS_JS = 'slides-thumbs.js?v=20261112b';
   const SETS = ['kumulatif', 'bulanan', 'target', 'gangguan_ps', 'kc_bulanan', 'gangguan_dupont', 'workplan', 'info_update'];
   const CORE = [
     ['Kinerja SAIDI per UID', 'Peta UID, target dan realisasi s.d. cutoff, rekap Sumkal, tren kumulatif.'],
@@ -16,6 +17,8 @@
     ['Jumlah kali gangguan penyulang', 'Permanen, sesaat, cleansing dan koreksi (kode J) per bulan dan per UID.'],
     ['Penyebab gangguan penyulang', 'Rincian penyebab, komposisi, Dalam Investigasi per UID, insight.'],
     ['Realisasi Action Plan (Workplan Keandalan)', '5 program action plan Sumkal dan tabel target, realisasi, capaian per unit induk.'],
+    ['Kondisi kelistrikan sistem grid', 'Tab Kondisi Sistem: DMP, beban puncak, cadangan dan status 4 sistem grid pada tanggal terakhir yang terisi, peta status, monitoring sistem siaga dan defisit.'],
+    ['Kondisi kelistrikan sistem isolated', 'Tab Kondisi Sistem: jumlah sistem isolated, jam nyala, status, DMP/BP/cadangan per unit induk pada tanggal terakhir yang terisi, peta status, monitoring sistem isolated siaga dan defisit.'],
   ];
   const DEFAULT = () => CORE.map((_, i) => ({ k: 'core', n: i + 1 }));
   let cutoff = null, busy = false, cat = null, D0 = null;
@@ -66,7 +69,7 @@
     const D = {}; let ok = true;
     SETS.forEach((k) => { const r = SSD.data(k); if (r.status !== 'ok') ok = false; else D[k] = r.data; });
     if (!ok) return;
-    if (!window.SSSlides) { load('slides-core.js', () => !!window.SSSlides).then(renderMonths).catch((e) => msg('sl-msg', 'Tidak bisa memuat penyusun slide: ' + e.message, 'bad')); return; }
+    if (!window.SSSlides) { load(CORE_JS, () => !!window.SSSlides).then(renderMonths).catch((e) => msg('sl-msg', 'Tidak bisa memuat penyusun slide: ' + e.message, 'bad')); return; }
     D0 = D;
     const mo = window.SSSlides.months(D);
     const opts = []; for (let m = 2; m <= mo.max; m++) opts.push(m);
@@ -86,7 +89,7 @@
   const thumbIO = window.IntersectionObserver ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { thumbIO.unobserve(e.target); fillThumb(e.target); } })) : null;
   function fillThumb(box) {
     const it = items.find((x) => x._id === box.dataset.id); if (!it || box.querySelector('img')) return;
-    if (it.k === 'core') load('slides-thumbs.js', () => !!window.SS_SLIDE_THUMBS).then(() => { const im = new Image(); im.alt = ''; im.src = window.SS_SLIDE_THUMBS[it.n - 1]; box.append(im); }).catch(() => {});
+    if (it.k === 'core') load(THUMBS_JS, () => !!window.SS_SLIDE_THUMBS).then(() => { const src = window.SS_SLIDE_THUMBS[it.n - 1]; if (!src) { box.append(el('span', 'sl-th-txt', CORE[it.n - 1][0])); return; } const im = new Image(); im.alt = ''; im.src = src; box.append(im); }).catch(() => {});
     else if (it.k === 'img') fileBlob(it).then((b) => { const im = new Image(); im.alt = ''; im.src = URL.createObjectURL(b); box.append(im); }).catch(() => box.append(el('span', 'sl-th-txt', 'Gambar belum bisa dimuat')));
   }
   function describe(it) {
@@ -301,7 +304,7 @@
       msg('sl-msg', 'Memuat pembuat PowerPoint…');
       const hasP = items.some((x) => x.k === 'pptx');
       await load(PPTX_URL, () => !!window.PptxGenJS);
-      await load('slides-core.js', () => !!window.SSSlides);
+      await load(CORE_JS, () => !!window.SSSlides);
       await load('slides-assets.js', () => !!window.SS_SLIDE_ASSETS);
       if (items.some((x) => x.k === 'core' && x.n === 7)) await load('workplan-assets.js', () => !!window.SS_WP_ASSETS);
       if (hasP) { await load(JSZIP_URL, () => !!window.JSZip); await load('slides-merge.js', () => !!window.SSPptxMerge); await load('slides-data.js', () => !!window.SSSlidesData); if (!cat || cat.m !== cutoff || cat.k !== !!kondisiData()) { cat = window.SSSlidesData.catalog(D0, cutoff, kondisiData()); cat.m = cutoff; cat.k = !!kondisiData(); } }
@@ -321,7 +324,7 @@
       }
       msg('sl-msg', `Menyusun ${items.length} slide…`);
       const D = {}; SETS.forEach((k) => { D[k] = SSD.data(k).data; });
-      const pres = await window.SSSlides.build(window.PptxGenJS, D, cutoff, { ...window.SS_SLIDE_ASSETS, wp: window.SS_WP_ASSETS }, plan);
+      const KD = kondisiData(); const pres = await window.SSSlides.build(window.PptxGenJS, D, cutoff, { ...window.SS_SLIDE_ASSETS, wp: window.SS_WP_ASSETS, kondisi: KD ? { ...KD, map: (window.__D || {}).kondisi_map } : null }, plan);
       let blob;
       if (fills.length) blob = await window.SSPptxMerge.merge(window.JSZip, await pres.write({ outputType: 'arraybuffer' }), fills);
       else blob = await pres.write({ outputType: 'blob' });
