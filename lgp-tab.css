@@ -1,0 +1,57 @@
+/* Tab Laporan Gangguan Penyulang (menu Harian): unggah laporan harian WAG per UID, rekap kumulatif dari unggahan */
+#lgp .lgp-hero { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
+#lgp .lgp-today { position: relative; z-index: 1; display: grid; gap: 8px; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); }
+#lgp .lgp-today-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+#lgp .lgp-today-h b { font-size: var(--cds-font-size-body); }
+#lgp .lgp-today-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 14px; }
+#lgp .lgp-today-list button { all: unset; box-sizing: border-box; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 2px; border-bottom: 1px solid var(--color-border-line); font-size: var(--cds-font-size-caption); }
+#lgp .lgp-today-list button:hover b, #lgp .lgp-today-list button:focus-visible b { text-decoration: underline; text-underline-offset: 3px; }
+#lgp .lgp-today-list button:focus-visible { outline: 2px solid var(--x-olive); outline-offset: 2px; }
+#lgp .lgp-st { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+#lgp .lgp-st.ok { background: color-mix(in srgb, var(--color-ok) 14%, transparent); color: var(--color-ok); }
+#lgp .lgp-st.no { background: color-mix(in srgb, var(--color-fg) 7%, transparent); color: var(--color-fg-muted); }
+#lgp .lgp-st.k { background: color-mix(in srgb, #B3261E 14%, transparent); color: #B3261E; }
+#lgp .lgp-st.w { background: color-mix(in srgb, #E9A23B 22%, transparent); color: #7A4A00; }
+@media (max-width: 52rem) { #lgp .lgp-hero { grid-template-columns: 1fr; } }
+@media (max-width: 30rem) { #lgp .lgp-today-list { grid-template-columns: 1fr; } }
+/* matriks status unggah UID × tanggal */
+#lgp .lgp-mx { border-collapse: separate; border-spacing: 3px; font-size: 11px; }
+#lgp .lgp-mx th { font-weight: 500; color: var(--color-fg-muted); text-align: center; padding: 0 0 2px; }
+#lgp .lgp-mx th.u { text-align: right; padding-right: 8px; color: var(--color-fg); font-weight: 600; white-space: nowrap; font-size: var(--cds-font-size-caption); }
+#lgp .lgp-mx td { padding: 0; }
+#lgp .lgp-mx td.n { padding-left: 8px; color: var(--color-fg-muted); white-space: nowrap; }
+#lgp .lgp-cell { all: unset; box-sizing: border-box; display: block; width: 24px; height: 22px; border-radius: 5px; border: 1px solid var(--color-border-line); background: color-mix(in srgb, var(--color-fg) 4%, transparent); cursor: pointer; }
+#lgp .lgp-cell.has { background: var(--x-olive, #4C6E1A); border-color: var(--x-olive, #4C6E1A); }
+#lgp .lgp-cell.has.p { background: #B3261E; border-color: #B3261E; }
+#lgp .lgp-cell.fut { opacity: .35; cursor: default; }
+#lgp .lgp-cell:focus-visible { outline: 2px solid var(--x-olive); outline-offset: 1px; }
+#lgp .lgp-sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; border: 1px solid var(--color-border-line); }
+/* tabel */
+#lgp .lgp-table td.l, #lgp .lgp-table th.l { text-align: left; }
+#lgp .lgp-table td.wrap { white-space: normal; min-width: 12rem; }
+#lgp .lgp-table td b { font-weight: 600; color: var(--color-fg); }
+#lgp .lgp-table tr.lgp-click { cursor: pointer; }
+#lgp .lgp-table .k { color: #B3261E; font-weight: 600; } #lgp .lgp-table .s { color: #A86A00; font-weight: 600; }
+#lgp .lgp-bar { display: flex; align-items: center; gap: 6px; min-width: 120px; }
+#lgp .lgp-bar i { display: block; height: 8px; border-radius: 4px; background: #B3261E; }
+#lgp .lgp-empty { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); padding: 10px 0; margin: 0; }
+#lgp .lgp-search { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 999px; padding: 5px 14px; min-width: 16rem; }
+#lgp .lgp-search:focus-visible { outline: 2px solid var(--x-olive); outline-offset: 2px; }
+#lgp .lgp-more { justify-self: start; }
+/* unggah */
+#lgp .lgp-text { width: 100%; box-sizing: border-box; min-height: 180px; resize: vertical; font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 10px; padding: 10px 12px; }
+#lgp .lgp-text:focus-visible { outline: 2px solid var(--x-olive); outline-offset: 2px; }
+#lgp .lgp-preset { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; }
+#lgp .lgp-fld { display: grid; gap: 4px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+#lgp .lgp-fld input, #lgp .lgp-fld select { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 8px; padding: 6px 10px; }
+#lgp .lgp-q { display: grid; gap: 10px; }
+#lgp .lgp-qi { border: 1px solid var(--color-border-line); border-radius: 10px; padding: 12px; display: grid; gap: 8px; background: var(--color-panel); }
+#lgp .lgp-qh { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: end; justify-content: space-between; }
+#lgp .lgp-warn { margin: 0; padding-left: 18px; font-size: var(--cds-font-size-caption); color: #8A5A00; }
+#lgp .lgp-kv { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+#lgp .lgp-kv b { font-size: var(--cds-font-size-body); color: var(--color-fg); }
+#lgp-up-msg.bad { color: var(--color-bad); font-weight: 600; }
+/* detail laporan */
+.lgp-back { position: fixed; inset: 0; background: #0f2a4a66; z-index: 90; display: flex; justify-content: center; align-items: flex-start; padding: 32px 12px; overflow: auto; }
+.lgp-dlg { background: var(--color-panel, #fff); color: var(--color-fg); border-radius: 14px; box-shadow: 0 12px 40px #0003; width: min(860px, 100%); padding: 20px; display: grid; gap: 12px; font-family: var(--font-anthropic-sans); }
+.lgp-dlg h3 { margin: 0; font-size: var(--cds-font-size-heading); font-weight: 600; }
