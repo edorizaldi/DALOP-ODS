@@ -1554,13 +1554,14 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="ss-chart dash-skeleton" id="lgp-trend"></div>
       </div>
       <div class="ss-card">
-        <h3>Temuan / penyebab gangguan permanen</h3>
+        <h3>Temuan / penyebab gangguan</h3>
+        <p class="ss-note">Dari daftar penyulang padam pada laporan (permanen dan sesaat).</p>
         <div class="ss-g-wrap gx-scroll"><table class="ss-table lgp-table" id="lgp-cause"></table></div>
       </div>
     </div>
     <div class="ss-card" id="lgp-kronis-card">
       <h3>Penyulang kronis</h3>
-      <p class="ss-note">Hitungan dashboard: penyulang yang padam permanen lebih dari 6 kali dalam satu bulan (Kronis), atau 4–6 kali (Waspada), dari daftar penyulang padam yang diunggah. Akurat bila laporan harian sebulan lengkap.</p>
+      <p class="ss-note">Hitungan dashboard: penyulang yang padam permanen lebih dari 6 kali dalam satu bulan (Kronis), atau 4–6 kali (Waspada), dari daftar penyulang padam yang diunggah. Hanya baris berjenis permanen yang dihitung; bila jenisnya tidak ditulis, jenis disimpulkan dari angka harian (mis. harian 0 permanen berarti semua sesaat). Akurat bila laporan harian sebulan lengkap.</p>
       <p class="ss-note" id="lgp-kronis-note"></p>
       <div class="ss-g-wrap gx-scroll"><table class="ss-table lgp-table" id="lgp-kronis"></table></div>
       <h3 style="margin-top:8px">Penyulang kronis sesuai laporan UID</h3>
@@ -3161,7 +3162,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script>document.getElementById('g-mx-dl').addEventListener('click', () => { const c = window.SSGRc || { per: '' }; window.SSExport({ card: 'g-matriks-card', btn: 'g-mx-dl', msg: 'g-mx-msg', preview: 'g-mx-pv', filename: `Matriks_Unit_x_Bulan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
 <script>document.getElementById('g-rc-dl').addEventListener('click', () => { const c = window.SSGRc || { scope: '', per: '' }; window.SSExport({ hideCols: ['Perubahan', 'Porsi'], card: 'g-rincian-card', btn: 'g-rc-dl', msg: 'g-rc-msg', preview: 'g-rc-pv', caption: `Jumlah No. Laporan unik per bulan · ${c.scope} · ${c.per}. % Distribusi = laporan bidang Distribusi ÷ total laporan.`, filename: `Rincian_Bulanan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
 <script src="gangguan-ps-tab.js?v=20261109"></script>
-<script src="lgp-tab.js?v=20261115"></script>
+<script src="lgp-tab.js?v=20261115b"></script>
 <script src="kc-tab.js"></script>
 <script src="dp-tab.js?v=20261112"></script>
 <script src="upd-core.js?v=20261112"></script>

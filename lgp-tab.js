@@ -50,8 +50,36 @@ function splitReports(text){
 
 function rowFields(line){
   const m = line.match(/^\s*(\d+)\s*[.)]\s+(.+)$/);
-  if(!m || m[2].indexOf("|")<0) return null;
-  return m[2].split("|").map(s=>s.trim());
+  if(!m) return null;
+  const body = m[2].replace(/\t/g," ").trim();
+  if(body.indexOf("|")>=0) return {pipe:true, f:body.split("|").map(s=>s.trim())};
+  const f = body.split(/\s*[,;]\s*/).map(s=>s.trim()).filter(Boolean);
+  return f.length>=2 ? {pipe:false, f} : null;
+}
+const isJenis = s => /^(gangguan\s+)?(permanen|sesaat)$/i.test(String(s||"").trim());
+const stripPfx = (s, re) => String(s||"").replace(re,"").trim();
+// pisahkan kolom: dengan "|" berurutan (Penyulang | ULP | UP3 | Jenis | Penyebab | Zona);
+// dengan koma dikenali dari awalan (ULP ..., UP3 ..., Permanen/Sesaat), sisanya penyebab
+function padamFields(r){
+  const f=r.f;
+  if(r.pipe){ return {penyulang:stripPfx(f[0],/^penyulang\s+/i), ulp:f[1]||"", up3:stripPfx(f[2],/^UP3\s+/i), jenis:(f[3]||"").toUpperCase().replace(/^GANGGUAN\s+/,""), penyebab:f[4]||"", zona:f.slice(5).join(" | ")}; }
+  const o={penyulang:stripPfx(f[0],/^penyulang\s+/i), ulp:"", up3:"", jenis:"", penyebab:"", zona:""}; const rest=[];
+  for(const x of f.slice(1)){
+    if(!o.ulp && /^ULP\b/i.test(x)) o.ulp=x;
+    else if(!o.up3 && /^UP3\b/i.test(x)) o.up3=stripPfx(x,/^UP3\s+/i);
+    else if(!o.jenis && isJenis(x)) o.jenis=x.toUpperCase().replace(/^GANGGUAN\s+/,"");
+    else if(!o.zona && /^Z\d+$/i.test(x)) o.zona=x.toUpperCase();
+    else rest.push(x);
+  }
+  o.penyebab=rest.join(", "); return o;
+}
+function kronisFields(r){
+  const f=r.f; let pen=f[0], ulp="", up3="", tot=f[f.length-1];
+  if(r.pipe){ ulp=f[1]||""; up3=f[2]||""; tot=f[3]||""; }
+  else for(const x of f.slice(1,-1)){ if(!ulp && /^ULP\b/i.test(x)) ulp=x; else if(!up3 && /^UP3\b/i.test(x)) up3=x; }
+  const nums=String(tot||"").match(/\d[\d.]*/g)||[]; const n=nums.map(toNum);
+  const pair=/\d\s*\/\s*\d/.test(tot||"");
+  return {penyulang:stripPfx(pen,/^penyulang\s+/i), ulp, up3:stripPfx(up3,/^UP3\s+/i), total: pair ? (n[0]||0)+(n[1]||0) : (n.length?n[0]:null), totalP: pair?n[0]:null, totalS: pair?n[1]:null};
 }
 
 function parseReport(raw){
@@ -62,15 +90,15 @@ function parseReport(raw){
 
   // UID
   let uid = null;
-  for(const l of lines){ const m = l.match(/PLN\s+UID\s*:\s*(.+)$/i); if(m){ uid = matchUid(m[1]); if(uid) break; } }
-  if(!uid){ for(const l of lines){ const m = l.match(/(?:Rekap\s+PLN\s+UID|Harian\s+UID|PLN\s+UID)\s+(?!se[-\s])(.+)$/i); if(m){ uid = matchUid(m[1]); if(uid) break; } } }
+  for(const l of lines){ const m = l.match(/PLN\s+UI[DW]\s*:\s*(.+)$/i); if(m){ uid = matchUid(m[1]); if(uid) break; } }
+  if(!uid){ for(const l of lines){ const m = l.match(/(?:Rekap\s+PLN\s+UI[DW]|Harian\s+UI[DW]|PLN\s+UI[DW])\s+(?!se[-\s])(.+)$/i); if(m){ uid = matchUid(m[1]); if(uid) break; } } }
 
   // Date
   let tanggal = null, tanggalTeks = "";
   const ti = find(/^\s*Tanggal\s*:/i);
   if(ti>=0){ tanggalTeks = lines[ti].replace(/^\s*Tanggal\s*:\s*/i,"").trim(); tanggal = parseDate(tanggalTeks); }
 
-  const iRekap = find(/Rekap\s+PLN\s+UID/i);
+  const iRekap = find(/Rekap\s+PLN\s+UI[DW]/i);
   const iUp3 = find(/Rekap\s+per\s+UP3/i);
   const iPadam = find(/DAFTAR\s+PENYULANG\s+PADAM/i);
   const iKronis = find(/DAFTAR\s+PENYULANG\s+KRONIS/i);
@@ -99,25 +127,33 @@ function parseReport(raw){
   // Penyulang padam
   const padam = [];
   for(const l of range(iPadam, firstAfter(iPadam,iKronis))){
-    const f = rowFields(l); if(!f) continue;
-    padam.push({penyulang:f[0]||"", ulp:f[1]||"", up3:f[2]||"", jenis:(f[3]||"").toUpperCase(), penyebab:f[4]||"", zona:f.slice(5).join(" | ")});
+    const r = rowFields(l); if(!r) continue;
+    padam.push(padamFields(r));
   }
 
   // Kronis
   let kronisJumlah = null; const kronis = [];
   const kr = range(iKronis, iEnd);
   for(const l of kr){
-    const m = l.match(/sebanyak\s*:?\s*([\d.,]+)\s*penyulang/i);
-    if(m && kronisJumlah===null) kronisJumlah = toNum(m[1]);
-    const f = rowFields(l); if(!f) continue;
-    kronis.push({penyulang:f[0]||"", ulp:f[1]||"", up3:f[2]||"", total:toNum(f[3])});
+    const m = l.match(/sebanyak\s*:?\s*([\d.,]+|nihil|tidak\s+ada)\s*(?:penyulang)?/i);
+    if(m && kronisJumlah===null) kronisJumlah = /\d/.test(m[1]) ? toNum(m[1]) : 0;
+    const r = rowFields(l); if(!r) continue;
+    kronis.push(kronisFields(r));
   }
 
   if(!uid) warnings.push("UID tidak terbaca dari teks. Pilih UID secara manual.");
   if(!tanggal) warnings.push("Tanggal laporan tidak terbaca. Isi tanggal secara manual.");
   if(kumP===null || harP===null) warnings.push("Angka Rekap PLN UID (kumulatif/harian) tidak lengkap.");
   if(iPadam<0) warnings.push("Bagian Daftar Penyulang Padam tidak ditemukan.");
-  if(harP!==null && iPadam>=0 && padam.length!==harP) warnings.push(`Gangguan permanen harian tertulis ${harP}, tetapi daftar penyulang padam berisi ${padam.length} baris.`);
+  // jenis gangguan tidak ditulis: simpulkan dari angka harian bila hanya satu jenis yang terjadi
+  const noJ = padam.filter(p=>!p.jenis);
+  if(noJ.length){
+    if(harP===0 && harS>0) noJ.forEach(p=>p.jenis="SESAAT");
+    else if(harS===0 && harP>0) noJ.forEach(p=>p.jenis="PERMANEN");
+    else warnings.push(`Jenis gangguan (permanen/sesaat) tidak ditulis untuk ${noJ.length} penyulang dan tidak bisa disimpulkan; penyulang ini tidak ikut hitungan kronis.`);
+  }
+  const nP = padam.filter(p=>/PERMANEN/.test(p.jenis)).length;
+  if(harP!==null && iPadam>=0 && nP!==harP && padam.length!==harP && padam.length!==(harP+(harS||0))) warnings.push(`Gangguan harian tertulis ${harP} permanen / ${harS} sesaat, tetapi daftar penyulang padam berisi ${padam.length} baris.`);
   if(kronisJumlah!==null && kronis.length!==kronisJumlah) warnings.push(`Jumlah penyulang kronis tertulis ${kronisJumlah}, tetapi rinciannya berisi ${kronis.length} baris.`);
 
   return {uid, tanggal, tanggalTeks, kumP, kumS, harP, harS, up3, padam, kronisJumlah, kronis, warnings, raw:String(raw||"").trim()};
@@ -153,7 +189,7 @@ const padamRows = (rs) => { const o = []; rs.forEach((r) => (r.padam || []).forE
 const norm = (s) => String(s || '').toUpperCase().replace(/\s+/g, ' ').trim();
 function kronisCalc(rs) {
   const g = {};
-  padamRows(rs).forEach((p) => { if (p.jenis && !/PERMANEN/i.test(p.jenis)) return;
+  padamRows(rs).forEach((p) => { if (!/PERMANEN/i.test(p.jenis || '')) return;
     const k = p.tanggal.slice(0, 7) + '|' + p.uid + '|' + norm(p.penyulang);
     if (!g[k]) g[k] = { bulan: p.tanggal.slice(0, 7), uid: p.uid, penyulang: p.penyulang, ulp: p.ulp, up3: p.up3, kali: 0, tgl: [] };
     g[k].kali++; g[k].tgl.push(p.tanggal); });
@@ -289,7 +325,7 @@ function paintTrend(rs) {
 function paintCause(rs) {
   const g = {}; padamRows(rs).forEach((p) => { const lab = (p.penyebab || 'Tidak disebutkan').trim(); const c = (lab.match(/^([A-Z]\d+)/) || [])[1] || lab; if (!g[c]) g[c] = { lab, n: 0 }; g[c].n++; });
   const rows = Object.values(g).sort((a, b) => b.n - a.n); const t = $('lgp-cause');
-  if (!rows.length) { t.replaceChildren(el('tbody', {}, el('tr', {}, el('td', { class: 'lgp-empty', text: 'Belum ada penyulang padam pada pilihan ini.' })))); return; }
+  if (!rows.length) { t.replaceChildren(el('tbody', {}, el('tr', {}, el('td', { class: 'lgp-empty l', text: 'Belum ada penyulang padam pada pilihan ini.' })))); return; }
   const max = rows[0].n, tot = rows.reduce((a, r) => a + r.n, 0);
   t.replaceChildren(el('thead', {}, el('tr', {}, el('th', { text: 'Temuan / penyebab' }), el('th', { text: 'Kali' }), el('th', { class: 'l', text: 'Porsi' }))),
     el('tbody', {}, rows.map((r) => el('tr', {}, el('td', { class: 'wrap', text: r.lab }), el('td', {}, el('b', { text: fmt(r.n) })),
@@ -309,20 +345,20 @@ function paintKronis(rs) {
     if (!ks.length) body.append(el('tr', {}, el('td', { class: 'l' }, el('b', { text: 'UID ' + u })), el('td', { class: 'l', text: dLabel(l.tanggal, 1) }), el('td', { text: fmt(l.kronisJumlah || 0) }),
       el('td', { class: 'l', colspan: '4' }, (l.kronisJumlah || 0) > 0 ? el('span', { class: 'lgp-st w', text: 'Rincian tidak dicantumkan di laporan' }) : el('span', { class: 'gx-zero', text: 'Tidak ada' }))));
     else ks.forEach((k, i) => body.append(el('tr', {}, el('td', { class: 'l' }, i ? '' : el('b', { text: 'UID ' + u })), el('td', { class: 'l', text: i ? '' : dLabel(l.tanggal, 1) }), el('td', { text: i ? '' : fmt(l.kronisJumlah != null ? l.kronisJumlah : ks.length) }),
-      el('td', { class: 'l' }, el('b', { text: k.penyulang })), el('td', { class: 'l', text: k.ulp }), el('td', { class: 'l', text: k.up3 }), el('td', { text: fmt(k.total) })))); });
-  r2.replaceChildren(el('thead', {}, el('tr', {}, ...['UID', 'Tanggal laporan', 'Jumlah terlapor', 'Penyulang', 'ULP', 'UP3', 'Total padam permanen'].map((h, i) => el('th', { class: [0, 1, 3, 4, 5].includes(i) ? 'l' : null, text: h })))),
+      el('td', { class: 'l' }, el('b', { text: k.penyulang })), el('td', { class: 'l', text: k.ulp }), el('td', { class: 'l', text: k.up3 }), el('td', { text: k.totalS != null ? `${fmt(k.totalP)} / ${fmt(k.totalS)}` : fmt(k.total) })))); });
+  r2.replaceChildren(el('thead', {}, el('tr', {}, ...['UID', 'Tanggal laporan', 'Jumlah terlapor', 'Penyulang', 'ULP', 'UP3', 'Total kali padam'].map((h, i) => el('th', { class: [0, 1, 3, 4, 5].includes(i) ? 'l' : null, text: h })))),
     body.children.length ? body : el('tbody', {}, el('tr', {}, el('td', { class: 'lgp-empty l', colspan: '7', text: 'Belum ada laporan.' }))));
 }
 function paintPadam(rs) {
-  const cnt = {}; padamRows(rs).forEach((p) => { const k = p.uid + '|' + norm(p.penyulang) + '|' + p.tanggal.slice(0, 7); cnt[k] = (cnt[k] || 0) + 1; });
+  const cnt = {}; padamRows(rs).forEach((p) => { if (!/PERMANEN/i.test(p.jenis || '')) return; const k = p.uid + '|' + norm(p.penyulang) + '|' + p.tanggal.slice(0, 7); cnt[k] = (cnt[k] || 0) + 1; });
   let rows = padamRows(rs).sort((a, b) => b.tanggal.localeCompare(a.tanggal) || a.uid.localeCompare(b.uid));
   if (S.search) rows = rows.filter((p) => [p.penyulang, p.ulp, p.up3, p.penyebab, p.zona, p.uid].join(' ').toLowerCase().includes(S.search));
   const lim = S.all ? rows.length : 50, t = $('lgp-padam');
-  t.replaceChildren(el('thead', {}, el('tr', {}, ...['Tanggal', 'UID', 'Nama penyulang', 'ULP', 'UP3', 'Jenis', 'Temuan / penyebab', 'Zona', 'Kali padam bulan itu'].map((h, i) => el('th', { class: i === 8 ? null : 'l', text: h })))),
-    el('tbody', {}, rows.length ? rows.slice(0, lim).map((p) => { const c = cnt[p.uid + '|' + norm(p.penyulang) + '|' + p.tanggal.slice(0, 7)] || 1;
+  t.replaceChildren(el('thead', {}, el('tr', {}, ...['Tanggal', 'UID', 'Nama penyulang', 'ULP', 'UP3', 'Jenis', 'Temuan / penyebab', 'Zona', 'Padam permanen bulan itu'].map((h, i) => el('th', { class: i === 8 ? null : 'l', text: h })))),
+    el('tbody', {}, rows.length ? rows.slice(0, lim).map((p) => { const c = cnt[p.uid + '|' + norm(p.penyulang) + '|' + p.tanggal.slice(0, 7)] || 0;
       return el('tr', {}, el('td', { class: 'l', text: dLabel(p.tanggal, 1) }), el('td', { class: 'l', text: 'UID ' + p.uid }), el('td', { class: 'l' }, el('b', { text: p.penyulang })), el('td', { class: 'l', text: p.ulp }), el('td', { class: 'l', text: p.up3 }),
-        el('td', { class: 'l' }, el('span', { class: 'lgp-st k', text: p.jenis || '–' })), el('td', { class: 'l wrap', text: p.penyebab }), el('td', { class: 'l', text: p.zona || '' }),
-        el('td', {}, el('span', { class: 'gx-pill ' + (c > 6 ? 'k' : c >= 4 ? 's' : ''), style: c >= 4 ? null : 'color:var(--color-fg);background:color-mix(in srgb,var(--color-fg) 8%,transparent)', text: fmt(c) }))); })
+        el('td', { class: 'l' }, el('span', { class: 'lgp-st ' + (/PERMANEN/.test(p.jenis || '') ? 'k' : /SESAAT/.test(p.jenis || '') ? 'w' : 'no'), text: p.jenis || 'Tidak disebut' })), el('td', { class: 'l wrap', text: p.penyebab }), el('td', { class: 'l', text: p.zona || '' }),
+        el('td', {}, c ? el('span', { class: 'gx-pill ' + (c > 6 ? 'k' : c >= 4 ? 's' : ''), style: c >= 4 ? null : 'color:var(--color-fg);background:color-mix(in srgb,var(--color-fg) 8%,transparent)', text: fmt(c) }) : el('span', { class: 'gx-zero', text: '–' }))); })
       : el('tr', {}, el('td', { class: 'lgp-empty l', colspan: '9', text: S.search ? 'Tidak ada penyulang yang cocok dengan pencarian.' : 'Belum ada penyulang padam pada pilihan ini.' }))));
   const more = $('lgp-padam-more'); more.hidden = rows.length <= lim; more.textContent = `Tampilkan semua (${fmt(rows.length)} baris)`;
   $('lgp-padam-n').textContent = rows.length ? `${fmt(Math.min(lim, rows.length))} dari ${fmt(rows.length)} baris` : '';
@@ -339,7 +375,7 @@ function detailTables(r) {
   wrap.append(el('b', { text: `Penyulang padam (${(r.padam || []).length})` }));
   if ((r.padam || []).length) wrap.append(tbl([['Penyulang', 1], ['ULP', 1], ['UP3', 1], ['Jenis', 1], ['Penyebab', 1], ['Zona', 1]], r.padam.map((p) => el('tr', {}, el('td', { class: 'l' }, el('b', { text: p.penyulang })), el('td', { class: 'l', text: p.ulp }), el('td', { class: 'l', text: p.up3 }), el('td', { class: 'l', text: p.jenis }), el('td', { class: 'l wrap', text: p.penyebab }), el('td', { class: 'l', text: p.zona })))));
   wrap.append(el('b', { text: `Penyulang kronis (${(r.kronis || []).length} baris rincian)` }));
-  if ((r.kronis || []).length) wrap.append(tbl([['Penyulang', 1], ['ULP', 1], ['UP3', 1], ['Total padam']], r.kronis.map((k) => el('tr', {}, el('td', { class: 'l' }, el('b', { text: k.penyulang })), el('td', { class: 'l', text: k.ulp }), el('td', { class: 'l', text: k.up3 }), el('td', { text: fmt(k.total) })))));
+  if ((r.kronis || []).length) wrap.append(tbl([['Penyulang', 1], ['ULP', 1], ['UP3', 1], ['Total padam']], r.kronis.map((k) => el('tr', {}, el('td', { class: 'l' }, el('b', { text: k.penyulang })), el('td', { class: 'l', text: k.ulp }), el('td', { class: 'l', text: k.up3 }), el('td', { text: k.totalS != null ? `${fmt(k.totalP)} / ${fmt(k.totalS)}` : fmt(k.total) })))));
   else if ((r.kronisJumlah || 0) > 0) wrap.append(el('p', { class: 'ss-note', text: `Laporan menyebut ${r.kronisJumlah} penyulang kronis tanpa rincian.` }));
   return wrap;
 }
@@ -445,8 +481,8 @@ $('lgp-btn-xlsx').addEventListener('click', async () => {
     add('Harian', [['Tanggal', 'UID', 'Kumulatif permanen', 'Kumulatif sesaat', 'Harian permanen', 'Harian sesaat'], ...rs.map((r) => [r.tanggal, 'UID ' + r.uid, r.kumP, r.kumS, r.harP, r.harS])]);
     const up = [['Tanggal', 'UID', 'UP3', 'Kumulatif permanen', 'Kumulatif sesaat', 'Harian permanen', 'Harian sesaat']]; rs.forEach((r) => (r.up3 || []).forEach((u) => up.push([r.tanggal, 'UID ' + r.uid, u.nama, u.kumP, u.kumS, u.harP, u.harS]))); add('Rekap UP3', up);
     add('Penyulang Padam', [['Tanggal', 'UID', 'Nama Penyulang', 'ULP', 'UP3', 'Jenis Gangguan', 'Temuan/Penyebab Gangguan', 'Zona'], ...padamRows(rs).map((p) => [p.tanggal, 'UID ' + p.uid, p.penyulang, p.ulp, p.up3, p.jenis, p.penyebab, p.zona])]);
-    const kr = [['Tanggal laporan', 'UID', 'Jumlah kronis terlapor', 'Nama Penyulang', 'ULP', 'UP3', 'Total Kali Padam Permanen']];
-    rs.forEach((r) => { if ((r.kronis || []).length) r.kronis.forEach((k) => kr.push([r.tanggal, 'UID ' + r.uid, r.kronisJumlah, k.penyulang, k.ulp, k.up3, k.total])); else kr.push([r.tanggal, 'UID ' + r.uid, r.kronisJumlah || 0, (r.kronisJumlah || 0) > 0 ? '(rincian tidak dicantumkan)' : '', '', '', '']); });
+    const kr = [['Tanggal laporan', 'UID', 'Jumlah kronis terlapor', 'Nama Penyulang', 'ULP', 'UP3', 'Total Kali Padam']];
+    rs.forEach((r) => { if ((r.kronis || []).length) r.kronis.forEach((k) => kr.push([r.tanggal, 'UID ' + r.uid, r.kronisJumlah, k.penyulang, k.ulp, k.up3, k.totalS != null ? `${k.totalP} / ${k.totalS}` : k.total])); else kr.push([r.tanggal, 'UID ' + r.uid, r.kronisJumlah || 0, (r.kronisJumlah || 0) > 0 ? '(rincian tidak dicantumkan)' : '', '', '', '']); });
     add('Kronis Terlapor', kr);
     add('Kronis Hitungan', [['Bulan', 'UID', 'Nama Penyulang', 'ULP', 'UP3', 'Kali padam permanen', 'Tanggal padam'], ...kc.map((k) => [k.bulan, 'UID ' + k.uid, k.penyulang, k.ulp, k.up3, k.kali, k.tgl.join(', ')])]);
     const data = X.write(wb, { type: 'array', bookType: 'xlsx' });
