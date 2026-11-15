@@ -19,7 +19,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261109">
 <link rel="stylesheet" href="hi-tab.css?v=20261110y">
 <link rel="stylesheet" href="acct.css">
-<link rel="stylesheet" href="lgp-tab.css?v=20261115">
+<link rel="stylesheet" href="lgp-tab.css?v=20261115d">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
@@ -3162,7 +3162,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script>document.getElementById('g-mx-dl').addEventListener('click', () => { const c = window.SSGRc || { per: '' }; window.SSExport({ card: 'g-matriks-card', btn: 'g-mx-dl', msg: 'g-mx-msg', preview: 'g-mx-pv', filename: `Matriks_Unit_x_Bulan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
 <script>document.getElementById('g-rc-dl').addEventListener('click', () => { const c = window.SSGRc || { scope: '', per: '' }; window.SSExport({ hideCols: ['Perubahan', 'Porsi'], card: 'g-rincian-card', btn: 'g-rc-dl', msg: 'g-rc-msg', preview: 'g-rc-pv', caption: `Jumlah No. Laporan unik per bulan · ${c.scope} · ${c.per}. % Distribusi = laporan bidang Distribusi ÷ total laporan.`, filename: `Rincian_Bulanan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
 <script src="gangguan-ps-tab.js?v=20261109"></script>
-<script src="lgp-tab.js?v=20261115c"></script>
+<script src="lgp-tab.js?v=20261115d"></script>
 <script src="kc-tab.js"></script>
 <script src="dp-tab.js?v=20261112"></script>
 <script src="upd-core.js?v=20261112"></script>

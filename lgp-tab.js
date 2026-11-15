@@ -48,6 +48,21 @@ function splitReports(text){
   return parts.length ? parts : [String(text||"").trim()];
 }
 
+// ambil pasangan angka permanen / sesaat dari "92 / 546" atau "Permanen 15087 Kali / Sesaat 9797 Kali" (angka kosong = 0)
+function pairFrom(text){
+  const t=String(text||"");
+  const p=t.match(/Permanen\s*:?\s*([\d.,]*)/i), s=t.match(/Sesaat\s*:?\s*([\d.,]*)/i);
+  if(p||s){ const a=p?toNum(p[1]):null, b=s?toNum(s[1]):null; return [a==null?0:a, b==null?0:b]; }
+  const m=t.match(/([\d.,]+)\s*(?:kali)?\s*\/\s*([\d.,]+)/i);
+  return m ? [toNum(m[1]), toNum(m[2])] : null;
+}
+// "Kumulatif ... | Harian ..." -> {kum:[p,s], har:[p,s]}
+function kumHar(line){
+  const o={}; const ik=line.search(/Kumulatif/i), ih=line.search(/Harian/i);
+  if(ik>=0){ const end = ih>ik ? ih : line.length; o.kum=pairFrom(line.slice(ik+9, end)); }
+  if(ih>=0){ const end = ik>ih ? ik : line.length; o.har=pairFrom(line.slice(ih+6, end)); }
+  return o;
+}
 // baris rincian dikenali dari nomor urutnya: "1. ...", "1) ...", "1 - ...", "No. 1 ..."
 function rowFields(line){
   const m = line.replace(/\t/g," ").match(/^\s*(?:No\.?\s*)?(\d{1,3})\s*[.):\-]\s*(.+)$/i);
@@ -84,9 +99,9 @@ function kronisFields(r){
   const f=r.f; let pen=f[0], ulp="", up3="", tot=f.length>1?f[f.length-1]:"";
   if(r.pipe){ ulp=f[1]||""; up3=f[2]||""; tot=f[3]||""; }
   else { if(/^(ULP|UP3)\b/i.test(tot)) tot=""; for(const x of f.slice(1)){ if(!ulp && /^ULP\b/i.test(x)) ulp=x; else if(!up3 && /^UP3\b/i.test(x)) up3=x; } }
-  const nums=String(tot||"").match(/\d[\d.]*/g)||[]; const n=nums.map(toNum);
-  const pair=/\d\s*\/\s*\d/.test(tot||"");
-  return {penyulang:stripPfx(pen,/^penyulang\s+/i), ulp, up3:stripPfx(up3,/^UP3\s+/i), total: pair ? (n[0]||0)+(n[1]||0) : (n.length?n[0]:null), totalP: pair?n[0]:null, totalS: pair?n[1]:null};
+  const t=String(tot||""); const ps=/permanen|sesaat/i.test(t) ? pairFrom(t) : (/\d\s*\/\s*\d/.test(t) ? pairFrom(t) : null);
+  const lead=t.match(/^\s*([\d.,]+)/); const first=lead?toNum(lead[1]):null;
+  return {penyulang:stripPfx(pen,/^penyulang\s+/i), ulp, up3:stripPfx(up3,/^UP3\s+/i), total: first!=null ? first : (ps ? ps[0]+ps[1] : null), totalP: ps?ps[0]:null, totalS: ps?ps[1]:null};
 }
 
 function parseReport(raw){
@@ -118,17 +133,17 @@ function parseReport(raw){
   const rekapLines = iRekap>=0 ? range(iRekap, firstAfter(iRekap,iUp3,iPadam,iKronis)) : lines;
   for(const l of rekapLines){
     if(/UP3/i.test(l)) continue;
-    let m = l.match(/Kumulatif\s*:?\s*([\d.,]+)\s*\/\s*([\d.,]+)/i);
-    if(m && kumP===null){ kumP=toNum(m[1]); kumS=toNum(m[2]); }
-    m = l.match(/Harian\s*:?\s*([\d.,]+)\s*\/\s*([\d.,]+)/i);
-    if(m && harP===null){ harP=toNum(m[1]); harS=toNum(m[2]); }
+    const o=kumHar(l);
+    if(o.kum && kumP===null){ kumP=o.kum[0]; kumS=o.kum[1]; }
+    if(o.har && harP===null){ harP=o.har[0]; harS=o.har[1]; }
   }
 
   // UP3
   const up3 = [];
   for(const l of (iUp3>=0 ? range(iUp3, firstAfter(iUp3,iPadam,iKronis)) : lines)){
-    const m = l.match(/(UP3\s+[^:|]+?)\s*:\s*Kumulatif\s*:?\s*([\d.,]+)\s*\/\s*([\d.,]+)\s*\|?\s*Harian\s*:?\s*([\d.,]+)\s*\/\s*([\d.,]+)/i);
-    if(m) up3.push({nama:m[1].replace(/\s+/g," ").trim().toUpperCase(), kumP:toNum(m[2]), kumS:toNum(m[3]), harP:toNum(m[4]), harS:toNum(m[5])});
+    const m = l.match(/(UP3\s+[^:|]+?)\s*:\s*(.*Kumulatif.*)$/i); if(!m) continue;
+    const o=kumHar(m[2]); if(!o.kum && !o.har) continue;
+    up3.push({nama:m[1].replace(/\s+/g," ").trim().toUpperCase(), kumP:o.kum?o.kum[0]:null, kumS:o.kum?o.kum[1]:null, harP:o.har?o.har[0]:null, harS:o.har?o.har[1]:null});
   }
 
   // Penyulang padam
@@ -152,18 +167,18 @@ function parseReport(raw){
   if(!tanggal) warnings.push("Tanggal laporan tidak terbaca. Isi tanggal secara manual.");
   if(kumP===null || harP===null) warnings.push("Angka Rekap PLN UID (kumulatif/harian) tidak lengkap.");
   if(iPadam<0) warnings.push("Bagian Daftar Penyulang Padam tidak ditemukan.");
-  // jenis gangguan tidak ditulis: simpulkan dari angka harian bila hanya satu jenis yang terjadi
+  // jenis gangguan tidak ditulis: simpulkan dari angka harian
+  const notes=[];
   const noJ = padam.filter(p=>!p.jenis);
   if(noJ.length){
-    if(harP===0 && harS>0) noJ.forEach(p=>p.jenis="SESAAT");
-    else if(harS===0 && harP>0) noJ.forEach(p=>p.jenis="PERMANEN");
-    else warnings.push(`Jenis gangguan (permanen/sesaat) tidak ditulis untuk ${noJ.length} penyulang dan tidak bisa disimpulkan; penyulang ini tidak ikut hitungan kronis.`);
+    if(harP===0 && harS>0){ noJ.forEach(p=>p.jenis="SESAAT"); notes.push(`Jenis gangguan tidak ditulis; ${noJ.length} penyulang dicatat sesaat karena gangguan permanen harian 0.`); }
+    else if(harP>0 && (harS===0 || noJ.length<=harP)){ noJ.forEach(p=>p.jenis="PERMANEN"); notes.push(`Jenis gangguan tidak ditulis; ${noJ.length} penyulang dicatat permanen (gangguan permanen harian ${harP}${harS?`, sesaat ${harS}`:""}).`); }
+    else if(harP!==null) warnings.push(`Jenis gangguan (permanen/sesaat) tidak ditulis untuk ${noJ.length} penyulang dan tidak bisa disimpulkan dari angka harian (${harP} permanen / ${harS} sesaat); penyulang ini tidak ikut hitungan kronis.`);
   }
-  const nP = padam.filter(p=>/PERMANEN/.test(p.jenis)).length;
-  if(harP!==null && iPadam>=0 && nP!==harP && padam.length!==harP && padam.length!==(harP+(harS||0))) warnings.push(`Gangguan harian tertulis ${harP} permanen / ${harS} sesaat, tetapi daftar penyulang padam berisi ${padam.length} baris.`);
+  if(harP!==null && padam.length > harP+(harS||0)) warnings.push(`Daftar penyulang padam berisi ${padam.length} baris, lebih banyak dari gangguan harian (${harP} permanen / ${harS} sesaat).`);
   if(kronisJumlah!==null && kronis.length!==kronisJumlah) warnings.push(`Jumlah penyulang kronis tertulis ${kronisJumlah}, tetapi rinciannya berisi ${kronis.length} baris.`);
 
-  return {uid, tanggal, tanggalTeks, kumP, kumS, harP, harS, up3, padam, kronisJumlah, kronis, warnings, raw:String(raw||"").trim()};
+  return {uid, tanggal, tanggalTeks, kumP, kumS, harP, harS, up3, padam, kronisJumlah, kronis, warnings, notes, raw:String(raw||"").trim()};
 }
 
 const $ = (id) => document.getElementById(id);
@@ -394,6 +409,7 @@ function openReport(r) {
       el('div', { class: 'dp-head' }, el('div', {}, el('h3', { text: `UID ${r.uid} · ${dLabel(r.tanggal)}` }), el('span', { class: 'ss-note', text: (r.tanggalTeks || '') + (r.diunggah ? ` · diunggah ${dLabel(r.diunggah.slice(0, 10), 1)}${r.oleh ? ' oleh ' + r.oleh : ''}` : '') })),
         el('div', { class: 'h-up-row' }, el('button', { type: 'button', class: 'h-act', text: 'Ganti laporan', onclick: () => { close(); startUpload(r.uid, r.tanggal); } }), el('button', { type: 'button', class: 'h-act h-act-primary', text: 'Tutup', onclick: close }))),
       (r.warnings || []).length ? el('ul', { class: 'lgp-warn' }, r.warnings.map((w) => el('li', { text: w }))) : null,
+      (r.notes || []).length ? el('ul', { class: 'lgp-notes' }, r.notes.map((w) => el('li', { text: w }))) : null,
       detailTables(r)));
   document.addEventListener('keydown', esc); SEC.append(back); back.querySelector('.h-act-primary').focus();
 }
@@ -438,12 +454,13 @@ function paintQueue() {
       el('div', { class: 'lgp-qh' }, el('div', { class: 'lgp-preset' }, el('label', { class: 'lgp-fld', for: 'lgp-q-u-' + r._k }, 'UID', su), el('label', { class: 'lgp-fld', for: 'lgp-q-d-' + r._k }, 'Tanggal laporan', di),
         el('span', { class: 'lgp-st ' + (!ok ? 'k' : ex ? 'w' : 'ok'), text: !ok ? 'Belum lengkap' : ex ? 'Menggantikan laporan lama' : 'Siap' })),
         el('div', { class: 'h-up-row' }, el('span', { class: 'ss-note', text: r._src }), el('button', { type: 'button', class: 'h-act', text: 'Buang', onclick: () => { S.queue.splice(i, 1); paintQueue(); } }))),
-      w.length ? el('ul', { class: 'lgp-warn' }, w.map((x) => el('li', { text: x }))) : null, detailTables(r)));
+      w.length ? el('ul', { class: 'lgp-warn' }, w.map((x) => el('li', { text: x }))) : null,
+      (r.notes || []).length ? el('ul', { class: 'lgp-notes' }, r.notes.map((x) => el('li', { text: x }))) : null, detailTables(r)));
   });
 }
 $('lgp-cancel').addEventListener('click', () => { S.queue = []; paintQueue(); msg(''); });
 const asJs = (arr) => 'window.__D=window.__D||{};window.__D["gangguan_harian"]=' + JSON.stringify(arr) + ';\n';
-const clean = (r) => ({ uid: r.uid, tanggal: r.tanggal, tanggalTeks: r.tanggalTeks || '', kumP: r.kumP, kumS: r.kumS, harP: r.harP, harS: r.harS, up3: r.up3 || [], padam: r.padam || [], kronisJumlah: r.kronisJumlah, kronis: r.kronis || [], warnings: r.warnings || [], diunggah: new Date().toISOString(), oleh: (window.SSAdmin && window.SSAdmin.name && window.SSAdmin.name()) || '' });
+const clean = (r) => ({ uid: r.uid, tanggal: r.tanggal, tanggalTeks: r.tanggalTeks || '', kumP: r.kumP, kumS: r.kumS, harP: r.harP, harS: r.harS, up3: r.up3 || [], padam: r.padam || [], kronisJumlah: r.kronisJumlah, kronis: r.kronis || [], warnings: r.warnings || [], notes: r.notes || [], diunggah: new Date().toISOString(), oleh: (window.SSAdmin && window.SSAdmin.name && window.SSAdmin.name()) || '' });
 const sortArr = (a) => a.sort((x, y) => x.tanggal === y.tanggal ? x.uid.localeCompare(y.uid) : x.tanggal.localeCompare(y.tanggal));
 $('lgp-apply').addEventListener('click', async () => {
   const ready = S.queue.filter((r) => r.uid && r.tanggal); if (!ready.length) return;
