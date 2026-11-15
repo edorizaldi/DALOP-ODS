@@ -49,18 +49,19 @@ function splitReports(text){
 }
 
 // ambil pasangan angka permanen / sesaat dari "92 / 546" atau "Permanen 15087 Kali / Sesaat 9797 Kali" (angka kosong = 0)
-function pairFrom(text){
+function pairFrom(text, swap){
   const t=String(text||"");
   const p=t.match(/Permanen\s*:?\s*([\d.,]*)/i), s=t.match(/Sesaat\s*:?\s*([\d.,]*)/i);
   if(p||s){ const a=p?toNum(p[1]):null, b=s?toNum(s[1]):null; return [a==null?0:a, b==null?0:b]; }
   const m=t.match(/([\d.,]+)\s*(?:kali)?\s*\/\s*([\d.,]+)/i);
-  return m ? [toNum(m[1]), toNum(m[2])] : null;
+  if(!m) return null;
+  const a=[toNum(m[1]), toNum(m[2])]; return swap ? [a[1],a[0]] : a;
 }
 // "Kumulatif ... | Harian ..." -> {kum:[p,s], har:[p,s]}
-function kumHar(line){
+function kumHar(line, swap){
   const o={}; const ik=line.search(/Kumulatif/i), ih=line.search(/Harian/i);
-  if(ik>=0){ const end = ih>ik ? ih : line.length; o.kum=pairFrom(line.slice(ik+9, end)); }
-  if(ih>=0){ const end = ik>ih ? ik : line.length; o.har=pairFrom(line.slice(ih+6, end)); }
+  if(ik>=0){ const end = ih>ik ? ih : line.length; o.kum=pairFrom(line.slice(ik+9, end), swap); }
+  if(ih>=0){ const end = ik>ih ? ik : line.length; o.har=pairFrom(line.slice(ih+6, end), swap); }
   return o;
 }
 // baris rincian dikenali dari nomor urutnya: "1. ...", "1) ...", "1 - ...", "No. 1 ..."
@@ -80,29 +81,68 @@ function rowFields(line){
 }
 const isJenis = s => /^(gangguan\s+)?(permanen|sesaat)$/i.test(String(s||"").trim());
 const stripPfx = (s, re) => String(s||"").replace(re,"").trim();
-// pisahkan kolom: dengan "|" berurutan (Penyulang | ULP | UP3 | Jenis | Penyebab | Zona);
-// dengan koma dikenali dari awalan (ULP ..., UP3 ..., Permanen/Sesaat), sisanya penyebab
-function padamFields(r){
-  const f=r.f;
-  if(r.pipe){ return {penyulang:stripPfx(f[0],/^penyulang\s+/i), ulp:f[1]||"", up3:stripPfx(f[2],/^UP3\s+/i), jenis:(f[3]||"").toUpperCase().replace(/^GANGGUAN\s+/,""), penyebab:f[4]||"", zona:f.slice(5).join(" | ")}; }
-  const o={penyulang:stripPfx(f[0],/^penyulang\s+/i), ulp:"", up3:"", jenis:"", penyebab:"", zona:""}; const rest=[];
+// ---- kolom mengikuti baris "Keterangan:" tiap bagian ----
+function colKey(lab){
+  const l=lab.toLowerCase();
+  if(/jenis/.test(l)) return "jenis";
+  if(/temuan|penyebab/.test(l)) return "penyebab";
+  if(/total|kali\s*padam|frekuensi/.test(l)) return "total";
+  if(/penyulang|feeder/.test(l)) return "penyulang";
+  if(/^ulp\b/.test(l)) return "ulp";
+  if(/^up3\b/.test(l)) return "up3";
+  if(/zona|section|lokasi/.test(l)) return "zona";
+  return "lain";
+}
+function parseHeader(line){
+  const body=String(line||"").replace(/^\s*Keterangan\s*:\s*/i,"").trim(); if(!body) return null;
+  const parts=(body.indexOf("|")>=0 ? body.split("|") : body.split(/\s*[,;]\s*/)).map(x=>x.trim()).filter(Boolean);
+  if(parts.length<2) return null;
+  const cols=parts.map(lab=>({lab, key:colKey(lab)}));
+  const jc=cols.find(c=>c.key==="jenis"); let defJenis="";
+  if(jc){ const p=/permanen/i.test(jc.lab), q=/sesaat/i.test(jc.lab); if(p&&!q) defJenis="PERMANEN"; else if(q&&!p) defJenis="SESAAT"; }
+  return {cols, labels:parts, swap:/sesaat\s*\/\s*permanen/i.test(body), defJenis};
+}
+const jenisNorm = s => String(s||"").toUpperCase().replace(/^GANGGUAN\s+/,"").trim();
+function parseTotal(v, swap){
+  const t=String(v||""); if(!/\d/.test(t)) return {total:null,totalP:null,totalS:null};
+  const ps = /permanen|sesaat/i.test(t) ? pairFrom(t) : (/\d\s*(?:kali)?\s*\/\s*\d/i.test(t) ? pairFrom(t, swap) : null);
+  const lead=t.match(/^\s*([\d.,]+)/); const first = (lead && !(ps && /^\s*[\d.,]+\s*(?:kali)?\s*\//i.test(t))) ? toNum(lead[1]) : null;
+  return {total: first!=null ? first : (ps ? ps[0]+ps[1] : null), totalP: ps?ps[0]:null, totalS: ps?ps[1]:null};
+}
+// tanpa urutan yang cocok: kenali isi dari awalannya (ULP ..., UP3 ..., Permanen/Sesaat, Z2, angka kali)
+function detectFields(f, kind){
+  const o={penyulang:f[0]||"", ulp:"", up3:"", jenis:"", penyebab:"", zona:"", lain:"", total:""}; const rest=[];
   for(const x of f.slice(1)){
     if(!o.ulp && /^ULP\b/i.test(x)) o.ulp=x;
-    else if(!o.up3 && /^UP3\b/i.test(x)) o.up3=stripPfx(x,/^UP3\s+/i);
-    else if(!o.jenis && isJenis(x)) o.jenis=x.toUpperCase().replace(/^GANGGUAN\s+/,"");
-    else if(!o.zona && /^Z\d+$/i.test(x)) o.zona=x.toUpperCase();
+    else if(!o.up3 && /^UP3\b/i.test(x)) o.up3=x;
+    else if(!o.jenis && isJenis(x)) o.jenis=x;
+    else if(!o.zona && /^Z\d+$/i.test(x)) o.zona=x;
+    else if(kind==="kronis" && !o.total && /\d/.test(x) && /^\s*[\d(]|kali|permanen|sesaat/i.test(x)) o.total=x;
     else rest.push(x);
   }
   o.penyebab=rest.join(", "); return o;
 }
-function kronisFields(r){
-  const f=r.f; let pen=f[0], ulp="", up3="", tot=f.length>1?f[f.length-1]:"";
-  if(r.pipe){ ulp=f[1]||""; up3=f[2]||""; tot=f[3]||""; }
-  else { if(/^(ULP|UP3)\b/i.test(tot)) tot=""; for(const x of f.slice(1)){ if(!ulp && /^ULP\b/i.test(x)) ulp=x; else if(!up3 && /^UP3\b/i.test(x)) up3=x; } }
-  const t=String(tot||""); const ps=/permanen|sesaat/i.test(t) ? pairFrom(t) : (/\d\s*\/\s*\d/.test(t) ? pairFrom(t) : null);
-  const lead=t.match(/^\s*([\d.,]+)/); const first=lead?toNum(lead[1]):null;
-  return {penyulang:stripPfx(pen,/^penyulang\s+/i), ulp, up3:stripPfx(up3,/^UP3\s+/i), total: first!=null ? first : (ps ? ps[0]+ps[1] : null), totalP: ps?ps[0]:null, totalS: ps?ps[1]:null};
+function mapRow(r, hdr, kind){
+  const f=r.f, cols=hdr&&hdr.cols; let o;
+  if(cols && f.length>=cols.length){
+    o={penyulang:"", ulp:"", up3:"", jenis:"", penyebab:"", zona:"", lain:"", total:""}; const lain=[];
+    cols.forEach((c,i)=>{ const v=f[i]||""; if(c.key==="lain") lain.push(c.lab+": "+v); else o[c.key]=o[c.key]?o[c.key]+", "+v:v; });
+    const extra=f.slice(cols.length);
+    if(extra.length){
+      const z=extra.filter(x=>/^Z\d+$/i.test(x)), other=extra.filter(x=>!/^Z\d+$/i.test(x));
+      if(z.length && !o.zona) o.zona=z.join(" ");
+      if(other.length){ if(!r.pipe && cols.some(c=>c.key==="penyebab")) o.penyebab=[o.penyebab,...other].filter(Boolean).join(", "); else lain.push(...other); }
+    }
+    o.lain=lain.join(" | ");
+    // kolom jenis berisi teks lain (mis. penyebab bergeser): kenali ulang dari isinya
+    if(o.jenis && !isJenis(o.jenis) && !/^(permanen|sesaat)/i.test(o.jenis)) o=detectFields(f, kind);
+  } else o=detectFields(f, kind);
+  o.penyulang=stripPfx(o.penyulang,/^penyulang\s+/i); o.up3=stripPfx(o.up3,/^UP3\s+/i); o.zona=String(o.zona||"").toUpperCase();
+  o.jenis=jenisNorm(o.jenis) || (hdr&&hdr.defJenis) || "";
+  return o;
 }
+function padamFields(r, hdr){ const o=mapRow(r,hdr,"padam"); return {penyulang:o.penyulang, ulp:o.ulp, up3:o.up3, jenis:o.jenis, penyebab:o.penyebab, zona:o.zona, lain:o.lain}; }
+function kronisFields(r, hdr){ const o=mapRow(r,hdr,"kronis"); return Object.assign({penyulang:o.penyulang, ulp:o.ulp, up3:o.up3}, parseTotal(o.total, hdr&&hdr.swap)); }
 
 function parseReport(raw){
   const text = String(raw||"").replace(/\r/g,"").replace(/[*_~]/g,"").replace(/ /g," ");
@@ -128,12 +168,17 @@ function parseReport(raw){
   const range = (a,b) => a<0 ? [] : lines.slice(a+1, b>a ? b : lines.length);
   const firstAfter = (a, ...cands) => { const c = cands.filter(x=>x>a); return c.length ? Math.min(...c) : iEnd; };
 
+  // urutan angka dari "Format angka: Kumulatif (Gangguan Permanen/Sesaat) | ..."
+  const iFmt = find(/Format\s+angka|\(\s*(?:Gangguan\s+)?(?:Permanen|Sesaat)\s*\/\s*(?:Gangguan\s+)?(?:Permanen|Sesaat)\s*\)/i);
+  const swapNum = iFmt>=0 && /\(\s*(?:Gangguan\s+)?Sesaat\s*\/\s*(?:Gangguan\s+)?Permanen/i.test(lines[iFmt]);
+  const hdrIn = (a,b) => { if(a<0) return null; for(const l of lines.slice(a+1, b>a?b:lines.length)) if(/^\s*Keterangan\s*:/i.test(l)) return parseHeader(l); return null; };
+
   // Rekap UID
   let kumP=null,kumS=null,harP=null,harS=null;
   const rekapLines = iRekap>=0 ? range(iRekap, firstAfter(iRekap,iUp3,iPadam,iKronis)) : lines;
   for(const l of rekapLines){
     if(/UP3/i.test(l)) continue;
-    const o=kumHar(l);
+    const o=kumHar(l, swapNum);
     if(o.kum && kumP===null){ kumP=o.kum[0]; kumS=o.kum[1]; }
     if(o.har && harP===null){ harP=o.har[0]; harS=o.har[1]; }
   }
@@ -142,25 +187,28 @@ function parseReport(raw){
   const up3 = [];
   for(const l of (iUp3>=0 ? range(iUp3, firstAfter(iUp3,iPadam,iKronis)) : lines)){
     const m = l.match(/(UP3\s+[^:|]+?)\s*:\s*(.*Kumulatif.*)$/i); if(!m) continue;
-    const o=kumHar(m[2]); if(!o.kum && !o.har) continue;
+    const o=kumHar(m[2], swapNum); if(!o.kum && !o.har) continue;
     up3.push({nama:m[1].replace(/\s+/g," ").trim().toUpperCase(), kumP:o.kum?o.kum[0]:null, kumS:o.kum?o.kum[1]:null, harP:o.har?o.har[0]:null, harS:o.har?o.har[1]:null});
   }
 
   // Penyulang padam
   const padam = [];
+  const hdrPadam = hdrIn(iPadam, firstAfter(iPadam,iKronis));
   for(const l of range(iPadam, firstAfter(iPadam,iKronis))){
+    if(/^\s*Keterangan\s*:/i.test(l)) continue;
     const r = rowFields(l); if(!r) continue;
-    padam.push(padamFields(r));
+    padam.push(padamFields(r, hdrPadam));
   }
 
   // Kronis
   let kronisJumlah = null; const kronis = [];
-  const kr = range(iKronis, iEnd);
+  const kr = range(iKronis, iEnd); const hdrKronis = hdrIn(iKronis, iEnd);
   for(const l of kr){
     const m = l.match(/sebanyak\s*:?\s*([\d.,]+|nihil|tidak\s+ada)\s*(?:penyulang)?/i);
     if(m && kronisJumlah===null) kronisJumlah = /\d/.test(m[1]) ? toNum(m[1]) : 0;
     const r = rowFields(l); if(!r) continue;
-    kronis.push(kronisFields(r));
+    if(/^\s*Keterangan\s*:/i.test(l)) continue;
+    kronis.push(kronisFields(r, hdrKronis));
   }
 
   if(!uid) warnings.push("UID tidak terbaca dari teks. Pilih UID secara manual.");
@@ -178,7 +226,7 @@ function parseReport(raw){
   if(harP!==null && padam.length > harP+(harS||0)) warnings.push(`Daftar penyulang padam berisi ${padam.length} baris, lebih banyak dari gangguan harian (${harP} permanen / ${harS} sesaat).`);
   if(kronisJumlah!==null && kronis.length!==kronisJumlah) warnings.push(`Jumlah penyulang kronis tertulis ${kronisJumlah}, tetapi rinciannya berisi ${kronis.length} baris.`);
 
-  return {uid, tanggal, tanggalTeks, kumP, kumS, harP, harS, up3, padam, kronisJumlah, kronis, warnings, notes, raw:String(raw||"").trim()};
+  return {uid, tanggal, tanggalTeks, kumP, kumS, harP, harS, up3, padam, kronisJumlah, kronis, kolom:{padam:hdrPadam?hdrPadam.labels:null, kronis:hdrKronis?hdrKronis.labels:null, urutanAngka: swapNum?"Sesaat/Permanen":"Permanen/Sesaat"}, warnings, notes, raw:String(raw||"").trim()};
 }
 
 const $ = (id) => document.getElementById(id);
@@ -376,10 +424,10 @@ function paintPadam(rs) {
   let rows = padamRows(rs).sort((a, b) => b.tanggal.localeCompare(a.tanggal) || a.uid.localeCompare(b.uid));
   if (S.search) rows = rows.filter((p) => [p.penyulang, p.ulp, p.up3, p.penyebab, p.zona, p.uid].join(' ').toLowerCase().includes(S.search));
   const lim = S.all ? rows.length : 50, t = $('lgp-padam');
-  t.replaceChildren(el('thead', {}, el('tr', {}, ...['Tanggal', 'UID', 'Nama penyulang', 'ULP', 'UP3', 'Jenis', 'Temuan / penyebab', 'Zona', 'Padam permanen bulan itu'].map((h, i) => el('th', { class: i === 8 ? null : 'l', text: h })))),
+  t.replaceChildren(el('thead', {}, el('tr', {}, ...['Tanggal', 'UID', 'Nama penyulang', 'ULP', 'UP3', 'Jenis', 'Temuan / penyebab', 'Zona / lainnya', 'Padam permanen bulan itu'].map((h, i) => el('th', { class: i === 8 ? null : 'l', text: h })))),
     el('tbody', {}, rows.length ? rows.slice(0, lim).map((p) => { const c = cnt[p.uid + '|' + norm(p.penyulang) + '|' + p.tanggal.slice(0, 7)] || 0;
       return el('tr', {}, el('td', { class: 'l', text: dLabel(p.tanggal, 1) }), el('td', { class: 'l', text: 'UID ' + p.uid }), el('td', { class: 'l' }, el('b', { text: p.penyulang })), el('td', { class: 'l', text: p.ulp }), el('td', { class: 'l', text: p.up3 }),
-        el('td', { class: 'l' }, el('span', { class: 'lgp-st ' + (/PERMANEN/.test(p.jenis || '') ? 'k' : /SESAAT/.test(p.jenis || '') ? 'w' : 'no'), text: p.jenis || 'Tidak disebut' })), el('td', { class: 'l wrap', text: p.penyebab }), el('td', { class: 'l', text: p.zona || '' }),
+        el('td', { class: 'l' }, el('span', { class: 'lgp-st ' + (/PERMANEN/.test(p.jenis || '') ? 'k' : /SESAAT/.test(p.jenis || '') ? 'w' : 'no'), text: p.jenis || 'Tidak disebut' })), el('td', { class: 'l wrap', text: p.penyebab }), el('td', { class: 'l', text: [p.zona, p.lain].filter(Boolean).join(' · ') }),
         el('td', {}, c ? el('span', { class: 'gx-pill ' + (c > 6 ? 'k' : c >= 4 ? 's' : ''), style: c >= 4 ? null : 'color:var(--color-fg);background:color-mix(in srgb,var(--color-fg) 8%,transparent)', text: fmt(c) }) : el('span', { class: 'gx-zero', text: '–' }))); })
       : el('tr', {}, el('td', { class: 'lgp-empty l', colspan: '9', text: S.search ? 'Tidak ada penyulang yang cocok dengan pencarian.' : 'Belum ada penyulang padam pada pilihan ini.' }))));
   const more = $('lgp-padam-more'); more.hidden = rows.length <= lim; more.textContent = `Tampilkan semua (${fmt(rows.length)} baris)`;
@@ -392,10 +440,14 @@ $('lgp-uid-reset').addEventListener('click', () => { S.uid = 'ALL'; render(); })
 function detailTables(r) {
   const wrap = el('div', { style: 'display:grid;gap:10px' });
   wrap.append(el('div', { class: 'lgp-kv' }, el('span', {}, 'Kumulatif P / S ', el('b', { text: `${fmt(r.kumP)} / ${fmt(r.kumS)}` })), el('span', {}, 'Harian P / S ', el('b', { text: `${fmt(r.harP)} / ${fmt(r.harS)}` })), el('span', {}, 'Kronis terlapor ', el('b', { text: fmt(r.kronisJumlah == null ? 0 : r.kronisJumlah) }))));
+  if (r.kolom && (r.kolom.padam || r.kolom.kronis)) wrap.append(el('ul', { class: 'lgp-notes' },
+    r.kolom.padam ? el('li', { text: 'Kolom daftar penyulang padam (dari Keterangan): ' + r.kolom.padam.join(' | ') }) : null,
+    r.kolom.kronis ? el('li', { text: 'Kolom daftar penyulang kronis (dari Keterangan): ' + r.kolom.kronis.join(' | ') }) : null,
+    el('li', { text: 'Urutan angka: ' + (r.kolom.urutanAngka || 'Permanen/Sesaat') })));
   const tbl = (heads, rows) => el('div', { class: 'ss-g-wrap' }, el('table', { class: 'ss-table lgp-table' }, el('thead', {}, el('tr', {}, heads.map(([h, l]) => el('th', { class: l ? 'l' : null, text: h })))), el('tbody', {}, rows)));
   if ((r.up3 || []).length) wrap.append(tbl([['UP3', 1], ['Kumulatif P'], ['Kumulatif S'], ['Harian P'], ['Harian S']], r.up3.map((u) => el('tr', {}, el('td', { class: 'l', text: u.nama }), el('td', { text: fmt(u.kumP) }), el('td', { text: fmt(u.kumS) }), el('td', { text: fmt(u.harP) }), el('td', { text: fmt(u.harS) })))));
   wrap.append(el('b', { text: `Penyulang padam (${(r.padam || []).length})` }));
-  if ((r.padam || []).length) wrap.append(tbl([['Penyulang', 1], ['ULP', 1], ['UP3', 1], ['Jenis', 1], ['Penyebab', 1], ['Zona', 1]], r.padam.map((p) => el('tr', {}, el('td', { class: 'l' }, el('b', { text: p.penyulang })), el('td', { class: 'l', text: p.ulp }), el('td', { class: 'l', text: p.up3 }), el('td', { class: 'l', text: p.jenis }), el('td', { class: 'l wrap', text: p.penyebab }), el('td', { class: 'l', text: p.zona })))));
+  if ((r.padam || []).length) wrap.append(tbl([['Penyulang', 1], ['ULP', 1], ['UP3', 1], ['Jenis', 1], ['Penyebab', 1], ['Zona / lainnya', 1]], r.padam.map((p) => el('tr', {}, el('td', { class: 'l' }, el('b', { text: p.penyulang })), el('td', { class: 'l', text: p.ulp }), el('td', { class: 'l', text: p.up3 }), el('td', { class: 'l', text: p.jenis }), el('td', { class: 'l wrap', text: p.penyebab }), el('td', { class: 'l', text: [p.zona, p.lain].filter(Boolean).join(' · ') })))));
   wrap.append(el('b', { text: `Penyulang kronis (${(r.kronis || []).length} baris rincian)` }));
   if ((r.kronis || []).length) wrap.append(tbl([['Penyulang', 1], ['ULP', 1], ['UP3', 1], ['Total padam']], r.kronis.map((k) => el('tr', {}, el('td', { class: 'l' }, el('b', { text: k.penyulang })), el('td', { class: 'l', text: k.ulp }), el('td', { class: 'l', text: k.up3 }), el('td', { text: k.totalS != null ? `${fmt(k.totalP)} / ${fmt(k.totalS)}` : fmt(k.total) })))));
   else if ((r.kronisJumlah || 0) > 0) wrap.append(el('p', { class: 'ss-note', text: `Laporan menyebut ${r.kronisJumlah} penyulang kronis tanpa rincian.` }));
@@ -460,7 +512,7 @@ function paintQueue() {
 }
 $('lgp-cancel').addEventListener('click', () => { S.queue = []; paintQueue(); msg(''); });
 const asJs = (arr) => 'window.__D=window.__D||{};window.__D["gangguan_harian"]=' + JSON.stringify(arr) + ';\n';
-const clean = (r) => ({ uid: r.uid, tanggal: r.tanggal, tanggalTeks: r.tanggalTeks || '', kumP: r.kumP, kumS: r.kumS, harP: r.harP, harS: r.harS, up3: r.up3 || [], padam: r.padam || [], kronisJumlah: r.kronisJumlah, kronis: r.kronis || [], warnings: r.warnings || [], notes: r.notes || [], diunggah: new Date().toISOString(), oleh: (window.SSAdmin && window.SSAdmin.name && window.SSAdmin.name()) || '' });
+const clean = (r) => ({ uid: r.uid, tanggal: r.tanggal, tanggalTeks: r.tanggalTeks || '', kumP: r.kumP, kumS: r.kumS, harP: r.harP, harS: r.harS, up3: r.up3 || [], padam: r.padam || [], kronisJumlah: r.kronisJumlah, kronis: r.kronis || [], kolom: r.kolom || null, warnings: r.warnings || [], notes: r.notes || [], diunggah: new Date().toISOString(), oleh: (window.SSAdmin && window.SSAdmin.name && window.SSAdmin.name()) || '' });
 const sortArr = (a) => a.sort((x, y) => x.tanggal === y.tanggal ? x.uid.localeCompare(y.uid) : x.tanggal.localeCompare(y.tanggal));
 $('lgp-apply').addEventListener('click', async () => {
   const ready = S.queue.filter((r) => r.uid && r.tanggal); if (!ready.length) return;
@@ -504,7 +556,7 @@ $('lgp-btn-xlsx').addEventListener('click', async () => {
       ...shown().map((u) => { const r = rs.filter((x) => x.uid === u), l = L[u], P = sum(r, 'harP'), Sx = sum(r, 'harS'); return ['UID ' + u, r.length, l ? l.tanggal : '', P, Sx, P + Sx, l ? l.kumP : '', l ? l.kumS : '', l ? (l.kronisJumlah || 0) : '', kc.filter((k) => k.uid === u && k.kali > 6).length]; })]);
     add('Harian', [['Tanggal', 'UID', 'Kumulatif permanen', 'Kumulatif sesaat', 'Harian permanen', 'Harian sesaat'], ...rs.map((r) => [r.tanggal, 'UID ' + r.uid, r.kumP, r.kumS, r.harP, r.harS])]);
     const up = [['Tanggal', 'UID', 'UP3', 'Kumulatif permanen', 'Kumulatif sesaat', 'Harian permanen', 'Harian sesaat']]; rs.forEach((r) => (r.up3 || []).forEach((u) => up.push([r.tanggal, 'UID ' + r.uid, u.nama, u.kumP, u.kumS, u.harP, u.harS]))); add('Rekap UP3', up);
-    add('Penyulang Padam', [['Tanggal', 'UID', 'Nama Penyulang', 'ULP', 'UP3', 'Jenis Gangguan', 'Temuan/Penyebab Gangguan', 'Zona'], ...padamRows(rs).map((p) => [p.tanggal, 'UID ' + p.uid, p.penyulang, p.ulp, p.up3, p.jenis, p.penyebab, p.zona])]);
+    add('Penyulang Padam', [['Tanggal', 'UID', 'Nama Penyulang', 'ULP', 'UP3', 'Jenis Gangguan', 'Temuan/Penyebab Gangguan', 'Zona', 'Kolom lain'], ...padamRows(rs).map((p) => [p.tanggal, 'UID ' + p.uid, p.penyulang, p.ulp, p.up3, p.jenis, p.penyebab, p.zona, p.lain || ''])]);
     const kr = [['Tanggal laporan', 'UID', 'Jumlah kronis terlapor', 'Nama Penyulang', 'ULP', 'UP3', 'Total Kali Padam']];
     rs.forEach((r) => { if ((r.kronis || []).length) r.kronis.forEach((k) => kr.push([r.tanggal, 'UID ' + r.uid, r.kronisJumlah, k.penyulang, k.ulp, k.up3, k.totalS != null ? `${k.totalP} / ${k.totalS}` : k.total])); else kr.push([r.tanggal, 'UID ' + r.uid, r.kronisJumlah || 0, (r.kronisJumlah || 0) > 0 ? '(rincian tidak dicantumkan)' : '', '', '', '']); });
     add('Kronis Terlapor', kr);
