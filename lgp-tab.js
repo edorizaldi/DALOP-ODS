@@ -48,13 +48,20 @@ function splitReports(text){
   return parts.length ? parts : [String(text||"").trim()];
 }
 
+// baris rincian dikenali dari nomor urutnya: "1. ...", "1) ...", "1 - ...", "No. 1 ..."
 function rowFields(line){
-  const m = line.match(/^\s*(\d+)\s*[.)]\s+(.+)$/);
+  const m = line.replace(/\t/g," ").match(/^\s*(?:No\.?\s*)?(\d{1,3})\s*[.):\-]\s*(.+)$/i);
   if(!m) return null;
-  const body = m[2].replace(/\t/g," ").trim();
+  const body = m[2].trim();
+  if(/^(nihil|tidak\s+ada|-+|n\/?a)\.?$/i.test(body)) return null;
   if(body.indexOf("|")>=0) return {pipe:true, f:body.split("|").map(s=>s.trim())};
-  const f = body.split(/\s*[,;]\s*/).map(s=>s.trim()).filter(Boolean);
-  return f.length>=2 ? {pipe:false, f} : null;
+  let f = body.split(/\s*[,;]\s*/).map(s=>s.trim()).filter(Boolean);
+  // tanpa pemisah: potong di kata ULP / UP3 / Permanen / Sesaat
+  if(f.length<2) f = body.split(/\s+(?=(?:ULP|UP3)\b|(?:Gangguan\s+)?(?:Permanen|Sesaat)\b)/i).map(s=>s.trim()).filter(Boolean);
+  if(f.length<2){ f=[body]; }
+  // pisahkan jenis yang menempel di depan penyebab, mis. "Sesaat - pohon"
+  f = f.flatMap(x=>{ const j=x.match(/^((?:Gangguan\s+)?(?:Permanen|Sesaat))\s*[-–:]\s*(.+)$/i); return j?[j[1],j[2]]:[x]; });
+  return {pipe:false, f};
 }
 const isJenis = s => /^(gangguan\s+)?(permanen|sesaat)$/i.test(String(s||"").trim());
 const stripPfx = (s, re) => String(s||"").replace(re,"").trim();
@@ -74,9 +81,9 @@ function padamFields(r){
   o.penyebab=rest.join(", "); return o;
 }
 function kronisFields(r){
-  const f=r.f; let pen=f[0], ulp="", up3="", tot=f[f.length-1];
+  const f=r.f; let pen=f[0], ulp="", up3="", tot=f.length>1?f[f.length-1]:"";
   if(r.pipe){ ulp=f[1]||""; up3=f[2]||""; tot=f[3]||""; }
-  else for(const x of f.slice(1,-1)){ if(!ulp && /^ULP\b/i.test(x)) ulp=x; else if(!up3 && /^UP3\b/i.test(x)) up3=x; }
+  else { if(/^(ULP|UP3)\b/i.test(tot)) tot=""; for(const x of f.slice(1)){ if(!ulp && /^ULP\b/i.test(x)) ulp=x; else if(!up3 && /^UP3\b/i.test(x)) up3=x; } }
   const nums=String(tot||"").match(/\d[\d.]*/g)||[]; const n=nums.map(toNum);
   const pair=/\d\s*\/\s*\d/.test(tot||"");
   return {penyulang:stripPfx(pen,/^penyulang\s+/i), ulp, up3:stripPfx(up3,/^UP3\s+/i), total: pair ? (n[0]||0)+(n[1]||0) : (n.length?n[0]:null), totalP: pair?n[0]:null, totalS: pair?n[1]:null};
