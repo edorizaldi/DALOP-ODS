@@ -19,6 +19,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261109">
 <link rel="stylesheet" href="hi-tab.css?v=20261110y">
 <link rel="stylesheet" href="acct.css">
+<link rel="stylesheet" href="lgp-tab.css?v=20261115d">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
 <script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
@@ -644,6 +645,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="ss-mg-pop" id="mg-harian" role="menu" aria-labelledby="mg-harian-b" hidden>
           <button type="button" class="ss-tab" id="tab-harian" data-tab-to="harian" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h3M8 17h6"/></svg><span class="ss-tab-t"><b>Infografis Laporan Harian</b><small>Infografis laporan harian H-1</small></span></button>
           <button type="button" class="ss-tab" id="tab-kondisi" data-tab-to="kondisi" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><path d="M12.8 6.5 10 10.8h2.4l-.9 3.7 2.9-4.4H12z"/></svg><span class="ss-tab-t"><b>Kondisi Sistem</b><small>Status sistem grid dan isolated, monitoring defisit</small></span></button>
+          <button type="button" class="ss-tab" id="tab-lgp" data-tab-to="lgp" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M14 3.5V8h4"/><path d="m12.6 10-2.4 3.6h2.2l-.8 3.4 2.6-4h-2.1z"/></svg><span class="ss-tab-t"><b>Laporan Gangguan Penyulang</b><small>Rekap kumulatif laporan harian per UID</small></span></button>
         </div></li>
       <li class="ss-mg" data-group="bulanan"><button type="button" class="ss-mg-btn" id="mg-bulanan-b" aria-haspopup="true" aria-expanded="false" aria-controls="mg-bulanan"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Bulanan</span><svg class="ss-mg-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         <div class="ss-mg-pop" id="mg-bulanan" role="menu" aria-labelledby="mg-bulanan-b" hidden>
@@ -1494,6 +1496,85 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       </div>
     </template>
   </section>
+  <section class="ss-sec" id="lgp" data-tab="lgp" hidden>
+    <div class="h-actions"><div class="ss-dbinfo ss-dbinfo-inline" data-dbinfo="lgp" data-source="info_update"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span class="ss-dbinfo-t">Memuat info update database…</span></div><span class="h-act-msg" id="lgp-act-msg" role="status"></span><button type="button" class="h-act" id="lgp-btn-update" aria-expanded="false" aria-controls="lgp-upload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Upload laporan harian</button><button type="button" class="h-act h-act-primary" id="lgp-btn-xlsx"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Unduh Excel</button></div>
+    <div class="h-upload ss-card" id="lgp-upload" hidden>
+      <div class="h-up-head"><h3>Upload laporan gangguan penyulang harian</h3><span class="ss-note">Laporan Monitoring Gangguan Penyulang Harian dari WAG Kehandalan Distribusi SUMKAL, satu laporan per UID per hari.</span></div>
+      <p class="ss-note">Tempel teks laporan dari WhatsApp, atau pilih file .txt. Beberapa laporan sekaligus boleh ditempel berurutan; setiap laporan dipisah dari salam pembukanya. UID dan tanggal dibaca dari teks. Laporan untuk UID dan tanggal yang sudah ada akan menggantikan laporan lama.</p>
+      <div class="lgp-preset">
+        <label class="lgp-fld" for="lgp-u-uid">UID (bila tidak terbaca dari teks)<select id="lgp-u-uid"></select></label>
+        <label class="lgp-fld" for="lgp-u-tgl">Tanggal (bila tidak terbaca dari teks)<input type="date" id="lgp-u-tgl"></label>
+      </div>
+      <label class="lgp-fld" for="lgp-text">Teks laporan<textarea class="lgp-text" id="lgp-text" placeholder="Assalamu'alaikum Wr. Wb. … Laporan Monitoring Gangguan Penyulang Harian UID …"></textarea></label>
+      <div class="h-up-row"><button type="button" class="h-act h-act-primary" id="lgp-read">Baca laporan</button></div>
+      <label class="h-drop" id="lgp-drop" tabindex="0">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+        <b>Atau tarik file .txt laporan ke sini, atau klik untuk memilih</b>
+        <span class="ss-note">Boleh lebih dari satu file sekaligus</span>
+        <input type="file" id="lgp-file" accept=".txt,text/plain" multiple hidden>
+      </label>
+      <div class="h-up-review" id="lgp-review" hidden>
+        <p class="ss-note">Periksa hasil bacaan sebelum diterapkan.</p>
+        <div class="lgp-q" id="lgp-queue"></div>
+        <div class="h-up-row">
+          <button type="button" class="h-act h-act-primary" id="lgp-apply">Terapkan ke dashboard</button>
+          <button type="button" class="h-act" id="lgp-cancel">Batal</button>
+        </div>
+      </div>
+      <p class="ss-note" id="lgp-up-msg" role="status"></p>
+    </div>
+    <header class="ss-hero lgp-hero" id="lgp-ringkasan">
+      <div class="ss-hero-main">
+        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>Laporan harian WAG · Gangguan penyulang</span>
+        <h1 class="ss-title">Laporan Gangguan Penyulang Harian</h1>
+        <p class="ss-take dash-skeleton" id="lgp-take">—</p>
+        <div class="ss-filters">
+          <div class="ss-frow"><span class="ss-flabel">Bulan</span><select id="lgp-f-bulan" aria-label="Bulan laporan"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">Unit</span><select id="lgp-f-unit" aria-label="UID"></select></div>
+        </div>
+      </div>
+      <div class="lgp-today" id="lgp-today"></div>
+    </header>
+    <div class="ss-tiles" id="lgp-kpi"></div>
+    <div class="ss-card" id="lgp-mx-card">
+      <div class="dp-head"><h3>Status unggah laporan harian</h3>
+        <div class="ss-legend"><span><i class="lgp-sw" style="background:var(--x-olive,#4C6E1A);border-color:var(--x-olive,#4C6E1A)"></i>Sudah diunggah</span><span><i class="lgp-sw" style="background:#B3261E;border-color:#B3261E"></i>Ada gangguan permanen</span><span><i class="lgp-sw"></i>Belum ada</span></div></div>
+      <p class="ss-note">Klik kotak berisi untuk melihat laporan, atau kotak kosong untuk mengunggah laporan UID dan tanggal itu.</p>
+      <div class="ss-g-wrap" id="lgp-mx"></div>
+    </div>
+    <div class="ss-card" id="lgp-uid-card">
+      <div class="dp-head"><h3>Rekap per UID</h3><button type="button" class="ss-g-reset" id="lgp-uid-reset" hidden>Tampilkan semua UID</button></div>
+      <p class="ss-note">Akumulasi = jumlah angka harian dari laporan yang diunggah pada periode terpilih. Kumulatif terlapor = angka kumulatif yang ditulis UID pada laporan terakhirnya. P = permanen, S = sesaat. Klik baris untuk melihat satu UID.</p>
+      <div class="ss-g-wrap"><table class="ss-table lgp-table" id="lgp-uid"></table></div>
+    </div>
+    <div class="gx-split">
+      <div class="ss-card">
+        <h3>Tren gangguan harian</h3>
+        <div class="ss-legend"><span><i class="lgp-sw" style="background:#B3261E;border-color:#B3261E"></i>Permanen</span><span><i class="lgp-sw" style="background:#E9A23B;border-color:#E9A23B"></i>Sesaat</span></div>
+        <div class="ss-chart dash-skeleton" id="lgp-trend"></div>
+      </div>
+      <div class="ss-card">
+        <h3>Temuan / penyebab gangguan</h3>
+        <p class="ss-note">Dari daftar penyulang padam pada laporan (permanen dan sesaat).</p>
+        <div class="ss-g-wrap gx-scroll"><table class="ss-table lgp-table" id="lgp-cause"></table></div>
+      </div>
+    </div>
+    <div class="ss-card" id="lgp-kronis-card">
+      <h3>Penyulang kronis</h3>
+      <p class="ss-note">Hitungan dashboard: penyulang yang padam permanen lebih dari 6 kali dalam satu bulan (Kronis), atau 4–6 kali (Waspada), dari daftar penyulang padam yang diunggah. Hanya baris berjenis permanen yang dihitung; bila jenisnya tidak ditulis, jenis disimpulkan dari angka harian (mis. harian 0 permanen berarti semua sesaat). Akurat bila laporan harian sebulan lengkap.</p>
+      <p class="ss-note" id="lgp-kronis-note"></p>
+      <div class="ss-g-wrap gx-scroll"><table class="ss-table lgp-table" id="lgp-kronis"></table></div>
+      <h3 style="margin-top:8px">Penyulang kronis sesuai laporan UID</h3>
+      <p class="ss-note">Dari laporan terakhir tiap UID pada periode terpilih.</p>
+      <div class="ss-g-wrap gx-scroll"><table class="ss-table lgp-table" id="lgp-kronis-rep"></table></div>
+    </div>
+    <div class="ss-card" id="lgp-padam-card">
+      <div class="dp-head"><h3>Daftar penyulang padam akibat gangguan</h3><input type="search" class="lgp-search" id="lgp-search" placeholder="Cari penyulang, ULP, UP3, penyebab" aria-label="Cari penyulang padam"></div>
+      <p class="ss-note" id="lgp-padam-n"></p>
+      <div class="ss-g-wrap"><table class="ss-table lgp-table" id="lgp-padam"></table></div>
+      <button type="button" class="h-act lgp-more" id="lgp-padam-more" hidden>Tampilkan semua</button>
+    </div>
+  </section>
   <section class="ss-sec" id="harian" data-tab="harian" hidden>
     <div class="h-actions" id="h-actions"><div class="ss-dbinfo ss-dbinfo-inline" data-dbinfo="harian" data-source="info_update"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span class="ss-dbinfo-t">Memuat info update database…</span></div><span class="h-act-msg" id="h-act-msg"></span><button type="button" class="h-act" id="h-btn-update" aria-expanded="false" aria-controls="h-upload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/></svg>Update laporan harian</button><button type="button" class="h-act h-act-primary" id="h-btn-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download infografis (PNG)</button></div>
     <div class="h-upload ss-card" id="h-upload" hidden>
@@ -1638,7 +1719,7 @@ window.SSD = (() => {
 </script>
 <script>
 (() => {
-  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'workplan', 'penyulang', 'hi', 'hirarki', 'update', 'harian', 'kondisi', 'slides'];
+  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'workplan', 'penyulang', 'hi', 'hirarki', 'update', 'harian', 'kondisi', 'lgp', 'slides'];
   window.SSC = ['var(--x-c0)', 'var(--x-c1)', 'var(--x-c2)', 'var(--x-c3)', 'var(--x-c4)', 'var(--x-c5)', 'var(--x-c6)', 'var(--x-c7)'];
   const show = (tab) => {
     if (!TABS.includes(tab)) tab = 'saidi';
@@ -3081,6 +3162,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script>document.getElementById('g-mx-dl').addEventListener('click', () => { const c = window.SSGRc || { per: '' }; window.SSExport({ card: 'g-matriks-card', btn: 'g-mx-dl', msg: 'g-mx-msg', preview: 'g-mx-pv', filename: `Matriks_Unit_x_Bulan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
 <script>document.getElementById('g-rc-dl').addEventListener('click', () => { const c = window.SSGRc || { scope: '', per: '' }; window.SSExport({ hideCols: ['Perubahan', 'Porsi'], card: 'g-rincian-card', btn: 'g-rc-dl', msg: 'g-rc-msg', preview: 'g-rc-pv', caption: `Jumlah No. Laporan unik per bulan · ${c.scope} · ${c.per}. % Distribusi = laporan bidang Distribusi ÷ total laporan.`, filename: `Rincian_Bulanan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
 <script src="gangguan-ps-tab.js?v=20261109"></script>
+<script src="lgp-tab.js?v=20261116"></script>
 <script src="kc-tab.js"></script>
 <script src="dp-tab.js?v=20261112"></script>
 <script src="upd-core.js?v=20261112"></script>
