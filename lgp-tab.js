@@ -568,8 +568,10 @@ $('lgp-btn-xlsx').addEventListener('click', async () => {
     add('Kronis Hitungan', [['Bulan', 'UID', 'Nama Penyulang', 'ULP', 'UP3', 'Kali padam permanen', 'Tanggal padam'], ...kc.map((k) => [k.bulan, 'UID ' + k.uid, k.penyulang, k.ulp, k.up3, k.kali, k.tgl.join(', ')])]);
     const data = X.write(wb, { type: 'array', bookType: 'xlsx' });
     const fname = `Laporan_Gangguan_Penyulang_${S.period === 'ALL' ? 'semua' : S.period}${S.uid === 'ALL' ? '' : '_' + S.uid}.xlsx`;
-    const dl = window.claude && await window.claude.use('downloads'); if (!dl) throw new Error('unduhan tidak tersedia');
-    await dl.save({ filename: fname, data: new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }) });
+    const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    let dl = null; try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+    if (dl) await dl.save({ filename: fname, data: blob });
+    else { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000); }
     m.textContent = '';
   } catch (e) { m.textContent = e && e.code === 'declined' ? '' : 'Excel gagal dibuat: ' + ((e && e.message) || e); }
   b.disabled = false;
