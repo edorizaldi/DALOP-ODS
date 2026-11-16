@@ -17,7 +17,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="hirarki-tab.css">
 <link rel="stylesheet" href="workplan-tab.css">
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261109">
-<link rel="stylesheet" href="hi-tab.css?v=20261116t">
+<link rel="stylesheet" href="hi-tab.css?v=20261116u">
 <link rel="stylesheet" href="acct.css">
 <link rel="stylesheet" href="lgp-tab.css?v=20261115d">
 <script src="d3.min.js"></script>
@@ -1109,7 +1109,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
     <div class="ss-card" id="hi-trn-card">
       <div class="dp-head"><h3 id="hi-trn-h">Trend penyulang per UID</h3><div class="dp-dl"><span class="ss-note" id="hi-trn-msg" role="status"></span><button type="button" class="h-act h-act-primary" id="hi-trn-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
       <p class="ss-note" id="hi-trn-note"></p>
-      <div class="ss-legend"><span><span class="hi-trn-pill naik">↑ Naik</span> gangguan bertambah dari bulan ke bulan</span><span><span class="hi-trn-pill turun">↓ Turun</span> gangguan berkurang</span><span>Batang per bulan diwarnai kelas: <i class="hi-trn-sw" style="background:#B3261E"></i>Kronis <i class="hi-trn-sw" style="background:#E9A23B"></i>Sakit <i class="hi-trn-sw" style="background:#3E9A5B"></i>Sehat</span></div>
+      <div class="ss-legend"><span><span class="hi-trn-pill naik">Naik</span> gangguan bulan terakhir lebih banyak dari 2 bulan sebelumnya</span><span><span class="hi-trn-pill turun">Turun</span> lebih sedikit</span><span>Angka per bulan diwarnai kelas: <i class="hi-trn-sw" style="background:#B3261E"></i>Kronis <i class="hi-trn-sw" style="background:#E9A23B"></i>Sakit <i class="hi-trn-sw" style="background:#3E9A5B"></i>Sehat</span></div>
       <div class="ss-g-wrap" data-source="peny_bulanan gangguan_up3"><table class="ss-table gx-table hi-top hi-trn" id="hi-trn"></table></div>
       <div class="h-preview" id="hi-trn-pv" hidden><span class="ss-note"></span><img alt="Trend penyulang per UID"></div>
     </div>
@@ -2719,7 +2719,7 @@ SSD.calc('up3_yoy', {
 </script>
 
 <script src="peny-tab.js"></script>
-<script src="hi-tab.js?v=20261116t"></script>
+<script src="hi-tab.js?v=20261116u"></script>
 
 <script>
 (() => {
