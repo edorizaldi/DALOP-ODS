@@ -14,7 +14,9 @@
 .hi-unit td.hi-pk { font-weight: 700; }
 .hi-unit .hi-bar { width: 100%; min-width: 120px; height: 12px; }
 .gx-mini4 i { display: block; height: 100%; }
-.hi-list-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.hi-list-ctl { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 12px; }
+.hi-list-ctl #hi-list-msg:empty { display: none; }
+@media (min-width: 52rem) { .hi-list-ctl { flex-wrap: nowrap; } .hi-list-ctl .h-act { white-space: nowrap; } }
 .hi-scroll { max-height: 34rem; }
 .hi-list td.hi-nm { font-weight: 600; white-space: nowrap; }
 .hi-list th.hi-mh { text-align: center; padding-left: 2px; padding-right: 2px; font-size: 11px; }

@@ -271,6 +271,7 @@
     if (q) rows = rows.filter((g) => g.peny.toLowerCase().includes(q) || uname(g.u).toLowerCase().includes(q) || ULABEL[g.u].toLowerCase().includes(q) || g.u.toLowerCase().includes(q) || [...g.ulp.keys(), ...g.ulpH.keys()].some((x) => x.toLowerCase().includes(q)));
     const tb0 = (g) => (g.bb ? g.bb[0] + g.bb[1] : -1); const tm = (g) => { const o = g.mo[bm]; return o ? o[0] + o[1] : 0; };
     rows.sort((a, b2) => tb0(b2) - tb0(a) || tm(b2) - tm(a) || a.peny.localeCompare(b2.peny));
+    S.list = { rows, upto, hpOn, bbTxt, HP };
     $('hi-list-h').textContent = `Penyulang · ${where} (${fmt(rows.length)})`;
     $('hi-list-note').textContent = '';
     const th = mk('thead'), h1 = mk('tr'), h2 = mk('tr');
@@ -306,6 +307,55 @@
     if (rows.length > MAX) { const tr = mk('tr'); const td = mk('td', `Menampilkan ${fmt(MAX)} dari ${fmt(rows.length)} penyulang. Pilih UID atau cari nama penyulang / ULP untuk mempersempit.`, 'gx-zero'); td.colSpan = ncol; tr.append(td); tb.append(tr); }
     $('hi-list').replaceChildren(th, tb);
   }
+  // ---------- Download Excel daftar penyulang (summary penyulang) sesuai filter dan pencarian ----------
+  const loadXlsx = () => window.XLSX ? Promise.resolve(window.XLSX) : new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; sc.onload = () => (window.XLSX ? res(window.XLSX) : rej(new Error('pustaka Excel tidak termuat'))); sc.onerror = () => rej(new Error('pustaka Excel gagal dimuat, periksa koneksi')); document.head.appendChild(sc); });
+  async function saveFile(blob, filename) {
+    let dlc = null; try { dlc = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dlc = null; }
+    if (dlc) { try { const r = await dlc.save({ filename, data: blob }); return r && r.status === 'saved'; } catch (e) { if (e && e.code === 'declined') return false; throw e; } }
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000); return true;
+  }
+  $('hi-list-xls').addEventListener('click', async () => {
+    const btn = $('hi-list-xls'), msg = (t) => { $('hi-list-msg').textContent = t || ''; };
+    if (!S || !S.list) { msg('Data belum siap.'); return; }
+    btn.disabled = true; msg('Menyiapkan Excel…');
+    try {
+      const X = await loadXlsx();
+      const { rows, upto, hpOn, bbTxt } = S.list;
+      const kname = (k) => (k ? KBY[k].nm : '');
+      const ulpOf = (g) => { const fromDb = g.ulp.size > 0; return [...(fromDb ? g.ulp : g.ulpH)].sort((a, b) => b[1] - a[1]).map(([x]) => x); };
+      const now = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const filt = `${S.where} · ${S.fTxt}${q ? ` · pencarian "${q}"` : ''}`;
+      // sheet 1: summary penyulang (sama dengan tabel)
+      const head = ['No', 'Penyulang', 'ULP', 'UID'];
+      upto.forEach((m) => head.push(`${BS[m - 1]} (kali)`, `${BS[m - 1]} kelas`));
+      head.push(`Rekap ${bbTxt} permanen`, `Rekap ${bbTxt} sesaat`, `Rekap ${bbTxt} total`, 'Kelas');
+      const sum = [[`Health Index Penyulang · ${filt}`], [`Kronis ≥ 6 kali · Sakit 2–5 kali · Sehat 1 kali (permanen + sesaat per bulan). Diunduh ${now} WIB.`], [], head];
+      rows.forEach((g, i) => {
+        const r = [i + 1, g.peny, ulpOf(g).join(', '), uname(g.u)];
+        upto.forEach((m) => { const o = g.mo[m]; const n = o ? o[0] + o[1] : 0; const nd = !IX.ada.has(m + '|' + g.u); r.push(nd ? '' : n, n ? kname(katOf(n)) : nd ? 'Belum ada data' : 'Tanpa gangguan'); });
+        const bb = g.bb; const nb = bb ? bb[0] + bb[1] : 0;
+        if (hpOn) r.push(bb ? bb[0] : 0, bb ? bb[1] : 0, nb, nb ? kname(katOf(nb)) : 'Tanpa gangguan'); else r.push('', '', '', '');
+        sum.push(r);
+      });
+      // sheet 2: detail per bulan (permanen / sesaat)
+      const det = [['UID', 'ULP', 'Penyulang', 'Bulan', 'Permanen', 'Sesaat', 'Total', 'Kelas']];
+      rows.forEach((g) => {
+        const ul = ulpOf(g).join(', ');
+        upto.forEach((m) => { const o = g.mo[m]; if (!o || !(o[0] + o[1])) return; det.push([uname(g.u), ul, g.peny, `${BLN[m - 1]} 2026`, o[0], o[1], o[0] + o[1], kname(katOf(o[0] + o[1]))]); });
+        if (hpOn && g.bb && g.bb[0] + g.bb[1]) det.push([uname(g.u), ul, g.peny, `Rekap ${bbTxt}`, g.bb[0], g.bb[1], g.bb[0] + g.bb[1], kname(katOf(g.bb[0] + g.bb[1]))]);
+      });
+      const wb = X.utils.book_new();
+      const ws1 = X.utils.aoa_to_sheet(sum); ws1['!cols'] = head.map((h, i) => ({ wch: i === 0 ? 5 : i === 1 ? 26 : i === 2 ? 22 : i === 3 ? 16 : Math.max(9, String(h).length + 1) }));
+      ws1['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 3, c: 0 }, e: { r: 3 + rows.length, c: head.length - 1 } }) }; ws1['!freeze'] = { xSplit: 2, ySplit: 4 };
+      const ws2 = X.utils.aoa_to_sheet(det); ws2['!cols'] = [16, 22, 26, 22, 10, 10, 10, 10].map((w) => ({ wch: w }));
+      X.utils.book_append_sheet(wb, ws1, 'Summary Penyulang'); X.utils.book_append_sheet(wb, ws2, 'Detail per Bulan');
+      const data = X.write(wb, { type: 'array', bookType: 'xlsx' });
+      const filename = `Health_Index_Penyulang_Summary_${ctx.name.replace(/[^A-Za-z0-9]+/g, '_')}.xlsx`;
+      const ok = await saveFile(new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename);
+      msg(ok ? `${fmt(rows.length)} penyulang diunduh.` : '');
+    } catch (e) { msg('Excel gagal dibuat: ' + ((e && e.message) || e)); }
+    btn.disabled = false;
+  });
   // ---------- Top 3 penyulang kronis per UID, bulan berjalan (laporan harian, sheet Detil Kode), semua UID dalam satu tabel ----------
   function renderTop() {
     if (!S || !IX) return;
