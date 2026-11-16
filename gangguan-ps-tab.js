@@ -61,9 +61,9 @@
   }
 
   // ---------- rekap gangguan internal / eksternal per UID per bulan (database Dupont: kode J, Distribusi, semua jenis padam) ----------
-  // Pengelompokan kolom CAUSE: internal = kondisi / kegagalan peralatan dan pekerjaan PLN; eksternal = lingkungan dan pihak luar;
-  // belum teridentifikasi = Dalam Investigasi, Gangguan Tidak Diketahui, dan cause kosong.
-  const CAUSE_INT = ['Lifetime', 'Kegagalan Peralatan Proteksi Petir', 'Partial DisCharge', 'Media Isolasi Bocor / Gagal', 'Kesalahan Pemasangan', 'Kesalahan Procedure', 'Flashover', 'Korosif / Penggaraman', 'Overload', 'Koordinasi Proteksi', 'Sambungan Kendor / Loss Kontak'];
+  // Pengelompokan kolom CAUSE: internal = kondisi / kegagalan peralatan, pekerjaan PLN, dan Dalam Investigasi (sesuai arahan);
+  // eksternal = lingkungan dan pihak luar; belum teridentifikasi = Gangguan Tidak Diketahui dan cause kosong.
+  const CAUSE_INT = ['Dalam Investigasi', 'Lifetime', 'Kegagalan Peralatan Proteksi Petir', 'Partial DisCharge', 'Media Isolasi Bocor / Gagal', 'Kesalahan Pemasangan', 'Kesalahan Procedure', 'Flashover', 'Korosif / Penggaraman', 'Overload', 'Koordinasi Proteksi', 'Sambungan Kendor / Loss Kontak'];
   const CAUSE_EXT = ['Benda Asing', 'Pohon', 'Binatang', 'Layangan / Kawat', 'Longsor', 'Kebakaran', 'Kendaraan', 'Umbul2 / Baliho / Penjor / Terpal / Reklame', 'Banjir', 'Vandalisme (Perusakan Oleh Orang)', 'Pekerjaan Konstruksi Pihak Ketiga', 'Gempa Bumi', 'Keluhan Pelanggan', 'Gangguan Instalasi Bangunan Pelanggan'];
   const ck = (c) => String(c || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const GRPMAP = new Map([...CAUSE_INT.map((c) => [ck(c), 'I']), ...CAUSE_EXT.map((c) => [ck(c), 'E'])]);
