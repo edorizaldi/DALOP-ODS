@@ -113,12 +113,12 @@
     us.forEach((u) => block(u, uname(u)));
     block(null, 'Total Sumkal', 'dp-ps-tot');
     $('gie-table').replaceChildren(th, tb);
-    // isi tiap kelompok (cause dan jumlah event Jan s.d. bulan terakhir)
+    // isi tiap kelompok: daftar cause, diurutkan dari yang paling sering
     const lst = $('gie-map'); lst.replaceChildren();
     GRP.forEach((gg) => {
       const items = Object.entries(byCause).filter(([, o]) => o.g === gg.id).sort((a, b) => b[1].n - a[1].n);
       const d = mk('div', null, 'gie-mapg'); const h = mk('b'); const i2 = mk('i', null, 'ss-sw'); i2.style.background = gg.c; h.append(i2, `Kelompok padam ${gg.nm.toLowerCase()}`); d.append(h);
-      d.append(mk('span', items.map(([c, o]) => `${c} (${fmt(o.n)})`).join(' · ') || '–')); lst.append(d);
+      d.append(mk('span', items.map(([c]) => c).join(' · ') || '–')); lst.append(d);
     });
   }
 
