@@ -352,8 +352,8 @@
       const TR = computeTrn();
       if (TR) {
         const tm = TR.ms; const per = `${BLN[tm[0] - 1]}–${BLN[tm[2] - 1]} 2026`;
-        const fmtTop = (l) => l.slice(0, TRN_N).map((r, i) => `${i + 1}. ${r.peny} (${r.ulp}) ${r.v.join(' → ')} [${r.d > 0 ? '+' : ''}${r.d}]`).join('\n');
-        const t3 = [[`Trend penyulang per UID · 3 bulan terakhir (${per}) · ${S.fTxt}`], [`Naik bila gangguan ${BS[tm[2] - 1]} > ${BS[tm[0] - 1]}, turun bila lebih kecil (kemiringan regresi 3 bulan); angka top 3 = ${tm.map((m) => BS[m - 1]).join(' → ')} [selisih].`], [],
+        const fmtTop = (l) => !l.length ? 'Nihil' : l.slice(0, TRN_N).map((r, i) => `${i + 1}. ${r.peny} (${r.ulp}) ${r.v.join(' → ')} [${r.d > 0 ? '+' : ''}${r.d}]`).join('\n');
+        const t3 = [[`Trend penyulang per UID · 3 bulan terakhir (${per}) · ${S.fTxt}`], [`Naik bila ${BS[tm[0] - 1]} < ${BS[tm[1] - 1]} < ${BS[tm[2] - 1]}, turun bila ${BS[tm[0] - 1]} > ${BS[tm[1] - 1]} > ${BS[tm[2] - 1]} (berturut-turut); naik-turun atau sama tidak dihitung. Angka top 3 = ${tm.map((m) => BS[m - 1]).join(' → ')} [selisih].`], [],
           ['No.', 'UID', 'Jumlah Penyulang Trend Naik (3 bulan terakhir)', 'Jumlah Penyulang Trend Turun', 'Top 3 Penyulang Trend Naik', 'Top 3 Penyulang Trend Turun']];
         (S.uid ? [S.uid] : UORD).forEach((u, i) => { const o = TR.out[u]; t3.push(o.lengkap ? [i + 1, ULABEL[u], o.naik.length, o.turun.length, fmtTop(o.naik), fmtTop(o.turun)] : [i + 1, ULABEL[u], '', '', 'Data belum lengkap', '']); });
         if (!S.uid) t3.push(['', 'Total Sumkal', TR.all.naik.length, TR.all.turun.length, fmtTop(TR.all.naik.map((r) => ({ ...r, ulp: ULABEL[r.u] + ' · ' + r.ulp }))), fmtTop(TR.all.turun.map((r) => ({ ...r, ulp: ULABEL[r.u] + ' · ' + r.ulp })))]);
@@ -444,8 +444,8 @@
   }
   // ---------- trend penyulang per UID: 3 bulan terakhir database (mis. Agustus, September, Oktober) ----------
   // Per penyulang (UID + nama) jumlah gangguan permanen + sesaat per bulan, mengikuti filter bidang dan jenis padam.
-  // Arah trend = kemiringan garis regresi atas 3 bulan itu (dengan 3 titik sama dengan (bulan ke-3 - bulan ke-1) / 2):
-  // naik bila bulan terakhir > bulan pertama, turun bila lebih kecil; sama = stabil (tidak dihitung).
+  // Trend berurutan: naik bila bulan ke-1 < bulan ke-2 < bulan ke-3, turun bila bulan ke-1 > bulan ke-2 > bulan ke-3;
+  // selain itu (naik-turun / sama) tidak dihitung.
   // Penyulang tanpa gangguan di ketiga bulan tidak dihitung; UID yang datanya belum lengkap 3 bulan ditandai.
   const TRN_N = 3;
   function computeTrn() {
@@ -462,7 +462,7 @@
     G.forEach((g) => {
       const o = out[g.u]; if (!o || !o.lengkap) return; const [a, b, c] = g.v; if (a + b + c === 0) return;
       const r = { u: g.u, peny: g.peny, ulp: g.ulp.size ? [...g.ulp].sort((p, q) => q[1] - p[1])[0][0] : '–', v: g.v, d: c - a, slope: (c - a) / 2 };
-      if (c > a) o.naik.push(r); else if (c < a) o.turun.push(r); else o.stabil++;
+      if (a < b && b < c) o.naik.push(r); else if (a > b && b > c) o.turun.push(r); else o.stabil++;
     });
     const byN = (p, q) => q.d - p.d || q.v[2] - p.v[2] || p.peny.localeCompare(q.peny);
     const byT = (p, q) => p.d - q.d || p.v[2] - q.v[2] || p.peny.localeCompare(q.peny);
@@ -472,7 +472,7 @@
   }
   function topList(list, d, ms, showUid) {
     const box = mk('ol', null, 'hi-trn-top ' + d);
-    if (!list.length) { box.append(mk('li', 'Tidak ada', 'hi-trn-nil')); return box; }
+    if (!list.length) { box.append(mk('li', 'Nihil', 'hi-trn-nil')); return box; }
     list.slice(0, TRN_N).forEach((r) => {
       const li = mk('li'); const nm = mk('b', r.peny); li.append(nm);
       li.append(mk('span', (showUid ? ULABEL[r.u] + ' · ' : '') + r.ulp, 'hi-trn-ulp'));
@@ -485,7 +485,7 @@
     const R = computeTrn(); if (!R) { $('hi-trn').replaceChildren(); return; }
     const { out, ms, all } = R; const per = `${BLN[ms[0] - 1]}–${BLN[ms[2] - 1]} 2026`; const ps = ms.map((m) => BS[m - 1]).join(' → ');
     $('hi-trn-h').textContent = `Trend penyulang per UID · 3 bulan terakhir (${per})`;
-    $('hi-trn-note').textContent = `${S.fTxt[0].toUpperCase() + S.fTxt.slice(1)}, permanen + sesaat per bulan (${ps}). Trend naik bila gangguan ${BLN[ms[2] - 1]} lebih banyak dari ${BLN[ms[0] - 1]} (kemiringan garis regresi 3 bulan positif), turun bila lebih sedikit; penyulang yang sama (stabil) atau tanpa gangguan di ketiga bulan tidak dihitung. Top 3 diurutkan dari selisih ${BS[ms[2] - 1]} − ${BS[ms[0] - 1]} terbesar.`;
+    $('hi-trn-note').textContent = `${S.fTxt[0].toUpperCase() + S.fTxt.slice(1)}, permanen + sesaat per bulan (${ps}). Trend naik bila gangguan naik berturut-turut (${BS[ms[0] - 1]} < ${BS[ms[1] - 1]} < ${BS[ms[2] - 1]}), turun bila turun berturut-turut (${BS[ms[0] - 1]} > ${BS[ms[1] - 1]} > ${BS[ms[2] - 1]}); penyulang yang naik-turun, sama, atau tanpa gangguan di ketiga bulan tidak dihitung. Top 3 diurutkan dari selisih ${BS[ms[2] - 1]} − ${BS[ms[0] - 1]} terbesar; Nihil bila tidak ada yang memenuhi.`;
     const th = mk('thead'), hr = mk('tr');
     [['No.', 'num hi-trn-no'], ['UID', ''], ['Jumlah Penyulang Trend Naik (3 bulan terakhir)', 'num hi-trn-cn'], ['Jumlah Penyulang Trend Turun', 'num hi-trn-cn'], ['Top 3 Penyulang Trend Naik', 'hi-trn-th naik'], ['Top 3 Penyulang Trend Turun', 'hi-trn-th turun']].forEach(([h, c]) => hr.append(mk('th', h, c)));
     th.append(hr);
@@ -493,7 +493,7 @@
     const cnt = (n, d) => { const td = mk('td', null, 'num hi-trn-c'); td.append(mk('span', fmt(n), 'hi-trn-pill ' + d)); return td; };
     uids.forEach((u, i) => {
       const o = out[u]; const tr = mk('tr');
-      const uc = mk('td', null, 'hi-trn-u'); uc.append(mk('b', ULABEL[u])); if (o.stabil) uc.append(mk('small', `${fmt(o.stabil)} stabil`, 'hi-nmu'));
+      const uc = mk('td', null, 'hi-trn-u'); uc.append(mk('b', ULABEL[u])); if (o.stabil) uc.append(mk('small', `${fmt(o.stabil)} fluktuatif/stabil`, 'hi-nmu'));
       tr.append(mk('td', String(i + 1), 'num hi-rank'), uc);
       if (!o.lengkap) { const td = mk('td', `Data penyulang ${per} belum lengkap untuk UID ini.`, 'hi-trn-nil'); td.colSpan = 4; tr.append(td); tb.append(tr); return; }
       const tn = mk('td'), tt = mk('td'); tn.append(topList(o.naik, 'naik', ms, false)); tt.append(topList(o.turun, 'turun', ms, false));
@@ -501,7 +501,7 @@
     });
     if (!S.uid) {
       const tr = mk('tr', null, 'hi-tot'); const st = UORD.reduce((a, u) => a + out[u].stabil, 0);
-      const uc = mk('td', null, 'hi-trn-u'); uc.append(mk('b', 'Total Sumkal')); if (st) uc.append(mk('small', `${fmt(st)} stabil`, 'hi-nmu'));
+      const uc = mk('td', null, 'hi-trn-u'); uc.append(mk('b', 'Total Sumkal')); if (st) uc.append(mk('small', `${fmt(st)} fluktuatif/stabil`, 'hi-nmu'));
       const tn = mk('td'), tt = mk('td'); tn.append(topList(all.naik, 'naik', ms, true)); tt.append(topList(all.turun, 'turun', ms, true));
       tr.append(mk('td', ''), uc, cnt(all.naik.length, 'naik'), cnt(all.turun.length, 'turun'), tn, tt); tb.append(tr);
     }
