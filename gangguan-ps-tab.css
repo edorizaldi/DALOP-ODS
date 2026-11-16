@@ -35,7 +35,7 @@
 .gpr-table td.gie-pc { color: var(--color-fg-muted); }
 .gie-det { margin-top: 4px; font-size: var(--cds-font-size-caption); }
 .gie-det summary { cursor: pointer; color: var(--color-fg-muted); }
-.gie-map { display: grid; gap: 6px; margin-top: 8px; }
-.gie-mapg { display: grid; grid-template-columns: 11rem 1fr; gap: 8px; align-items: baseline; }
-.gie-mapg b { white-space: nowrap; display: inline-flex; align-items: center; } .gie-mapg .ss-sw { margin-right: 6px; }
+.gie-map { display: grid; gap: 6px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.gie-mapg { display: grid; grid-template-columns: 15rem 1fr; gap: 8px; align-items: baseline; }
+.gie-mapg b { white-space: nowrap; display: inline-flex; align-items: center; color: var(--color-fg); font-weight: 600; } .gie-mapg .ss-sw { margin-right: 6px; }
 @media (max-width: 40rem) { .gie-mapg { grid-template-columns: 1fr; } }

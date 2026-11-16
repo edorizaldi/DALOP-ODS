@@ -62,13 +62,13 @@
 
   // ---------- rekap gangguan internal / eksternal per UID per bulan (database Dupont: kode J, Distribusi, semua jenis padam) ----------
   // Pengelompokan kolom CAUSE: internal = kondisi / kegagalan peralatan, pekerjaan PLN, dan Dalam Investigasi (sesuai arahan);
-  // eksternal = lingkungan dan pihak luar; belum teridentifikasi = Gangguan Tidak Diketahui dan cause kosong.
+  // eksternal = lingkungan dan pihak luar; tidak diketahui = Gangguan Tidak Diketahui dan cause kosong.
   const CAUSE_INT = ['Dalam Investigasi', 'Lifetime', 'Kegagalan Peralatan Proteksi Petir', 'Partial DisCharge', 'Media Isolasi Bocor / Gagal', 'Kesalahan Pemasangan', 'Kesalahan Procedure', 'Flashover', 'Korosif / Penggaraman', 'Overload', 'Koordinasi Proteksi', 'Sambungan Kendor / Loss Kontak'];
   const CAUSE_EXT = ['Benda Asing', 'Pohon', 'Binatang', 'Layangan / Kawat', 'Longsor', 'Kebakaran', 'Kendaraan', 'Umbul2 / Baliho / Penjor / Terpal / Reklame', 'Banjir', 'Vandalisme (Perusakan Oleh Orang)', 'Pekerjaan Konstruksi Pihak Ketiga', 'Gempa Bumi', 'Keluhan Pelanggan', 'Gangguan Instalasi Bangunan Pelanggan'];
   const ck = (c) => String(c || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const GRPMAP = new Map([...CAUSE_INT.map((c) => [ck(c), 'I']), ...CAUSE_EXT.map((c) => [ck(c), 'E'])]);
   const grpOf = (c) => GRPMAP.get(ck(c)) || 'U';
-  const GRP = [{ id: 'I', nm: 'Internal', c: '#2F6FA8' }, { id: 'E', nm: 'Eksternal', c: '#C9822B' }, { id: 'U', nm: 'Belum teridentifikasi', c: '#9AA5B1' }];
+  const GRP = [{ id: 'I', nm: 'Internal', c: '#2F6FA8' }, { id: 'E', nm: 'Eksternal', c: '#C9822B' }, { id: 'U', nm: 'Tidak diketahui', c: '#9AA5B1' }];
   let gieRows = [];
   $('gie-dl').addEventListener('click', () => window.SSExport({ card: 'gie-card', btn: 'gie-dl', msg: 'gie-msg', preview: 'gie-pv', filename: 'Rekap_Internal_Eksternal_per_UID_2026.png' }));
   $('gie-csv').addEventListener('click', () => {
@@ -93,7 +93,7 @@
     // ringkasan Sumkal
     const tI = cum(null, 'I'), tE = cum(null, 'E'), tU = cum(null, 'U'), tT = tI + tE + tU;
     const idn = tI + tE;
-    $('gie-sel').replaceChildren(`Sumkal Jan–${BS[lastM - 1]} 2026: `, mk('b', `${fmt(tE)} eksternal (${pc(tE / tT)})`), ', ', mk('b', `${fmt(tI)} internal (${pc(tI / tT)})`), ` dan ${fmt(tU)} belum teridentifikasi (${pc(tU / tT)}) dari ${fmt(tT)} event. Dari yang penyebabnya sudah diketahui, ${idn ? pc(tE / idn) : '–'} eksternal dan ${idn ? pc(tI / idn) : '–'} internal.`);
+    $('gie-sel').replaceChildren(`Sumkal Jan–${BS[lastM - 1]} 2026: `, mk('b', `${fmt(tE)} eksternal (${pc(tE / tT)})`), ', ', mk('b', `${fmt(tI)} internal (${pc(tI / tT)})`), ` dan ${fmt(tU)} tidak diketahui (${pc(tU / tT)}) dari ${fmt(tT)} event (kode J, bidang Distribusi, semua jenis padam, permanen + sesaat).`);
     const th = mk('thead'), hr = mk('tr');
     [['UID', ''], ['', ''], ...months.map((m) => [BS[m - 1], 'num']), [`Kumulatif Jan–${BS[lastM - 1]}`, 'num gpr-cum'], ['Porsi', 'num']].forEach(([h, c]) => hr.append(mk('th', h, c))); th.append(hr);
     const tb = mk('tbody'); gieRows = [['UID', 'Kelompok', ...months.map((m) => BLN[m - 1]), `Kumulatif Jan-${BLN[lastM - 1]}`, 'Porsi']];
@@ -113,11 +113,11 @@
     us.forEach((u) => block(u, uname(u)));
     block(null, 'Total Sumkal', 'dp-ps-tot');
     $('gie-table').replaceChildren(th, tb);
-    // daftar pengelompokan cause
+    // isi tiap kelompok (cause dan jumlah event Jan s.d. bulan terakhir)
     const lst = $('gie-map'); lst.replaceChildren();
     GRP.forEach((gg) => {
       const items = Object.entries(byCause).filter(([, o]) => o.g === gg.id).sort((a, b) => b[1].n - a[1].n);
-      const d = mk('div', null, 'gie-mapg'); const h = mk('b'); const i2 = mk('i', null, 'ss-sw'); i2.style.background = gg.c; h.append(i2, gg.nm); d.append(h);
+      const d = mk('div', null, 'gie-mapg'); const h = mk('b'); const i2 = mk('i', null, 'ss-sw'); i2.style.background = gg.c; h.append(i2, `Kelompok padam ${gg.nm.toLowerCase()}`); d.append(h);
       d.append(mk('span', items.map(([c, o]) => `${c} (${fmt(o.n)})`).join(' · ') || '–')); lst.append(d);
     });
   }
