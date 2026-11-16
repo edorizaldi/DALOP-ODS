@@ -64,9 +64,14 @@ function kumHar(line, swap){
   if(ih>=0){ const end = ik>ih ? ik : line.length; o.har=pairFrom(line.slice(ih+6, end), swap); }
   return o;
 }
-// baris rincian dikenali dari nomor urutnya: "1. ...", "1) ...", "1 - ...", "No. 1 ..."
+// baris rincian dikenali dari nomor urut ("1.", "1)", "No. 1") atau poin ("-", "•", "*"),
+// atau baris tanpa penanda yang memakai pemisah "|"
+const ROW_RE = /^\s*(?:(?:No\.?\s*)?(\d{1,3})\s*[.):\-]|([-–—•·▪●◦►➢>]))\s*(.+)$/i;
 function rowFields(line){
-  const m = line.replace(/\t/g," ").match(/^\s*(?:No\.?\s*)?(\d{1,3})\s*[.):\-]\s*(.+)$/i);
+  const ln = line.replace(/\t/g," ");
+  let m = ln.match(ROW_RE);
+  if(m) m = [m[0], m[1]||m[2], m[3]];
+  else if(/\|.*\|/.test(ln) && !/^\s*(Keterangan|Format)/i.test(ln)) m = [ln, "", ln];
   if(!m) return null;
   const body = m[2].trim();
   if(/^(nihil|tidak\s+ada|-+|n\/?a)\.?$/i.test(body)) return null;
@@ -145,7 +150,7 @@ function padamFields(r, hdr){ const o=mapRow(r,hdr,"padam"); return {penyulang:o
 function kronisFields(r, hdr){ const o=mapRow(r,hdr,"kronis"); return Object.assign({penyulang:o.penyulang, ulp:o.ulp, up3:o.up3}, parseTotal(o.total, hdr&&hdr.swap)); }
 
 function parseReport(raw){
-  const text = String(raw||"").replace(/\r/g,"").replace(/[*_~]/g,"").replace(/ /g," ");
+  const text = String(raw||"").replace(/\r/g,"").replace(/^([ \t]*)\*[ \t]+/gm,"$1• ").replace(/[*_~]/g,"").replace(/ /g," ");
   const lines = text.split("\n");
   const warnings = [];
   const find = re => lines.findIndex(l => re.test(l));
