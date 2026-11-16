@@ -20,7 +20,7 @@
 .gx-table tr.dp-ps-tot td { font-weight: 700; border-top: 2px solid var(--color-border-line); }
 .gx-sub { display: block; font-size: 11px; color: var(--color-fg-muted); }
 .gx-mini4 i { display: block; height: 100%; }
-@media (max-width: 60rem) { /* rekap permanen / sesaat per UID per bulan */
+/* rekap permanen / sesaat per UID per bulan */
 .gpr-table td, .gpr-table th { padding-top: 4px; padding-bottom: 4px; }
 .gpr-table td.gpr-u { font-weight: 600; vertical-align: middle; white-space: nowrap; }
 .gpr-table tr.gpr-first td { border-top: 2px solid var(--color-border-line); }
@@ -30,3 +30,12 @@
 .gpr-table tr.dp-ps-tot.gpr-first td { border-top: 2px solid var(--color-border-line); }
 .gpr-table .gpr-cum { background: color-mix(in srgb, #B3261E 7%, transparent); font-weight: 700; border-left: 2px solid var(--color-border-line); }
 .gpr-table .ss-sw { margin-right: 6px; }
+
+/* rekap internal / eksternal */
+.gpr-table td.gie-pc { color: var(--color-fg-muted); }
+.gie-det { margin-top: 4px; font-size: var(--cds-font-size-caption); }
+.gie-det summary { cursor: pointer; color: var(--color-fg-muted); }
+.gie-map { display: grid; gap: 6px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.gie-mapg { display: grid; grid-template-columns: 15rem 1fr; gap: 8px; align-items: baseline; }
+.gie-mapg b { white-space: nowrap; display: inline-flex; align-items: center; color: var(--color-fg); font-weight: 600; } .gie-mapg .ss-sw { margin-right: 6px; }
+@media (max-width: 40rem) { .gie-mapg { grid-template-columns: 1fr; } }
