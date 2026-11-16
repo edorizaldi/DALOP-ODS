@@ -60,6 +60,68 @@
     $('gpr-table').replaceChildren(th, tb);
   }
 
+  // ---------- rekap gangguan internal / eksternal per UID per bulan (database Dupont: kode J, Distribusi, semua jenis padam) ----------
+  // Pengelompokan kolom CAUSE: internal = kondisi / kegagalan peralatan dan pekerjaan PLN; eksternal = lingkungan dan pihak luar;
+  // belum teridentifikasi = Dalam Investigasi, Gangguan Tidak Diketahui, dan cause kosong.
+  const CAUSE_INT = ['Lifetime', 'Kegagalan Peralatan Proteksi Petir', 'Partial DisCharge', 'Media Isolasi Bocor / Gagal', 'Kesalahan Pemasangan', 'Kesalahan Procedure', 'Flashover', 'Korosif / Penggaraman', 'Overload', 'Koordinasi Proteksi', 'Sambungan Kendor / Loss Kontak'];
+  const CAUSE_EXT = ['Benda Asing', 'Pohon', 'Binatang', 'Layangan / Kawat', 'Longsor', 'Kebakaran', 'Kendaraan', 'Umbul2 / Baliho / Penjor / Terpal / Reklame', 'Banjir', 'Vandalisme (Perusakan Oleh Orang)', 'Pekerjaan Konstruksi Pihak Ketiga', 'Gempa Bumi', 'Keluhan Pelanggan', 'Gangguan Instalasi Bangunan Pelanggan'];
+  const ck = (c) => String(c || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const GRPMAP = new Map([...CAUSE_INT.map((c) => [ck(c), 'I']), ...CAUSE_EXT.map((c) => [ck(c), 'E'])]);
+  const grpOf = (c) => GRPMAP.get(ck(c)) || 'U';
+  const GRP = [{ id: 'I', nm: 'Internal', c: '#2F6FA8' }, { id: 'E', nm: 'Eksternal', c: '#C9822B' }, { id: 'U', nm: 'Belum teridentifikasi', c: '#9AA5B1' }];
+  let gieRows = [];
+  $('gie-dl').addEventListener('click', () => window.SSExport({ card: 'gie-card', btn: 'gie-dl', msg: 'gie-msg', preview: 'gie-pv', filename: 'Rekap_Internal_Eksternal_per_UID_2026.png' }));
+  $('gie-csv').addEventListener('click', () => {
+    if (!gieRows.length) return;
+    const csv = gieRows.map((r) => r.map((v) => (/[;"\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : v)).join(';')).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); a.download = 'Rekap_Internal_Eksternal_per_UID_2026.csv'; document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  });
+  function renderIE() {
+    const D = SSD.data('gangguan_dupont'); if (D.status !== 'ok') return;
+    const v = {}; const ms = new Set(); const byCause = {};
+    D.data.forEach((r) => {
+      if (r.BIDANG !== 'DISTRIBUSI' || (r.PS !== 'Permanen' && r.PS !== 'Sesaat')) return;
+      const m = +r.BULAN_NO; if (!(m >= 1 && m <= 12)) return; ms.add(m);
+      const gp = grpOf(r.CAUSE); const n = Number(r.JUMLAH);
+      const k = r.UNIT + '|' + gp + '|' + m; v[k] = (v[k] || 0) + n;
+      const cn = String(r.CAUSE || '').trim() || '(kosong)'; const o = byCause[cn] || (byCause[cn] = { g: gp, n: 0 }); o.n += n;
+    });
+    const months = [...ms].sort((a, b) => a - b); if (!months.length) return; const lastM = months[months.length - 1];
+    const us = UORD.filter((u) => months.some((m) => GRP.some((g) => v[u + '|' + g.id + '|' + m])));
+    const g = (u, gp, m) => (u ? v[u + '|' + gp + '|' + m] || 0 : us.reduce((a, x) => a + (v[x + '|' + gp + '|' + m] || 0), 0));
+    const cum = (u, gp) => months.reduce((a, m) => a + g(u, gp, m), 0);
+    // ringkasan Sumkal
+    const tI = cum(null, 'I'), tE = cum(null, 'E'), tU = cum(null, 'U'), tT = tI + tE + tU;
+    const idn = tI + tE;
+    $('gie-sel').replaceChildren(`Sumkal Jan–${BS[lastM - 1]} 2026: `, mk('b', `${fmt(tE)} eksternal (${pc(tE / tT)})`), ', ', mk('b', `${fmt(tI)} internal (${pc(tI / tT)})`), ` dan ${fmt(tU)} belum teridentifikasi (${pc(tU / tT)}) dari ${fmt(tT)} event. Dari yang penyebabnya sudah diketahui, ${idn ? pc(tE / idn) : '–'} eksternal dan ${idn ? pc(tI / idn) : '–'} internal.`);
+    const th = mk('thead'), hr = mk('tr');
+    [['UID', ''], ['', ''], ...months.map((m) => [BS[m - 1], 'num']), [`Kumulatif Jan–${BS[lastM - 1]}`, 'num gpr-cum'], ['Porsi', 'num']].forEach(([h, c]) => hr.append(mk('th', h, c))); th.append(hr);
+    const tb = mk('tbody'); gieRows = [['UID', 'Kelompok', ...months.map((m) => BLN[m - 1]), `Kumulatif Jan-${BLN[lastM - 1]}`, 'Porsi']];
+    const block = (u, name, cls) => {
+      const tot = GRP.reduce((a, gg) => a + cum(u, gg.id), 0);
+      [...GRP, { id: 'T', nm: 'Total' }].forEach((gg, i) => {
+        const tr = mk('tr', null, [cls, i === 0 ? 'gpr-first' : '', gg.id === 'T' ? 'gpr-sum' : ''].filter(Boolean).join(' '));
+        if (i === 0) { const td = mk('td', name, 'gpr-u'); td.rowSpan = 4; tr.append(td); }
+        const val = (m) => (gg.id === 'T' ? GRP.reduce((a, x) => a + g(u, x.id, m), 0) : g(u, gg.id, m));
+        const sw = mk('td', null, 'gpr-l'); if (gg.c) { const i2 = mk('i', null, 'ss-sw'); i2.style.background = gg.c; sw.append(i2); } sw.append(gg.nm); tr.append(sw);
+        months.forEach((m) => { const n = val(m); tr.append(mk('td', fmt(n), 'num' + (n ? '' : ' gx-zero'))); });
+        const c = gg.id === 'T' ? tot : cum(u, gg.id); tr.append(mk('td', fmt(c), 'num gpr-cum'));
+        const share = tot ? c / tot : 0; tr.append(mk('td', gg.id === 'T' ? '' : pc(share), 'num gie-pc'));
+        tb.append(tr); gieRows.push([name, gg.nm, ...months.map(val), c, gg.id === 'T' ? '' : (share * 100).toFixed(1).replace('.', ',') + '%']);
+      });
+    };
+    us.forEach((u) => block(u, uname(u)));
+    block(null, 'Total Sumkal', 'dp-ps-tot');
+    $('gie-table').replaceChildren(th, tb);
+    // daftar pengelompokan cause
+    const lst = $('gie-map'); lst.replaceChildren();
+    GRP.forEach((gg) => {
+      const items = Object.entries(byCause).filter(([, o]) => o.g === gg.id).sort((a, b) => b[1].n - a[1].n);
+      const d = mk('div', null, 'gie-mapg'); const h = mk('b'); const i2 = mk('i', null, 'ss-sw'); i2.style.background = gg.c; h.append(i2, gg.nm); d.append(h);
+      d.append(mk('span', items.map(([c, o]) => `${c} (${fmt(o.n)})`).join(' · ') || '–')); lst.append(d);
+    });
+  }
+
   const filterText = (P) => [P.g_kode ? 'Kode ' + P.g_kode : 'semua kode', P.g_bidang ? 'Bidang ' + tc(P.g_bidang) : 'semua bidang'].join(' · ');
 
   // ---------- 1) permanen vs sesaat per unit ----------
@@ -98,5 +160,5 @@
     $('gps-table').replaceChildren(th, tb);
   }
 
-  SSD.onData(() => { const P = dash.params(); try { renderRekap(); } catch (e) { console.error(e); } try { renderPS(P); } catch (e) { console.error(e); } });
+  SSD.onData(() => { const P = dash.params(); try { renderRekap(); } catch (e) { console.error(e); } try { renderIE(); } catch (e) { console.error(e); } try { renderPS(P); } catch (e) { console.error(e); } });
 })();

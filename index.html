@@ -16,7 +16,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="kondisi-tab.css?v=20261103">
 <link rel="stylesheet" href="hirarki-tab.css">
 <link rel="stylesheet" href="workplan-tab.css">
-<link rel="stylesheet" href="gangguan-ps-tab.css?v=20261109">
+<link rel="stylesheet" href="gangguan-ps-tab.css?v=20261116ie">
 <link rel="stylesheet" href="hi-tab.css?v=20261116u">
 <link rel="stylesheet" href="acct.css">
 <link rel="stylesheet" href="lgp-tab.css?v=20261115d">
@@ -859,6 +859,14 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <p class="ss-note">Database Event Padam Penyulang: <b>kode J</b>, <b>bidang Distribusi</b>, semua jenis padam. Kolom paling kanan: kumulatif awal tahun s.d. bulan terakhir.</p>
       <div class="ss-g-wrap" data-source="gangguan_ps"><table class="ss-table gx-table gpr-table" id="gpr-table"></table></div>
       <div class="h-preview" id="gpr-pv" hidden><span class="ss-note"></span><img alt="Rekap gangguan permanen dan sesaat per UID per bulan"></div>
+    </div>
+    <div class="ss-card" id="gie-card">
+      <div class="dp-head"><h3>Rekap gangguan internal dan eksternal per UID per bulan</h3><div class="dp-dl"><span class="ss-note" id="gie-msg" role="status"></span><button type="button" class="h-act" id="gie-csv"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download CSV</button><button type="button" class="h-act h-act-primary" id="gie-dl"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Download PNG</button></div></div>
+      <p class="ss-note">Database Dupont gangguan: <b>kode J</b>, <b>bidang Distribusi</b>, semua jenis padam, permanen + sesaat (jumlahnya sama dengan rekap permanen dan sesaat di atas). Penyebab (cause) dikelompokkan menjadi internal, eksternal, dan belum teridentifikasi; rincian pengelompokan ada di bawah tabel.</p>
+      <p class="ss-g-sel" id="gie-sel"></p>
+      <div class="ss-g-wrap" data-source="gangguan_dupont"><table class="ss-table gx-table gpr-table" id="gie-table"></table></div>
+      <details class="gie-det"><summary>Pengelompokan penyebab (cause) dan jumlah event Jan s.d. bulan terakhir</summary><div class="gie-map" id="gie-map"></div></details>
+      <div class="h-preview" id="gie-pv" hidden><span class="ss-note"></span><img alt="Rekap gangguan internal dan eksternal per UID per bulan"></div>
     </div>
   </section>
 
@@ -3168,7 +3176,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="gj-tab.js"></script>
 <script>document.getElementById('g-mx-dl').addEventListener('click', () => { const c = window.SSGRc || { per: '' }; window.SSExport({ card: 'g-matriks-card', btn: 'g-mx-dl', msg: 'g-mx-msg', preview: 'g-mx-pv', filename: `Matriks_Unit_x_Bulan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
 <script>document.getElementById('g-rc-dl').addEventListener('click', () => { const c = window.SSGRc || { scope: '', per: '' }; window.SSExport({ hideCols: ['Perubahan', 'Porsi'], card: 'g-rincian-card', btn: 'g-rc-dl', msg: 'g-rc-msg', preview: 'g-rc-pv', caption: `Jumlah No. Laporan unik per bulan · ${c.scope} · ${c.per}. % Distribusi = laporan bidang Distribusi ÷ total laporan.`, filename: `Rincian_Bulanan_Gangguan_${c.per.replace(/[^A-Za-z0-9]+/g, '_')}.png` }); });</script>
-<script src="gangguan-ps-tab.js?v=20261109"></script>
+<script src="gangguan-ps-tab.js?v=20261116ie"></script>
 <script src="lgp-tab.js?v=20261116"></script>
 <script src="kc-tab.js"></script>
 <script src="dp-tab.js?v=20261112"></script>
