@@ -142,3 +142,19 @@
 .hi-top tr.hi-tot td { background-color: color-mix(in srgb, #13254A 5%, transparent); }
 .hi-top tr.hi-tot.hi-tfirst td { border-top: 2px solid var(--navy, #13254A); }
 .hi-top .hi-nmu { display: block; font-size: 10.5px; color: var(--color-fg-muted); font-weight: 500; }
+
+/* trend penyulang per UID */
+.hi-trn td, .hi-trn th { vertical-align: middle; }
+.hi-trn th:not(.num) { text-align: left !important; }
+.hi-trn td.hi-trn-u { white-space: nowrap; text-align: left !important; vertical-align: top; }
+.hi-trn tr.hi-trn-g.hi-trn-turun td:not(.hi-trn-u) { border-top: 1px dashed var(--color-border-line); }
+.hi-trn-pill { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 1px 9px; border-radius: 999px; white-space: nowrap; }
+.hi-trn-pill.naik { background: color-mix(in srgb, #B3261E 13%, transparent); color: #8f1d17; }
+.hi-trn-pill.turun { background: color-mix(in srgb, #2E8B4E 14%, transparent); color: #1f6b3a; }
+.hi-trn td.hi-trn-sl { font-weight: 700; }
+.hi-trn td.hi-trn-sl.naik { color: #B3261E; } .hi-trn td.hi-trn-sl.turun { color: #2E8B4E; }
+.hi-trn td.hi-trn-spc { padding-top: 4px; padding-bottom: 4px; }
+.hi-trn-sp { display: block; }
+.hi-trn td.hi-trn-nil { color: var(--color-fg-muted); font-style: italic; text-align: left !important; }
+.hi-trn-sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin: 0 3px 0 6px; }
+#hi-trn-note:empty { display: none; }
