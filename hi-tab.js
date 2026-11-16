@@ -35,7 +35,7 @@
   $('hi-search').addEventListener('input', (e) => { q = e.target.value.trim().toLowerCase(); renderList(); });
   const ctx = { name: '' };
   const exp = (id) => $(`hi-${id}-dl`).addEventListener('click', () => window.SSExport({ card: `hi-${id}-card`, btn: `hi-${id}-dl`, msg: `hi-${id}-msg`, preview: `hi-${id}-pv`, filename: `Health_Index_Penyulang_${id}_${ctx.name.replace(/[^A-Za-z0-9]+/g, '_')}.png` }));
-  exp('trend'); exp('unit'); exp('top');
+  exp('trend'); exp('unit'); exp('top'); exp('trn');
   // laporan PNG: header (ringkasan + kotak), rekap event permanen/sesaat, dan Top 3 per UID sesuai filter
   $('hi-rep-dl').addEventListener('click', async () => {
     const sec = $('hi'); const W = mk('div', null, 'hi-report'); W.id = 'hi-report';
@@ -236,7 +236,7 @@
 
     S = { fTxt, scoped, bm, where, uid, months: IX.months, bidang };
     renderPS();
-    renderList(); renderTop();
+    renderList(); renderTop(); renderTrn();
     $('hi-note').textContent = `Sumber: database Event Padam Penyulang saja (gangguan per penyulang dari APKT); tidak memakai Database Penyulang. Kelas per penyulang per bulan dari jumlah gangguan permanen + sesaat kode J, mengikuti filter bidang (bawaan Distribusi) dan jenis padam (bawaan semua): kronis ≥ 6 kali, sakit 2–5 kali, sehat 1 kali. Penyulang tanpa gangguan pada bulan itu tidak dihitung; total = penyulang yang mengalami gangguan. Rekap per UP3 belum ditampilkan. Pemeriksaan kelengkapan data dibandingkan rekap Event Padam Penyulang per UID untuk bidang terpilih (semua jenis padam).`;
   }
 
@@ -349,6 +349,21 @@
       ws1['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 3, c: 0 }, e: { r: 3 + rows.length, c: head.length - 1 } }) }; ws1['!freeze'] = { xSplit: 2, ySplit: 4 };
       const ws2 = X.utils.aoa_to_sheet(det); ws2['!cols'] = [16, 22, 26, 22, 10, 10, 10, 10].map((w) => ({ wch: w }));
       X.utils.book_append_sheet(wb, ws1, 'Summary Penyulang'); X.utils.book_append_sheet(wb, ws2, 'Detail per Bulan');
+      const TR = computeTrn();
+      if (TR) {
+        const tm = TR.ms; const per = `${BLN[tm[0] - 1]}–${BLN[tm[2] - 1]} 2026`;
+        const fmtTop = (l) => !l.length ? 'Nihil' : l.slice(0, TRN_N).map((r, i) => `${i + 1}. ${r.peny} (${r.ulp}) ${r.v.join(' → ')}`).join('\n');
+        const t3 = [[`Trend penyulang per UID · 3 bulan terakhir (${per}) · ${S.fTxt}`], [`Naik bila ${BS[tm[0] - 1]} < ${BS[tm[1] - 1]} < ${BS[tm[2] - 1]}, turun bila ${BS[tm[0] - 1]} > ${BS[tm[1] - 1]} > ${BS[tm[2] - 1]} (berturut-turut); naik-turun atau sama tidak dihitung. Angka top 3 = ${tm.map((m) => BS[m - 1]).join(' → ')}.`], [],
+          ['No.', 'UID', 'Jumlah Penyulang Trend Naik (3 bulan terakhir)', 'Jumlah Penyulang Trend Turun', 'Top 3 Penyulang Trend Naik', 'Top 3 Penyulang Trend Turun']];
+        (S.uid ? [S.uid] : UORD).forEach((u, i) => { const o = TR.out[u]; t3.push(o.lengkap ? [i + 1, ULABEL[u], o.naik.length, o.turun.length, fmtTop(o.naik), fmtTop(o.turun)] : [i + 1, ULABEL[u], '', '', 'Data belum lengkap', '']); });
+        if (!S.uid) t3.push(['', 'Total Sumkal', TR.all.naik.length, TR.all.turun.length, fmtTop(TR.all.naik.map((r) => ({ ...r, ulp: ULABEL[r.u] + ' · ' + r.ulp }))), fmtTop(TR.all.turun.map((r) => ({ ...r, ulp: ULABEL[r.u] + ' · ' + r.ulp })))]);
+        const ws3 = X.utils.aoa_to_sheet(t3); ws3['!cols'] = [6, 18, 16, 16, 60, 60].map((w) => ({ wch: w }));
+        X.utils.book_append_sheet(wb, ws3, 'Trend 3 Bulan');
+        const d3 = [['UID', 'Trend', 'Peringkat dalam UID', 'Penyulang', 'ULP', ...tm.map((m) => BLN[m - 1]), `Selisih ${BS[tm[2] - 1]} − ${BS[tm[0] - 1]}`]];
+        (S.uid ? [S.uid] : UORD).forEach((u) => { const o = TR.out[u]; if (!o.lengkap) return; [['naik', 'Naik'], ['turun', 'Turun']].forEach(([d, lab]) => o[d].forEach((r, i) => d3.push([ULABEL[u], lab, i + 1, r.peny, r.ulp, ...r.v, r.d]))); });
+        const ws4 = X.utils.aoa_to_sheet(d3); ws4['!cols'] = [16, 8, 10, 26, 20, 10, 10, 10, 12].map((w) => ({ wch: w })); ws4['!autofilter'] = { ref: X.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: d3.length - 1, c: d3[0].length - 1 } }) };
+        X.utils.book_append_sheet(wb, ws4, 'Trend 3 Bulan Detail');
+      }
       const data = X.write(wb, { type: 'array', bookType: 'xlsx' });
       const filename = `Health_Index_Penyulang_Summary_${ctx.name.replace(/[^A-Za-z0-9]+/g, '_')}.xlsx`;
       const ok = await saveFile(new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename);
@@ -426,6 +441,71 @@
     group('Total Sumkal', t, [...G].filter(isKr).sort(byKr).slice(0, 3), 'hi-tot', true, false);
     $('hi-top').replaceChildren(th, tb);
     $('hi-top-note').textContent = '';
+  }
+  // ---------- trend penyulang per UID: 3 bulan terakhir database (mis. Agustus, September, Oktober) ----------
+  // Per penyulang (UID + nama) jumlah gangguan permanen + sesaat per bulan, mengikuti filter bidang dan jenis padam.
+  // Trend berurutan: naik bila bulan ke-1 < bulan ke-2 < bulan ke-3, turun bila bulan ke-1 > bulan ke-2 > bulan ke-3;
+  // selain itu (naik-turun / sama) tidak dihitung.
+  // Penyulang tanpa gangguan di ketiga bulan tidak dihitung; UID yang datanya belum lengkap 3 bulan ditandai.
+  const TRN_N = 3;
+  function computeTrn() {
+    if (!S || !IX) return null;
+    const ms = IX.months.slice(-3); if (ms.length < 3) return null;
+    const G = new Map();
+    S.scoped.forEach((f) => {
+      if (f.inj) return; const k = f.u + '|' + nn(f.peny);
+      let g = G.get(k); if (!g) { g = { u: f.u, peny: f.peny, v: [0, 0, 0], ulp: new Map() }; G.set(k, g); }
+      f.ulp.forEach((n, x) => g.ulp.set(x, (g.ulp.get(x) || 0) + n));
+      ms.forEach((m, i) => { const o = f.mo[m]; if (o) g.v[i] += o[0] + o[1]; });
+    });
+    const out = {}; UORD.forEach((u) => { out[u] = { naik: [], turun: [], stabil: 0, lengkap: ms.every((m) => IX.ada.has(m + '|' + u)) }; });
+    G.forEach((g) => {
+      const o = out[g.u]; if (!o || !o.lengkap) return; const [a, b, c] = g.v; if (a + b + c === 0) return;
+      const r = { u: g.u, peny: g.peny, ulp: g.ulp.size ? [...g.ulp].sort((p, q) => q[1] - p[1])[0][0] : '–', v: g.v, d: c - a, slope: (c - a) / 2 };
+      if (a < b && b < c) o.naik.push(r); else if (a > b && b > c) o.turun.push(r); else o.stabil++;
+    });
+    const byN = (p, q) => q.d - p.d || q.v[2] - p.v[2] || p.peny.localeCompare(q.peny);
+    const byT = (p, q) => p.d - q.d || p.v[2] - q.v[2] || p.peny.localeCompare(q.peny);
+    Object.values(out).forEach((o) => { o.naik.sort(byN); o.turun.sort(byT); });
+    const all = { naik: [].concat(...Object.values(out).map((o) => o.naik)).sort(byN), turun: [].concat(...Object.values(out).map((o) => o.turun)).sort(byT) };
+    return { out, ms, all };
+  }
+  function topList(list, d, ms, showUid) {
+    const box = mk('ol', null, 'hi-trn-top ' + d);
+    if (!list.length) { box.append(mk('li', 'Nihil', 'hi-trn-nil')); return box; }
+    list.slice(0, TRN_N).forEach((r) => {
+      const li = mk('li'); const nm = mk('b', r.peny); li.append(nm);
+      li.append(mk('span', (showUid ? ULABEL[r.u] + ' · ' : '') + r.ulp, 'hi-trn-ulp'));
+      const seq = mk('span', null, 'hi-trn-seq'); r.v.forEach((n, i) => { if (i) seq.append(mk('i', '→')); const k = n ? katOf(n) : null; const c = mk('span', fmt(n), 'hi-cell' + (k ? '' : ' z')); if (k) { c.style.background = KBY[k].c; c.style.color = KBY[k].fg; } c.title = `${BLN[ms[i] - 1]}: ${fmt(n)} kali`; seq.append(c); });
+      li.append(seq); box.append(li);
+    });
+    return box;
+  }
+  function renderTrn() {
+    const R = computeTrn(); if (!R) { $('hi-trn').replaceChildren(); return; }
+    const { out, ms, all } = R; const per = `${BLN[ms[0] - 1]}–${BLN[ms[2] - 1]} 2026`; const ps = ms.map((m) => BS[m - 1]).join(' → ');
+    $('hi-trn-h').textContent = `Trend penyulang per UID · 3 bulan terakhir (${per})`;
+    $('hi-trn-note').textContent = `${S.fTxt[0].toUpperCase() + S.fTxt.slice(1)}, permanen + sesaat per bulan (${ps}). Trend naik bila gangguan naik berturut-turut (${BS[ms[0] - 1]} < ${BS[ms[1] - 1]} < ${BS[ms[2] - 1]}), turun bila turun berturut-turut (${BS[ms[0] - 1]} > ${BS[ms[1] - 1]} > ${BS[ms[2] - 1]}); penyulang yang naik-turun, sama, atau tanpa gangguan di ketiga bulan tidak dihitung. Top 3 diurutkan dari selisih ${BS[ms[2] - 1]} − ${BS[ms[0] - 1]} terbesar; Nihil bila tidak ada yang memenuhi.`;
+    const th = mk('thead'), hr = mk('tr');
+    [['No.', 'num hi-trn-no'], ['UID', ''], ['Jumlah Penyulang Trend Naik (3 bulan terakhir)', 'num hi-trn-cn'], ['Jumlah Penyulang Trend Turun', 'num hi-trn-cn'], ['Top 3 Penyulang Trend Naik', 'hi-trn-th naik'], ['Top 3 Penyulang Trend Turun', 'hi-trn-th turun']].forEach(([h, c]) => hr.append(mk('th', h, c)));
+    th.append(hr);
+    const tb = mk('tbody'); const uids = S.uid ? [S.uid] : UORD;
+    const cnt = (n, d) => { const td = mk('td', null, 'num hi-trn-c'); td.append(mk('span', fmt(n), 'hi-trn-pill ' + d)); return td; };
+    uids.forEach((u, i) => {
+      const o = out[u]; const tr = mk('tr');
+      const uc = mk('td', null, 'hi-trn-u'); uc.append(mk('b', ULABEL[u])); if (o.stabil) uc.append(mk('small', `${fmt(o.stabil)} fluktuatif/stabil`, 'hi-nmu'));
+      tr.append(mk('td', String(i + 1), 'num hi-rank'), uc);
+      if (!o.lengkap) { const td = mk('td', `Data penyulang ${per} belum lengkap untuk UID ini.`, 'hi-trn-nil'); td.colSpan = 4; tr.append(td); tb.append(tr); return; }
+      const tn = mk('td'), tt = mk('td'); tn.append(topList(o.naik, 'naik', ms, false)); tt.append(topList(o.turun, 'turun', ms, false));
+      tr.append(cnt(o.naik.length, 'naik'), cnt(o.turun.length, 'turun'), tn, tt); tb.append(tr);
+    });
+    if (!S.uid) {
+      const tr = mk('tr', null, 'hi-tot'); const st = UORD.reduce((a, u) => a + out[u].stabil, 0);
+      const uc = mk('td', null, 'hi-trn-u'); uc.append(mk('b', 'Total Sumkal')); if (st) uc.append(mk('small', `${fmt(st)} fluktuatif/stabil`, 'hi-nmu'));
+      const tn = mk('td'), tt = mk('td'); tn.append(topList(all.naik, 'naik', ms, true)); tt.append(topList(all.turun, 'turun', ms, true));
+      tr.append(mk('td', ''), uc, cnt(all.naik.length, 'naik'), cnt(all.turun.length, 'turun'), tn, tt); tb.append(tr);
+    }
+    $('hi-trn').replaceChildren(th, tb);
   }
   // ---------- rekap event permanen dan sesaat per UID: Jan s.d. bulan terpilih (database Event Padam Penyulang) + bulan berjalan (laporan harian) ----------
   function renderPS() {
