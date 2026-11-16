@@ -352,8 +352,8 @@
       const TR = computeTrn();
       if (TR) {
         const tm = TR.ms; const per = `${BLN[tm[0] - 1]}–${BLN[tm[2] - 1]} 2026`;
-        const fmtTop = (l) => !l.length ? 'Nihil' : l.slice(0, TRN_N).map((r, i) => `${i + 1}. ${r.peny} (${r.ulp}) ${r.v.join(' → ')} [${r.d > 0 ? '+' : ''}${r.d}]`).join('\n');
-        const t3 = [[`Trend penyulang per UID · 3 bulan terakhir (${per}) · ${S.fTxt}`], [`Naik bila ${BS[tm[0] - 1]} < ${BS[tm[1] - 1]} < ${BS[tm[2] - 1]}, turun bila ${BS[tm[0] - 1]} > ${BS[tm[1] - 1]} > ${BS[tm[2] - 1]} (berturut-turut); naik-turun atau sama tidak dihitung. Angka top 3 = ${tm.map((m) => BS[m - 1]).join(' → ')} [selisih].`], [],
+        const fmtTop = (l) => !l.length ? 'Nihil' : l.slice(0, TRN_N).map((r, i) => `${i + 1}. ${r.peny} (${r.ulp}) ${r.v.join(' → ')}`).join('\n');
+        const t3 = [[`Trend penyulang per UID · 3 bulan terakhir (${per}) · ${S.fTxt}`], [`Naik bila ${BS[tm[0] - 1]} < ${BS[tm[1] - 1]} < ${BS[tm[2] - 1]}, turun bila ${BS[tm[0] - 1]} > ${BS[tm[1] - 1]} > ${BS[tm[2] - 1]} (berturut-turut); naik-turun atau sama tidak dihitung. Angka top 3 = ${tm.map((m) => BS[m - 1]).join(' → ')}.`], [],
           ['No.', 'UID', 'Jumlah Penyulang Trend Naik (3 bulan terakhir)', 'Jumlah Penyulang Trend Turun', 'Top 3 Penyulang Trend Naik', 'Top 3 Penyulang Trend Turun']];
         (S.uid ? [S.uid] : UORD).forEach((u, i) => { const o = TR.out[u]; t3.push(o.lengkap ? [i + 1, ULABEL[u], o.naik.length, o.turun.length, fmtTop(o.naik), fmtTop(o.turun)] : [i + 1, ULABEL[u], '', '', 'Data belum lengkap', '']); });
         if (!S.uid) t3.push(['', 'Total Sumkal', TR.all.naik.length, TR.all.turun.length, fmtTop(TR.all.naik.map((r) => ({ ...r, ulp: ULABEL[r.u] + ' · ' + r.ulp }))), fmtTop(TR.all.turun.map((r) => ({ ...r, ulp: ULABEL[r.u] + ' · ' + r.ulp })))]);
@@ -477,7 +477,7 @@
       const li = mk('li'); const nm = mk('b', r.peny); li.append(nm);
       li.append(mk('span', (showUid ? ULABEL[r.u] + ' · ' : '') + r.ulp, 'hi-trn-ulp'));
       const seq = mk('span', null, 'hi-trn-seq'); r.v.forEach((n, i) => { if (i) seq.append(mk('i', '→')); const k = n ? katOf(n) : null; const c = mk('span', fmt(n), 'hi-cell' + (k ? '' : ' z')); if (k) { c.style.background = KBY[k].c; c.style.color = KBY[k].fg; } c.title = `${BLN[ms[i] - 1]}: ${fmt(n)} kali`; seq.append(c); });
-      seq.append(mk('em', (r.d > 0 ? '+' : '') + fmt(r.d), 'hi-trn-d ' + d)); li.append(seq); box.append(li);
+      li.append(seq); box.append(li);
     });
     return box;
   }
