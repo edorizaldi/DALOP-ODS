@@ -30,7 +30,7 @@
     l: { t: 'Di bawah 18 kV', c: '#2f6fb3' },
     x: { t: 'Tanpa data tegangan', c: 'var(--cds-chart-muted)' },
   };
-  const kelasOf = (mx, mn) => (mx == null ? 'x' : mx > HI2 ? 's' : mx > HI ? 'h' : mn != null && mn < LO ? 'l' : 'n');
+  const kelasOf = (mx, mn) => (mx == null && mn == null ? 'x' : mx > HI2 ? 's' : mn != null && mn < LO ? 'l' : mx > HI ? 'h' : 'n');
   const pill = (k) => { const s = mk('span', KELAS[k].t, 'gi-pill'); s.style.setProperty('--gi-c', KELAS[k].c); return s; };
 
   // hx_feeder besar: dimuat saat tab dibuka (versi web)
@@ -67,10 +67,15 @@
     const nd = TG.length ? TG[0].v.length : 0;
     const tr = TG.map((t) => {
       const v = t.v.map((x) => (x == null || x === '' ? null : Number(x)));
+      const vmin = (t.vmin || []).map((x) => (x == null || x === '' ? null : Number(x)));
       const ok = v.map((x, i) => [x, i]).filter(([x]) => x != null);
-      const mx = ok.length ? ok.reduce((a, b) => (b[0] > a[0] ? b : a)) : null, mn = ok.length ? ok.reduce((a, b) => (b[0] < a[0] ? b : a)) : null;
+      const okN = vmin.map((x, i) => [x, i]).filter(([x]) => x != null);
+      const mx = ok.length ? ok.reduce((a, b) => (b[0] > a[0] ? b : a)) : null;
+      const mn = okN.length ? okN.reduce((a, b) => (b[0] < a[0] ? b : a)) : null;
       const kurang = (t.jamhari || []).filter((j) => j != null && j !== '' && Number(j) < 24).length;
-      return { ...t, v, mx: mx ? mx[0] : null, mxD: mx ? mx[1] + 1 : null, mn: mn ? mn[0] : null, avg: ok.length ? ok.reduce((a, b) => a + b[0], 0) / ok.length : null, nHi: ok.filter(([x]) => x > HI).length, nOk: ok.length, kurang, kelas: kelasOf(mx ? mx[0] : null, mn ? mn[0] : null) };
+      return { ...t, v, vmin, hasMin: okN.length > 0, mx: mx ? mx[0] : null, mxD: mx ? mx[1] + 1 : null, mn: mn ? mn[0] : null, mnD: mn ? mn[1] + 1 : null,
+        avg: ok.length ? ok.reduce((a, b) => a + b[0], 0) / ok.length : null, avgN: okN.length ? okN.reduce((a, b) => a + b[0], 0) / okN.length : null,
+        nHi: ok.filter(([x]) => x > HI).length, nLo: okN.filter(([x]) => x < LO).length, nOk: ok.length, nOkN: okN.length, kurang, kelas: kelasOf(mx ? mx[0] : null, mn ? mn[0] : null) };
     });
     const trByKode = new Map(); tr.forEach((t) => { if (!t.kode) return; const a = trByKode.get(t.kode) || []; a.push(t); trByKode.set(t.kode, a); });
     trByKode.forEach((a) => a.sort((x, y) => String(x.trafo).localeCompare(String(y.trafo), 'id', { numeric: true })));
@@ -83,9 +88,9 @@
     PP.forEach((p) => { const a = NU(p.up3) + '|' + N(p.penyulang), b = p.uid + '|' + N(p.penyulang); if (!p3.has(a)) p3.set(a, p); if (!pu.has(b)) pu.set(b, p); });
     // GI
     const gis = MS.map((g) => {
-      const t = trByKode.get(g.kode) || []; const vals = t.filter((x) => x.mx != null);
-      const mx = vals.length ? Math.max(...vals.map((x) => x.mx)) : null, mn = vals.length ? Math.min(...vals.map((x) => x.mn)) : null;
-      return { id: g.aset || g.kode, ...g, t, mx, mn, top: vals.find((x) => x.mx === mx) || null, kelas: kelasOf(mx, mn), hasXY: g.lat !== '' && g.lon !== '' && g.lat != null, feeders: [] };
+      const t = trByKode.get(g.kode) || []; const vals = t.filter((x) => x.mx != null), valsN = t.filter((x) => x.mn != null);
+      const mx = vals.length ? Math.max(...vals.map((x) => x.mx)) : null, mn = valsN.length ? Math.min(...valsN.map((x) => x.mn)) : null;
+      return { id: g.aset || g.kode, ...g, t, mx, mn, top: vals.find((x) => x.mx === mx) || null, low: valsN.find((x) => x.mn === mn) || null, kelas: kelasOf(mx, mn), hasXY: g.lat !== '' && g.lon !== '' && g.lat != null, feeders: [] };
     });
     const giById = new Map(gis.map((g) => [g.id, g]));
     const used = new Set();
@@ -111,7 +116,7 @@
     return out;
   };
 
-  function spark(v) {
+  function spark(v, vmin) {
     const W = 96, H = 22, lo = 17.5, hi = 23;
     const y = (x) => H - 2 - (Math.max(lo, Math.min(hi, x)) - lo) / (hi - lo) * (H - 4);
     const xs = (i) => 2 + i * (W - 4) / Math.max(1, v.length - 1);
@@ -120,6 +125,10 @@
     const ns = 'http://www.w3.org/2000/svg'; const s = document.createElementNS(ns, 'svg'); s.setAttribute('viewBox', `0 0 ${W} ${H}`); s.setAttribute('class', 'gi-spark'); s.setAttribute('aria-hidden', 'true');
     [[HI, 'var(--color-warn)'], [LO, '#2f6fb3']].forEach(([v0, c]) => { const l = document.createElementNS(ns, 'line'); l.setAttribute('x1', 0); l.setAttribute('x2', W); l.setAttribute('y1', y(v0)); l.setAttribute('y2', y(v0)); l.setAttribute('stroke', c); l.setAttribute('stroke-dasharray', '2 2'); l.setAttribute('stroke-width', '.8'); s.append(l); });
     const p = document.createElementNS(ns, 'path'); p.setAttribute('d', d); p.setAttribute('fill', 'none'); p.setAttribute('stroke', 'var(--color-fg)'); p.setAttribute('stroke-width', '1.3'); s.append(p);
+    if (vmin && vmin.some((x) => x != null)) {
+      const pm = vmin.map((x, i) => (x == null ? null : `${xs(i).toFixed(1)},${y(x).toFixed(1)}`)); let dm = ''; pm.forEach((q, i) => { if (!q) return; dm += (i && pm[i - 1] ? 'L' : 'M') + q; });
+      const p2 = document.createElementNS(ns, 'path'); p2.setAttribute('d', dm); p2.setAttribute('fill', 'none'); p2.setAttribute('stroke', 'var(--color-fg-muted)'); p2.setAttribute('stroke-width', '1'); p2.setAttribute('stroke-dasharray', '2 1.5'); s.append(p2);
+    }
     return s;
   }
 
@@ -149,7 +158,7 @@
   function drawGiTable() {
     const tb = $('d-gtabel'); if (!X) return;
     const head = mk('thead'), hr = mk('tr');
-    [['Gardu induk', 'ss-l'], ['Penyulang', ''], ['Trafo', 'ss-l'], [`Tren ${BLN[(X.mm || 1) - 1]}`, 'ss-hide-n'], ['Max (kV)'], ['Rata-rata max (kV)', 'ss-hide-n'], ['Hari > 21 kV'], ['Kelas', 'ss-l'], ['Catatan data', 'ss-l ss-hide-n']].forEach(([h, c]) => hr.append(mk('th', h, c || '')));
+    [['Gardu induk', 'ss-l'], ['Penyulang', ''], ['Trafo', 'ss-l'], [`Tren ${BLN[(X.mm || 1) - 1]} (max · min)`, 'ss-hide-n'], ['Max (kV)'], ['Min (kV)'], ['Rata-rata max · min (kV)', 'ss-hide-n'], ['Hari > 21 kV'], ['Hari < 18 kV'], ['Kelas', 'ss-l'], ['Catatan data', 'ss-l ss-hide-n']].forEach(([h, c]) => hr.append(mk('th', h, c || '')));
     head.append(hr);
     const body = mk('tbody'); let n = 0;
     giList.filter((g) => !g.none && (!qg || g.nama.toUpperCase().includes(qg) || String(g.kode).toUpperCase().includes(qg))).forEach((g) => {
@@ -158,9 +167,10 @@
         const tr = mk('tr', null, g === selG ? 'ss-p-on' : ''); tr.dataset.gi = g.id; tr.tabIndex = 0;
         const nm = mk('td', i ? '' : g.nama, 'ss-l'); if (!i && !g.hasXY) nm.append(mk('span', 'tanpa koordinat', 'ss-p-flag'));
         tr.append(nm, mk('td', i ? '' : fmt(g.feeders.length)), mk('td', t ? t.trafo || '—' : '—', 'ss-l'));
-        const sp = mk('td', null, 'ss-hide-n'); if (t) sp.append(spark(t.v)); tr.append(sp);
-        const mxTd = mk('td', t ? kv(t.mx) : '—', 'ss-hl'); if (t && t.mx != null) mxTd.style.color = KELAS[t.kelas].c; tr.append(mxTd);
-        tr.append(mk('td', t ? kv(t.avg) : '—', 'ss-hide-n'), mk('td', t && t.nOk ? `${t.nHi} / ${t.nOk}` : '—'));
+        const sp = mk('td', null, 'ss-hide-n'); if (t) sp.append(spark(t.v, t.vmin)); tr.append(sp);
+        const mxTd = mk('td', t ? kv(t.mx) : '—', 'ss-hl'); if (t && t.mx > HI) mxTd.style.color = KELAS[t.mx > HI2 ? 's' : 'h'].c; tr.append(mxTd);
+        const mnTd = mk('td', t ? kv(t.mn) : '—', 'ss-hl'); if (t && t.mn != null && t.mn < LO) mnTd.style.color = KELAS.l.c; tr.append(mnTd);
+        tr.append(mk('td', t ? `${kv(t.avg)} · ${kv(t.avgN)}` : '—', 'ss-hide-n'), mk('td', t && t.nOk ? `${t.nHi} / ${t.nOk}` : '—'), mk('td', t && t.nOkN ? `${t.nLo} / ${t.nOkN}` : '—'));
         const kc = mk('td', null, 'ss-l'); kc.append(pill(t ? t.kelas : 'x')); tr.append(kc);
         const cat = []; if (t) { if (t.konstan) cat.push('nilai konstan sebulan'); if (Number(t.anomali)) cat.push(`${t.anomali} hari ada bacaan > 25 kV dibuang`); if (t.kurang) cat.push(`${t.kurang} hari data < 24 jam`); }
         tr.append(mk('td', cat.join(' · ') || (t ? '—' : 'belum ada di file monitoring tegangan'), 'ss-l ss-hide-n gi-cat'));
@@ -168,7 +178,7 @@
       });
     });
     tb.replaceChildren(head, body);
-    $('d-gtabel-note').textContent = `${fmt(giList.filter((g) => !g.none).length)} GI di UP3 ${up3} (${fmt(n)} baris trafo/incoming), diurutkan dari kali gangguan penyulangnya. "Hari > 21 kV" = jumlah hari tegangan max harian di atas 21 kV. Klik baris untuk memilih GI.`;
+    $('d-gtabel-note').textContent = `${fmt(giList.filter((g) => !g.none).length)} GI di UP3 ${up3} (${fmt(n)} baris trafo/incoming), diurutkan dari kali gangguan penyulangnya. Max/Min = tegangan tertinggi/terendah sebulan dari nilai harian; "Hari > 21 kV" dan "Hari < 18 kV" dihitung dari tegangan max dan min harian. Klik baris untuk memilih GI.`;
   }
 
   function render() {
@@ -216,7 +226,9 @@
       tk.append(`UP3 ${up3} punya `, Bb(`${fmt(gU.length)} GI`), ` (${fmt(gU.filter((g) => g.t.length).length)} dengan data tegangan ${per}). `);
       if (selG && !selG.none) {
         tk.append(`${giName(selG.nama)} menyuplai `, Bb(`${fmt(feeders.length)} penyulang`), `; ${fmt(feeders.filter((f) => f.t > 0).length)} mengalami gangguan, total `, Bb(`${fmt(Tt)} kali`), ` s.d. ${BLN[lastM - 1]} 2026${jenis ? ' (' + jenis.toLowerCase() + ')' : ''}. `);
-        if (selG.mx != null) tk.append('Tegangan max GI ', Bb(`${kv(selG.mx)} kV`), ` (${selG.top.trafo || selG.top.apd}, ${selG.top.mxD} ${BLNF[X.mm - 1]}). `);
+        if (selG.mx != null) tk.append('Tegangan max GI ', Bb(`${kv(selG.mx)} kV`), ` (${selG.top.trafo || selG.top.apd}, ${selG.top.mxD} ${BLNF[X.mm - 1]})`);
+        if (selG.mn != null) tk.append(', min ', Bb(`${kv(selG.mn)} kV`), ` (${selG.low.trafo || selG.low.apd}, ${selG.low.mnD} ${BLNF[X.mm - 1]})`);
+        if (selG.mx != null || selG.mn != null) tk.append('. ');
       } else if (selG) tk.append(Bb(`${fmt(feeders.length)} penyulang`), ` di UP3 ${up3} belum terpetakan ke GI di data hirarki aset, total `, Bb(`${fmt(Tt)} kali`), ' gangguan. ');
       if (selF && selF.t) { const pk = X.months.reduce((a, m) => (selF.s[m].t > selF.s[a].t ? m : a), X.months[0]); tk.append(`Penyulang ${selF.nama}: `, Bb(`${fmt(selF.t)} kali`), `, tertinggi ${BLNF[pk - 1]} (${fmt(selF.s[pk].t)}).`); }
     }
@@ -242,8 +254,8 @@
     const gU = giList.filter((g) => !g.none);
     $('d-t1-l').textContent = `Gardu induk di UP3 ${up3}`;
     done('d-t1', fmt(gU.length)); $('d-t1-sub').textContent = `${fmt(gU.filter((g) => g.hasXY).length)} berkoordinat · ${fmt(gU.filter((g) => g.t.length).length)} punya data tegangan`;
-    done('d-t2', selG && selG.mx != null ? kv(selG.mx) : '—'); $('d-t2-name').textContent = selG ? (selG.none ? 'Belum terpetakan ke GI' : selG.nama) : '';
-    $('d-t2-sub').textContent = selG && selG.top ? `${selG.top.trafo || selG.top.apd} · ${selG.top.mxD} ${BLNF[X.mm - 1]} · ${KELAS[selG.kelas].t}` : 'belum ada data tegangan';
+    done('d-t2', selG && selG.mx != null ? kv(selG.mx) : '—'); $('d-t2-name').textContent = selG && selG.mn != null ? `min ${kv(selG.mn)} kV` : '';
+    $('d-t2-sub').textContent = selG && selG.top ? `${selG.none ? '' : selG.nama + ' · '}max ${selG.top.trafo || selG.top.apd} tgl ${selG.top.mxD}${selG.low ? `, min ${selG.low.trafo || selG.low.apd} tgl ${selG.low.mnD}` : ''}` : 'belum ada data tegangan';
     done('d-t3', fmt(feeders.length)); $('d-t3-sub').textContent = `${fmt(feeders.filter((f) => f.t > 0).length)} mengalami gangguan · ${fmt(feeders.filter((f) => f.p).length)} ada di database penyulang`;
     const Tt = feeders.reduce((a, f) => a + f.t, 0);
     done('d-t4', fmt(Tt)); $('d-t4-name').textContent = feeders[0] && feeders[0].t ? feeders[0].nama : ''; $('d-t4-sub').textContent = feeders[0] && feeders[0].t ? `terbanyak: ${fmt(feeders[0].t)} kali` : `${BLN[X.months[0] - 1]}–${BLN[lastM - 1]} 2026`;
@@ -262,9 +274,12 @@
         row('Trafo/incoming dipantau', selG.t.length ? selG.t.map((t) => t.trafo || t.apd).join(', ') : 'belum ada di file monitoring tegangan');
         if (selG.t.length) {
           const v = selG.t.filter((t) => t.avg != null);
+          const vn = selG.t.filter((t) => t.avgN != null);
           row(`Tegangan max ${per}`, selG.mx != null ? `${kv(selG.mx)} kV · ${selG.top.trafo || selG.top.apd} tanggal ${selG.top.mxD}` : '—');
-          row('Rata-rata max harian', v.length ? `${kv(v.reduce((a, t) => a + t.avg, 0) / v.length)} kV` : '—');
+          row(`Tegangan min ${per}`, selG.mn != null ? `${kv(selG.mn)} kV · ${selG.low.trafo || selG.low.apd} tanggal ${selG.low.mnD}` : 'belum ada data');
+          row('Rata-rata max · min harian', `${v.length ? kv(v.reduce((a, t) => a + t.avg, 0) / v.length) : '—'} · ${vn.length ? kv(vn.reduce((a, t) => a + t.avgN, 0) / vn.length) : '—'} kV`);
           row('Hari di atas 21 kV', selG.t.map((t) => `${t.trafo || t.apd}: ${t.nHi}`).join(' · '));
+          row('Hari di bawah 18 kV', selG.t.map((t) => `${t.trafo || t.apd}: ${t.nLo}`).join(' · '));
         }
       } else if (selG) { row('Gardu induk', 'Belum terpetakan', 'ss-p-name'); row('Keterangan', `Penyulang di database penyulang UP3 ${selG.up3} yang namanya tidak ditemukan di data hirarki aset (feeder per GI). Umumnya penyulang sistem isolated/PLTD.`); }
     }
@@ -293,17 +308,17 @@
     drawPenyTable(); drawGiTable();
 
     // chart tegangan GI
-    $('d-gchart-h').textContent = selG && !selG.none ? `Tegangan max harian · ${selG.nama}` : 'Tegangan max harian GI';
-    $('d-gchart-note').textContent = `${per}, nilai tertinggi fasa per hari (bacaan > 25 kV dibuang). Garis putus-putus: 21 kV (+5%) dan 18 kV (−10%) dari 20 kV.`;
+    $('d-gchart-h').textContent = selG && !selG.none ? `Tegangan max & min harian · ${selG.nama}` : 'Tegangan max & min harian GI';
+    $('d-gchart-note').textContent = `${per}. Garis tebal: tegangan max harian (fasa tertinggi); garis tipis putus-putus warna sama: tegangan min harian (fasa terendah). Bacaan > 25 kV dibuang. Garis batas: 21 kV (+5%) dan 18 kV (−10%) dari 20 kV.`;
     chartG.classList.remove('dash-skeleton'); chartG.replaceChildren();
     const lgd = $('d-glegend'); lgd.replaceChildren();
-    const trs = selG ? selG.t.filter((t) => t.mx != null) : [];
+    const trs = selG ? selG.t.filter((t) => t.mx != null || t.mn != null) : [];
     if (!trs.length) chartG.append(mk('div', selG && !selG.none ? 'Belum ada data tegangan untuk GI ini.' : 'Pilih gardu induk.', 'ss-note'));
     else {
       trs.forEach((t, i) => { const s = mk('span'); const sw = mk('i', null, 'ss-sw'); sw.style.background = SSC[i % SSC.length]; s.append(sw, t.trafo || t.apd); lgd.append(s); });
       const W = Math.max(280, chartG.clientWidth), H = 280, mg = { t: 16, r: 10, b: 26, l: 40 };
       const svg = d3.select(chartG).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Tegangan max harian ' + selG.nama);
-      const all = trs.flatMap((t) => t.v.filter((x) => x != null));
+      const all = trs.flatMap((t) => [...t.v, ...t.vmin].filter((x) => x != null));
       const y = d3.scaleLinear([Math.min(LO - 0.5, d3.min(all) - 0.2), Math.max(HI + 0.5, d3.max(all) + 0.2)], [H - mg.b, mg.t]).nice();
       const x = d3.scaleLinear([1, X.nd], [mg.l, W - mg.r]);
       svg.append('g').selectAll('line').data(y.ticks(6)).join('line').attr('x1', mg.l).attr('x2', W - mg.r).attr('y1', (d) => y(d)).attr('y2', (d) => y(d)).attr('stroke', 'var(--cds-chart-grid)');
@@ -317,7 +332,12 @@
         const c = SSC[i % SSC.length];
         svg.append('path').attr('d', d3.line().defined((d) => d != null).x((d, j) => x(j + 1)).y((d) => y(d))(t.v)).attr('fill', 'none').attr('stroke', c).attr('stroke-width', 2);
         svg.append('g').selectAll('circle').data(t.v.map((v, j) => [v, j + 1]).filter(([v]) => v != null)).join('circle').attr('cx', (d) => x(d[1])).attr('cy', (d) => y(d[0])).attr('r', 2.4).attr('fill', c)
-          .append('title').text((d) => `${t.trafo} · ${d[1]} ${BLNF[X.mm - 1]}: ${kv(d[0])} kV`);
+          .append('title').text((d) => `${t.trafo} · ${d[1]} ${BLNF[X.mm - 1]}: max ${kv(d[0])} kV · min ${kv(t.vmin[d[1] - 1])} kV`);
+        if (t.hasMin) {
+          svg.append('path').attr('d', d3.line().defined((d) => d != null).x((d, j) => x(j + 1)).y((d) => y(d))(t.vmin)).attr('fill', 'none').attr('stroke', c).attr('stroke-width', 1.4).attr('stroke-dasharray', '4 3');
+          svg.append('g').selectAll('circle').data(t.vmin.map((v, j) => [v, j + 1]).filter(([v]) => v != null)).join('circle').attr('cx', (d) => x(d[1])).attr('cy', (d) => y(d[0])).attr('r', (d) => (d[0] < LO ? 3.6 : 1.8)).attr('fill', (d) => (d[0] < LO ? KELAS.l.c : 'var(--color-bg)')).attr('stroke', c).attr('stroke-width', 1)
+            .append('title').text((d) => `${t.trafo} · ${d[1]} ${BLNF[X.mm - 1]}: min ${kv(d[0])} kV`);
+        }
       });
     }
 

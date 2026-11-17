@@ -63,13 +63,23 @@
         const ci = { apd: P && P('apd_code'), gi: fd('Nama/Kode GI'), cat: P && P('Catatan'), jam: fd('Jumlah Data'), an: fd('Hari dgn Anomali'), ko: fd('Nilai max konstan') };
         if (ph >= 0) PS.rows.slice(ph + 1).forEach((r) => { const a = S(r[ci.apd]); if (a) pc.set(a, { gi: ci.gi == null ? '' : S(r[ci.gi]), cat: ci.cat == null ? '' : S(r[ci.cat]), jam: ci.jam == null ? '' : num(r[ci.jam]) ?? '', an: ci.an == null ? 0 : num(r[ci.an]) || 0, ko: ci.ko != null && norm(r[ci.ko]) === 'YA' }); });
       } else warn.push('sheet Pencocokan tidak ada: catatan, jumlah data dan nilai konstan dikosongkan');
-      // Max Harian (List): jam data per hari
-      const jh = new Map(); const LS = sheetOf(sheets, 'Max Harian (List)');
+      // Min Harian (opsional): susunan sama dengan Max Harian, dicocokkan per apd_code dan tanggal
+      const mnMap = new Map(); const MN = sheetOf(sheets, 'Min Harian');
+      if (MN) {
+        const nh = headerAt(MN.rows, ['unit_code', 'apd_code']);
+        if (nh >= 1) {
+          const NH = colMap(MN.rows[nh]); const ndr = MN.rows[nh - 1] || []; const ncol = new Map();
+          ndr.forEach((v, i) => { const n = num(v); if (n != null && n >= 20000101 && n <= 21001231) ncol.set(String(Math.round(n)), i); });
+          MN.rows.slice(nh + 1).forEach((r) => { const a = S(r[NH('apd_code')]); if (!a) return; mnMap.set(a, dcols.map(([, d]) => { const i = ncol.get(d); const x = i == null ? null : num(r[i]); return x == null ? null : r2(x); })); });
+        } else warn.push('sheet Min Harian: kolom unit_code, apd_code tidak ditemukan; tegangan minimum dikosongkan');
+      } else warn.push('sheet Min Harian tidak ada: tegangan minimum dikosongkan');
+      // Max-Min Harian (List) / Max Harian (List): jam data per hari
+      const jh = new Map(); const LS = sheetOf(sheets, 'Max-Min Harian (List)') || sheetOf(sheets, 'Max Harian (List)');
       if (LS) {
         const lh = headerAt(LS.rows, ['apd_code', 'date_periode']); const L = lh >= 0 ? colMap(LS.rows[lh]) : null;
         const jc = lh >= 0 ? LS.rows[lh].findIndex((c) => norm(c).startsWith('JUMLAHDATA')) : -1;
         if (L && jc >= 0) LS.rows.slice(lh + 1).forEach((r) => { const a = S(r[L('apd_code')]); const d = num(r[L('date_periode')]); if (!a || d == null) return; const m = jh.get(a) || new Map(); m.set(String(Math.round(d)), num(r[jc])); jh.set(a, m); });
-      } else warn.push('sheet Max Harian (List) tidak ada: jumlah jam data per hari dikosongkan');
+      } else warn.push('sheet Max-Min Harian (List) tidak ada: jumlah jam data per hari dikosongkan');
       teg = [];
       MH.rows.slice(th + 1).forEach((r) => {
         const apd = S(r[H('apd_code')]); if (!apd) return;
@@ -77,12 +87,12 @@
         const v = dcols.map(([i]) => { const x = num(r[i]); return x == null ? null : r2(x); });
         teg.push({ uid: UC[num(r[H('unit_code')])] || '', kode: S(r[H('KODE_JARINGAN')]), gi: S(H('Nama GI (Master)') == null ? '' : r[H('Nama GI (Master)')]) || (p ? p.gi : ''), trafo: S(H('Nama Trafo') == null ? '' : r[H('Nama Trafo')]),
           apd, cocok: S(H('Status Pencocokan') == null ? '' : r[H('Status Pencocokan')]), catatan: p ? p.cat : '', jam: p ? p.jam : '', anomali: p ? p.an : 0, konstan: p && p.ko ? 'Ya' : '',
-          jamhari: dcols.map(([, d]) => (J && J.has(d) ? J.get(d) : null)), v, periode });
+          jamhari: dcols.map(([, d]) => (J && J.has(d) ? J.get(d) : null)), v, vmin: mnMap.get(apd) || dcols.map(() => null), periode });
       });
       if (!teg.length) throw new Error('sheet Max Harian tidak berisi data trafo');
     } else warn.push('sheet Max Harian tidak ada: data tegangan di dashboard tidak diubah');
     const kodes = new Set(master.map((x) => x.kode));
-    return { master, teg, periode, warn, stats: { gi: master.length, xy: master.filter((x) => x.lat !== '').length, tr: teg ? teg.length : 0, cocok: teg ? teg.filter((t) => t.kode && kodes.has(t.kode)).length : 0, giTeg: teg ? new Set(teg.filter((t) => kodes.has(t.kode)).map((t) => t.kode)).size : 0 } };
+    return { master, teg, periode, warn, stats: { gi: master.length, xy: master.filter((x) => x.lat !== '').length, tr: teg ? teg.length : 0, trMin: teg ? teg.filter((t) => t.vmin.some((x) => x != null)).length : 0, cocok: teg ? teg.filter((t) => t.kode && kodes.has(t.kode)).length : 0, giTeg: teg ? new Set(teg.filter((t) => kodes.has(t.kode)).map((t) => t.kode)).size : 0 } };
   }
   const toJs = (id, rows) => `window.__D=window.__D||{};window.__D[${JSON.stringify(id)}]=${JSON.stringify(rows)};\n`;
   const api = { build, toJs };
@@ -98,7 +108,7 @@
   const perName = (p) => { const [y, m] = String(p || '').split('-').map(Number); return m ? `${BLN[m - 1]} ${y}` : '–'; };
   const cur = () => {
     const M = (window.__D && window.__D.gi_master) || [], T = (window.__D && window.__D.gi_tegangan) || []; const k = new Set(M.map((x) => x.kode));
-    return { gi: M.length, xy: M.filter((x) => x.lat !== '' && x.lat != null).length, tr: T.length, cocok: T.filter((t) => t.kode && k.has(t.kode)).length, giTeg: new Set(T.filter((t) => k.has(t.kode)).map((t) => t.kode)).size, periode: T.length ? T[0].periode : '' };
+    return { gi: M.length, xy: M.filter((x) => x.lat !== '' && x.lat != null).length, tr: T.length, trMin: T.filter((t) => (t.vmin || []).some((x) => x != null)).length, cocok: T.filter((t) => t.kode && k.has(t.kode)).length, giTeg: new Set(T.filter((t) => k.has(t.kode)).map((t) => t.kode)).size, periode: T.length ? T[0].periode : '' };
   };
   function fillCard() { const c = cur(); $('u-g2-isi').textContent = c.gi ? `${fmt(c.gi)} GI (${fmt(c.xy)} berkoordinat); tegangan ${perName(c.periode)} untuk ${fmt(c.tr)} trafo/incoming di ${fmt(c.giTeg)} GI` : '—'; }
   fillCard();
@@ -108,7 +118,7 @@
     $('up-g2-review').hidden = !pending; $('up-g2-go').disabled = !pending;
     if (!pending) return;
     const o = pending.out, s = o.stats, c = cur();
-    const rows = [['GI di Master GI', s.gi, c.gi], ['GI berkoordinat', s.xy, c.xy], ['Trafo/incoming dengan data tegangan', o.teg ? s.tr : null, c.tr], ['Trafo cocok dengan Master GI', o.teg ? s.cocok : null, c.cocok], ['GI dengan data tegangan', o.teg ? s.giTeg : null, c.giTeg]];
+    const rows = [['GI di Master GI', s.gi, c.gi], ['GI berkoordinat', s.xy, c.xy], ['Trafo/incoming dengan data tegangan', o.teg ? s.tr : null, c.tr], ['Trafo dengan data tegangan minimum', o.teg ? s.trMin : null, c.trMin], ['Trafo cocok dengan Master GI', o.teg ? s.cocok : null, c.cocok], ['GI dengan data tegangan', o.teg ? s.giTeg : null, c.giTeg]];
     $('up-g2-body').replaceChildren(...rows.map(([l, a, b]) => { const tr = document.createElement('tr'); const d = a == null ? null : a - b; [l, a == null ? 'tidak diubah' : fmt(a), fmt(b), d == null ? '–' : (d > 0 ? '+' : '') + f0.format(d)].forEach((v, i) => { const td = document.createElement('td'); td.textContent = v; if (i) td.className = 'num'; tr.append(td); }); return tr; }));
     $('up-g2-sum').textContent = `${pending.name}: Master GI ${fmt(s.gi)} GI` + (o.teg ? `, tegangan ${perName(o.periode)} (sebelumnya ${perName(c.periode)})` : '') + '.' + (o.warn.length ? ' Catatan: ' + o.warn.join('; ') + '.' : '') + ' Periksa angkanya, lalu klik Update dashboard sekarang.';
   }
@@ -130,7 +140,7 @@
     const { name, out } = pending; $('up-g2-go').disabled = true;
     const at = new Date().toISOString();
     const periode = out.teg ? `Master GI dan tegangan ${perName(out.periode)}` : 'Master GI';
-    const sumber = `${name} (sheet Master GI${out.teg ? ', Max Harian, Pencocokan, Max Harian (List)' : ''})`;
+    const sumber = `${name} (sheet Master GI${out.teg ? ', Max Harian, Min Harian, Pencocokan, Max-Min Harian (List)' : ''})`;
     const info = ((window.SSD && SSD.data('info_update').data) || (window.__D && window.__D.info_update) || []).map((r) => ({ ...r }));
     const row = { tab: 'gi', diperbarui: at, periode, sumber: sumber + ' (diunggah di dashboard)' };
     const i = info.findIndex((r) => r.tab === 'gi'); if (i >= 0) info[i] = row; else info.push(row);

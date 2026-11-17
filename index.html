@@ -1028,7 +1028,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
     </header>
     <div class="ss-tiles" id="d-kpi" data-source="gi_master gi_tegangan peny_profil peny_bulanan">
       <div class="ss-tile"><div class="ss-tile-label" id="d-t1-l">Gardu induk di UP3</div><div class="ss-big"><span class="dash-skeleton" id="d-t1">—</span><span class="ss-unit">GI</span></div><div class="ss-sub" id="d-t1-sub"></div></div>
-      <div class="ss-tile"><div class="ss-tile-label">Tegangan max GI terpilih</div><div class="ss-big"><span class="dash-skeleton" id="d-t2">—</span><span class="ss-unit">kV</span></div><div class="ss-up3name" id="d-t2-name"></div><div class="ss-sub" id="d-t2-sub"></div></div>
+      <div class="ss-tile"><div class="ss-tile-label">Tegangan max · min GI terpilih</div><div class="ss-big"><span class="dash-skeleton" id="d-t2">—</span><span class="ss-unit">kV</span></div><div class="ss-up3name" id="d-t2-name"></div><div class="ss-sub" id="d-t2-sub"></div></div>
       <div class="ss-tile"><div class="ss-tile-label">Penyulang dari GI terpilih</div><div class="ss-big"><span class="dash-skeleton" id="d-t3">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="d-t3-sub"></div></div>
       <div class="ss-tile"><div class="ss-tile-label">Kali gangguan penyulang GI</div><div class="ss-big"><span class="dash-skeleton" id="d-t4">—</span><span class="ss-unit">kali</span></div><div class="ss-up3name" id="d-t4-name"></div><div class="ss-sub" id="d-t4-sub"></div></div>
     </div>
@@ -1044,7 +1044,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
     </div>
     <div class="ss-grid ss-pair">
       <div class="ss-card" id="d-gchart-card">
-        <h3 id="d-gchart-h">Tegangan max harian GI</h3>
+        <h3 id="d-gchart-h">Tegangan max &amp; min harian GI</h3>
         <p class="ss-note" id="d-gchart-note"></p>
         <div class="ss-legend" id="d-glegend"></div>
         <div class="ss-chart ss-short dash-skeleton" id="d-gchart" data-source="gi_tegangan"></div>
@@ -1237,7 +1237,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       </div>
       <div class="ss-card ss-u-card" id="u-gi" data-source="gi_master gi_tegangan">
         <div class="ss-u-head"><span class="ss-u-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-5h6v5"/><path d="M12.6 8.5 11 11h2l-1.4 2.5"/></svg></span><h3>Database Gardu Induk</h3></div>
-        <dl class="ss-u-dl"><dt>File sumber</dt><dd>Sanding_Tegangan_GI_SUMKAL.xlsx (sheet Master GI, Max Harian, Pencocokan, Max Harian (List))</dd><dt>Dipakai di</dt><dd>Tab Database Penyulang &amp; Gardu Induk</dd><dt>Update terakhir</dt><dd data-dbinfo-when="gi">—</dd><dt>Isi</dt><dd id="u-g2-isi">—</dd></dl>
+        <dl class="ss-u-dl"><dt>File sumber</dt><dd>Sanding_Tegangan_GI_SUMKAL.xlsx (sheet Master GI, Max Harian, Min Harian, Pencocokan, Max-Min Harian (List))</dd><dt>Dipakai di</dt><dd>Tab Database Penyulang &amp; Gardu Induk</dd><dt>Update terakhir</dt><dd data-dbinfo-when="gi">—</dd><dt>Isi</dt><dd id="u-g2-isi">—</dd></dl>
         <div class="ss-u-acts"><button type="button" class="ss-u-btn" data-up-open="gi" aria-expanded="false" aria-controls="up-gi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Unggah &amp; update langsung</button></div>
       </div>
       <div class="ss-card ss-u-card" id="u-aset" data-source="hx_ringkasan">
@@ -1257,7 +1257,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       <p class="ss-up-msg" id="up-p-msg" role="status"></p>
     </div>
     <div class="ss-card ss-up-panel" id="up-gi" hidden>
-      <div class="ss-up-head"><h3>Update Database Gardu Induk</h3><p class="ss-note">File sanding tegangan GI (.xlsx) seperti Sanding_Tegangan_GI_SUMKAL.xlsx. Sheet <b>Master GI</b> (wajib: KODE_JARINGAN, KODE_ASSET, NAMA, ALAMAT, LATITUDE, LONGITUDE, DIST, NAMA_UP3, NAMA_UNIT) mengganti daftar GI dan koordinatnya. Sheet <b>Max Harian</b> (baris tanggal yyyymmdd di atas judul unit_code, KODE_JARINGAN, Nama GI (Master), Nama Trafo, apd_code, Status Pencocokan) mengganti data tegangan max harian; sheet Pencocokan dan Max Harian (List) melengkapi catatan dan jam data per hari. Tanpa sheet Max Harian, data tegangan di dashboard tidak diubah.</p></div>
+      <div class="ss-up-head"><h3>Update Database Gardu Induk</h3><p class="ss-note">File sanding tegangan GI (.xlsx) seperti Sanding_Tegangan_GI_SUMKAL.xlsx. Sheet <b>Master GI</b> (wajib: KODE_JARINGAN, KODE_ASSET, NAMA, ALAMAT, LATITUDE, LONGITUDE, DIST, NAMA_UP3, NAMA_UNIT) mengganti daftar GI dan koordinatnya. Sheet <b>Max Harian</b> (baris tanggal yyyymmdd di atas judul unit_code, KODE_JARINGAN, Nama GI (Master), Nama Trafo, apd_code, Status Pencocokan) mengganti data tegangan max harian, sheet <b>Min Harian</b> (susunan sama) mengisi tegangan minimum harian; sheet Pencocokan dan Max-Min Harian (List) melengkapi catatan dan jam data per hari. Tanpa sheet Max Harian, data tegangan di dashboard tidak diubah.</p></div>
       <label class="h-drop" id="up-g2-drop" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><b>Tarik file sanding tegangan GI ke sini, atau klik untuk memilih</b><span class="ss-note">Format .xlsx · contoh: Sanding_Tegangan_GI_SUMKAL.xlsx</span><input type="file" id="up-g2-file" accept=".xlsx" hidden></label>
       <div class="ss-up-prog"><progress id="up-g2-bar" max="100" value="0" hidden></progress><span class="ss-note" id="up-g2-barlabel"></span></div>
       <div id="up-g2-review" class="ss-up-review" hidden>
@@ -2767,7 +2767,7 @@ SSD.calc('up3_yoy', {
 })();
 </script>
 
-<script src="db-tab.js?v=20261117"></script>
+<script src="db-tab.js?v=20261117b"></script>
 <script src="hi-tab.js?v=20261116w"></script>
 
 <script>
@@ -3224,7 +3224,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="upd-core.js?v=20261112"></script>
 <script src="upd-bulanan.js?v=20261108b"></script>
 <script src="upd-aset.js"></script>
-<script src="upd-gi.js?v=20261117"></script>
+<script src="upd-gi.js?v=20261117b"></script>
 <script src="upd-workplan.js"></script>
 <script src="slides-tab.js?v=20261112b"></script>
 <script src="kondisi_data.js"></script>
