@@ -1,0 +1,8 @@
+/* Tab Database Gardu Induk (draft) */
+.gi-draft { display: inline-block; vertical-align: middle; font-size: var(--cds-font-size-caption); font-weight: 600; letter-spacing: .02em; padding: 0 .6em; line-height: 1.8; border-radius: 999px; background: color-mix(in srgb, var(--color-warn) 14%, transparent); color: var(--color-warn); margin-left: 6px; }
+.gi-pill { display: inline-flex; align-items: center; gap: 5px; font-size: var(--cds-font-size-caption); font-weight: 600; white-space: nowrap; padding: 0 .6em; line-height: 1.8; border-radius: 999px; background: color-mix(in srgb, var(--gi-c) 13%, transparent); color: color-mix(in srgb, var(--gi-c) 80%, var(--color-fg)); vertical-align: middle; }
+.gi-pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--gi-c); }
+.ss-p-dl dd.ss-p-name .gi-pill { font-family: inherit; font-size: var(--cds-font-size-caption); }
+.gi-spark { width: 96px; height: 22px; display: block; margin: 0 auto; }
+.gi-table td.gi-cat { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); max-width: 18rem; white-space: normal; }
+.gi-map-legend { margin: 6px 0 0; }
