@@ -6,3 +6,10 @@
 .gi-spark { width: 96px; height: 22px; display: block; margin: 0 auto; }
 .gi-table td.gi-cat { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); max-width: 18rem; white-space: normal; }
 .gi-map-legend { margin: 6px 0 0; }
+/* pilihan Penyulang | Gardu Induk dalam satu menu Database */
+.db-switch { display: inline-flex; width: max-content; max-width: 100%; justify-self: start; align-self: flex-start; gap: 4px; padding: 4px; margin: 0 0 var(--cds-gap-md); border-radius: 999px; background: color-mix(in srgb, var(--color-fg) 6%, transparent); border: 1px solid var(--color-border-line); }
+.db-switch button { display: inline-flex; align-items: center; gap: 7px; border: 0; background: transparent; color: var(--color-fg-muted); font: inherit; font-size: var(--cds-font-size-body); font-weight: 600; padding: 7px 16px; border-radius: 999px; cursor: pointer; }
+.db-switch button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.db-switch button:hover { color: var(--color-fg); }
+.db-switch button[aria-selected="true"] { background: var(--color-bg); color: var(--color-fg); box-shadow: 0 1px 3px color-mix(in srgb, var(--color-fg) 18%, transparent); }
+.db-switch button:focus-visible { outline: 2px solid var(--ss-acc); outline-offset: 2px; }
