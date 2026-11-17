@@ -18,7 +18,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="workplan-tab.css">
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261116ig">
 <link rel="stylesheet" href="hi-tab.css?v=20261116u">
-<link rel="stylesheet" href="gi-tab.css?v=20261117b">
+<link rel="stylesheet" href="db-tab.css?v=20261117">
 <link rel="stylesheet" href="acct.css">
 <link rel="stylesheet" href="lgp-tab.css?v=20261115d">
 <script src="d3.min.js"></script>
@@ -1005,98 +1005,72 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
     </div>
   </section>
 
-  <section class="ss-sec" id="penyulang" data-tab="penyulang" data-sub="peny" hidden>
-    <div class="db-switch" role="tablist" aria-label="Pilih database"><button type="button" role="tab" data-sub="peny" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12h10M7 12l10-7M7 12l10 7"/></svg>Penyulang</button><button type="button" role="tab" data-sub="gi" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-5h6v5"/></svg>Gardu Induk</button></div>
+  <section class="ss-sec" id="penyulang" data-tab="penyulang" hidden>
     <div class="ss-dbinfo" data-dbinfo="penyulang" data-source="info_update"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span class="ss-dbinfo-t">Memuat info update database…</span></div>
-    <header class="ss-hero" id="p-ringkasan">
+    <header class="ss-hero" id="d-ringkasan">
       <div class="ss-hero-main">
-        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>Profil penyulang · per UP3</span>
-        <h1 class="ss-title" id="penyulang-h">Database Penyulang</h1>
-        <p class="ss-take dash-skeleton" id="p-take" data-source="peny_profil peny_bulanan">—</p>
-        <div class="ss-filters" id="p-filter" data-source="peny_profil">
-          <div class="ss-frow"><span class="ss-flabel">UID</span><select id="p-f-uid" aria-label="UID"></select></div>
-          <div class="ss-frow"><span class="ss-flabel">UP3</span><select id="p-f-up3" aria-label="UP3"></select></div>
-          <div class="ss-frow"><span class="ss-flabel">Jenis padam</span><div class="ss-chips" id="p-f-jenis" role="group" aria-label="Jenis padam"></div></div>
-          <div class="ss-frow"><span class="ss-flabel">Penyulang</span><select id="p-f-peny" aria-label="Penyulang"></select></div>
+        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-5h6v5"/></svg>Gardu induk · penyulang · per UP3</span>
+        <h1 class="ss-title" id="penyulang-h">Database Penyulang &amp; Gardu Induk <span class="gi-draft">Draft</span></h1>
+        <p class="ss-take dash-skeleton" id="d-take" data-source="gi_master gi_tegangan peny_profil peny_bulanan">—</p>
+        <div class="ss-filters" id="d-filter" data-source="gi_master peny_profil">
+          <div class="ss-frow"><span class="ss-flabel">UID</span><select id="d-f-uid" aria-label="UID"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">UP3</span><select id="d-f-up3" aria-label="UP3"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">Gardu induk</span><select id="d-f-gi" aria-label="Gardu induk"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">Penyulang</span><select id="d-f-peny" aria-label="Penyulang dari gardu induk terpilih"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">Jenis padam</span><div class="ss-chips" id="d-f-jenis" role="group" aria-label="Jenis padam"></div></div>
         </div>
       </div>
-      <figure class="ss-map" id="p-peta-wrap">
-        <div class="ss-mapbox" id="p-map" data-source="peta koordinat peny_profil peny_bulanan"></div>
-        <figcaption class="ss-map-note" id="p-map-note"></figcaption>
+      <figure class="ss-map" id="d-peta-wrap">
+        <div class="ss-mapbox" id="d-map" data-source="peta koordinat gi_master gi_tegangan peny_profil"></div>
+        <div class="ss-legend gi-map-legend" id="d-map-legend"></div>
+        <figcaption class="ss-map-note" id="d-map-note"></figcaption>
       </figure>
     </header>
-    <div class="ss-tiles" id="p-kpi" data-source="peny_profil peny_bulanan">
-      <div class="ss-tile"><div class="ss-tile-label" id="p-t1-l">Penyulang di UP3</div><div class="ss-big"><span class="dash-skeleton" id="p-t1">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="p-t1-sub"></div></div>
-      <div class="ss-tile"><div class="ss-tile-label">Penyulang yang mengalami gangguan</div><div class="ss-big"><span class="dash-skeleton" id="p-t2">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="p-t2-sub"></div></div>
-      <div class="ss-tile"><div class="ss-tile-label">Kali gangguan penyulang di UP3</div><div class="ss-big"><span class="dash-skeleton" id="p-t3">—</span><span class="ss-unit">kali</span></div><div class="ss-sub" id="p-t3-sub"></div></div>
-      <div class="ss-tile"><div class="ss-tile-label">Penyulang terbanyak gangguan</div><div class="ss-big"><span class="dash-skeleton" id="p-t4">—</span><span class="ss-unit">kali</span></div><div class="ss-up3name" id="p-t4-name"></div><div class="ss-sub" id="p-t4-sub"></div></div>
+    <div class="ss-tiles" id="d-kpi" data-source="gi_master gi_tegangan peny_profil peny_bulanan">
+      <div class="ss-tile"><div class="ss-tile-label" id="d-t1-l">Gardu induk di UP3</div><div class="ss-big"><span class="dash-skeleton" id="d-t1">—</span><span class="ss-unit">GI</span></div><div class="ss-sub" id="d-t1-sub"></div></div>
+      <div class="ss-tile"><div class="ss-tile-label">Tegangan max GI terpilih</div><div class="ss-big"><span class="dash-skeleton" id="d-t2">—</span><span class="ss-unit">kV</span></div><div class="ss-up3name" id="d-t2-name"></div><div class="ss-sub" id="d-t2-sub"></div></div>
+      <div class="ss-tile"><div class="ss-tile-label">Penyulang dari GI terpilih</div><div class="ss-big"><span class="dash-skeleton" id="d-t3">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="d-t3-sub"></div></div>
+      <div class="ss-tile"><div class="ss-tile-label">Kali gangguan penyulang GI</div><div class="ss-big"><span class="dash-skeleton" id="d-t4">—</span><span class="ss-unit">kali</span></div><div class="ss-up3name" id="d-t4-name"></div><div class="ss-sub" id="d-t4-sub"></div></div>
     </div>
     <div class="ss-grid ss-pair">
-      <div class="ss-card" id="p-profil-card">
-        <h3 id="p-profil-h">Profil penyulang</h3>
-        <dl class="ss-p-dl" id="p-profil" data-source="peny_profil"></dl>
-      </div>
-      <div class="ss-card" id="p-chart-card">
-        <h3 id="p-chart-h">Kali gangguan per bulan</h3>
-        <p class="ss-note" id="p-chart-note"></p>
-        <div class="ss-legend" id="p-legend"></div>
-        <div class="ss-chart ss-short dash-skeleton" id="p-chart" data-source="peny_bulanan"></div>
-      </div>
-    </div>
-    <div class="ss-card" id="p-tabel-card">
-      <div class="ss-sechead">
-        <div><h3 id="p-tabel-h">Kali gangguan per penyulang</h3>
-          <p class="ss-note" id="p-tabel-note"></p></div>
-        <input class="ss-search" id="p-search" type="search" placeholder="Cari penyulang atau ULP" aria-label="Cari penyulang">
-      </div>
-      <div class="ss-tablewrap" data-source="peny_profil peny_bulanan"><table class="ss-table ss-p-table" id="p-tabel"></table></div>
-    </div>
-  </section>
-
-  <section class="ss-sec" id="gi" data-tab="penyulang" data-sub="gi" hidden>
-    <div class="db-switch" role="tablist" aria-label="Pilih database"><button type="button" role="tab" data-sub="peny" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="19" cy="19" r="2"/><path d="M7 12h10M7 12l10-7M7 12l10 7"/></svg>Penyulang</button><button type="button" role="tab" data-sub="gi" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-5h6v5"/></svg>Gardu Induk</button></div>
-    <header class="ss-hero" id="gi-ringkasan">
-      <div class="ss-hero-main">
-        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11"/><path d="M9 20v-5h6v5"/></svg>Gardu induk · tegangan 20 kV · per UP3</span>
-        <h1 class="ss-title" id="gi-h">Database Gardu Induk <span class="gi-draft">Draft</span></h1>
-        <p class="ss-take dash-skeleton" id="gi-take" data-source="gi_master gi_tegangan">—</p>
-        <div class="ss-filters" id="gi-filter" data-source="gi_master">
-          <div class="ss-frow"><span class="ss-flabel">UID</span><select id="gi-f-uid" aria-label="UID"></select></div>
-          <div class="ss-frow"><span class="ss-flabel">UP3</span><select id="gi-f-up3" aria-label="UP3"></select></div>
-          <div class="ss-frow"><span class="ss-flabel">Gardu induk</span><select id="gi-f-gi" aria-label="Gardu induk"></select></div>
-        </div>
-      </div>
-      <figure class="ss-map" id="gi-peta-wrap">
-        <div class="ss-mapbox" id="gi-map" data-source="peta koordinat gi_master gi_tegangan"></div>
-        <div class="ss-legend gi-map-legend" id="gi-map-legend"></div>
-        <figcaption class="ss-map-note" id="gi-map-note"></figcaption>
-      </figure>
-    </header>
-    <div class="ss-tiles" id="gi-kpi" data-source="gi_master gi_tegangan">
-      <div class="ss-tile"><div class="ss-tile-label" id="gi-t1-l">GI di UP3</div><div class="ss-big"><span class="dash-skeleton" id="gi-t1">—</span><span class="ss-unit">GI</span></div><div class="ss-sub" id="gi-t1-sub"></div></div>
-      <div class="ss-tile"><div class="ss-tile-label">Trafo/incoming dengan data tegangan</div><div class="ss-big"><span class="dash-skeleton" id="gi-t2">—</span><span class="ss-unit">trafo</span></div><div class="ss-sub" id="gi-t2-sub"></div></div>
-      <div class="ss-tile"><div class="ss-tile-label">Tegangan max tertinggi</div><div class="ss-big"><span class="dash-skeleton" id="gi-t3">—</span><span class="ss-unit">kV</span></div><div class="ss-up3name" id="gi-t3-name"></div><div class="ss-sub" id="gi-t3-sub"></div></div>
-      <div class="ss-tile"><div class="ss-tile-label">Trafo pernah di atas 21 kV</div><div class="ss-big"><span class="dash-skeleton" id="gi-t4">—</span><span class="ss-unit">trafo</span></div><div class="ss-sub" id="gi-t4-sub"></div></div>
-    </div>
-    <div class="ss-grid ss-pair">
-      <div class="ss-card" id="gi-profil-card">
+      <div class="ss-card" id="d-gprofil-card">
         <h3>Profil gardu induk</h3>
-        <dl class="ss-p-dl" id="gi-profil" data-source="gi_master gi_tegangan"></dl>
+        <dl class="ss-p-dl" id="d-gprofil" data-source="gi_master gi_tegangan"></dl>
       </div>
-      <div class="ss-card" id="gi-chart-card">
-        <h3 id="gi-chart-h">Tegangan max harian</h3>
-        <p class="ss-note" id="gi-chart-note"></p>
-        <div class="ss-legend" id="gi-legend"></div>
-        <div class="ss-chart ss-short dash-skeleton" id="gi-chart" data-source="gi_tegangan"></div>
+      <div class="ss-card" id="d-pprofil-card">
+        <h3>Profil penyulang</h3>
+        <dl class="ss-p-dl" id="d-pprofil" data-source="peny_profil peny_bulanan"></dl>
       </div>
     </div>
-    <div class="ss-card" id="gi-tabel-card">
-      <div class="ss-sechead">
-        <div><h3>Tegangan per gardu induk</h3>
-          <p class="ss-note" id="gi-tabel-note"></p></div>
-        <input class="ss-search" id="gi-search" type="search" placeholder="Cari GI, kode atau ULP" aria-label="Cari gardu induk">
+    <div class="ss-grid ss-pair">
+      <div class="ss-card" id="d-gchart-card">
+        <h3 id="d-gchart-h">Tegangan max harian GI</h3>
+        <p class="ss-note" id="d-gchart-note"></p>
+        <div class="ss-legend" id="d-glegend"></div>
+        <div class="ss-chart ss-short dash-skeleton" id="d-gchart" data-source="gi_tegangan"></div>
       </div>
-      <div class="ss-tablewrap" data-source="gi_master gi_tegangan"><table class="ss-table ss-p-table gi-table" id="gi-tabel"></table></div>
+      <div class="ss-card" id="d-pchart-card">
+        <h3 id="d-pchart-h">Kali gangguan per bulan</h3>
+        <p class="ss-note" id="d-pchart-note"></p>
+        <div class="ss-legend" id="d-plegend"></div>
+        <div class="ss-chart ss-short dash-skeleton" id="d-pchart" data-source="peny_bulanan"></div>
+      </div>
+    </div>
+    <div class="ss-card" id="d-ptabel-card">
+      <div class="ss-sechead">
+        <div><h3 id="d-ptabel-h">Penyulang dari gardu induk</h3>
+          <p class="ss-note" id="d-ptabel-note"></p></div>
+        <input class="ss-search" id="d-search" type="search" placeholder="Cari penyulang atau ULP" aria-label="Cari penyulang">
+      </div>
+      <div class="ss-tablewrap" data-source="peny_profil peny_bulanan"><table class="ss-table ss-p-table" id="d-ptabel"></table></div>
+    </div>
+    <div class="ss-card" id="d-gtabel-card">
+      <div class="ss-sechead">
+        <div><h3>Tegangan gardu induk di UP3</h3>
+          <p class="ss-note" id="d-gtabel-note"></p></div>
+        <input class="ss-search" id="d-gsearch" type="search" placeholder="Cari GI atau kode" aria-label="Cari gardu induk">
+      </div>
+      <div class="ss-tablewrap" data-source="gi_master gi_tegangan"><table class="ss-table ss-p-table gi-table" id="d-gtabel"></table></div>
     </div>
   </section>
 
@@ -1784,14 +1758,11 @@ window.SSD = (() => {
 (() => {
   const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'workplan', 'penyulang', 'hi', 'hirarki', 'update', 'harian', 'kondisi', 'lgp', 'slides'];
   window.SSC = ['var(--x-c0)', 'var(--x-c1)', 'var(--x-c2)', 'var(--x-c3)', 'var(--x-c4)', 'var(--x-c5)', 'var(--x-c6)', 'var(--x-c7)'];
-  // sub-halaman dalam satu menu (Database Penyulang & Gardu Induk): param db_sub = 'peny' | 'gi'
-  const SUBS = { gi: ['penyulang', 'gi'] };
+  const ALIAS = { gi: 'penyulang' }; // #gi membuka Database Penyulang & Gardu Induk
   const show = (tab) => {
-    if (SUBS[tab]) tab = SUBS[tab][0];
+    if (ALIAS[tab]) tab = ALIAS[tab];
     if (!TABS.includes(tab)) tab = 'saidi';
-    const sub = dash.params().db_sub === 'gi' ? 'gi' : 'peny';
-    document.querySelectorAll('#ss-shell [data-tab]').forEach((el) => { el.hidden = el.dataset.tab !== tab || (!!el.dataset.sub && el.dataset.sub !== sub); });
-    document.querySelectorAll('#ss-shell .db-switch button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.sub === sub)));
+    document.querySelectorAll('#ss-shell [data-tab]').forEach((el) => { el.hidden = el.dataset.tab !== tab; });
     document.querySelectorAll('#ss-shell .ss-tab').forEach((b) => { if (b.dataset.tabTo === tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
     if (window.SSDbInfo && window.SSDbInfo.chip) window.SSDbInfo.chip(tab);
     document.querySelectorAll('#ss-shell .ss-mg').forEach((g) => {
@@ -1800,7 +1771,6 @@ window.SSD = (() => {
     });
   };
   const go = (tab) => { show(tab); dash.setLink(tab); dash.setParams({ tab }); };
-  document.querySelectorAll('#ss-shell .db-switch').forEach((w) => w.addEventListener('click', (e) => { const b = e.target.closest('button[data-sub]'); if (b) { dash.setParams({ db_sub: b.dataset.sub }); window.scrollTo({ top: 0 }); } }));
   // menu atas: arahkan kursor ke Harian/Bulanan/Database untuk membuka daftar halaman; klik/sentuh dan keyboard juga bisa
   const menu = document.getElementById('ss-menu');
   const groups = [...menu.querySelectorAll('.ss-mg')];
@@ -1850,7 +1820,7 @@ window.SSD = (() => {
   const tick = () => { const d = new Date(); document.getElementById('ss-clock-t').textContent = fT.format(d).replace(/:/g, '.'); document.getElementById('ss-clock-d').textContent = fD.format(d); };
   tick(); setInterval(tick, 1000);
   const fromLink = location.hash.slice(1);
-  if (SUBS[fromLink]) { dash.setParams({ tab: SUBS[fromLink][0], db_sub: SUBS[fromLink][1] }); show(SUBS[fromLink][0]); }
+  if (ALIAS[fromLink]) { show(ALIAS[fromLink]); dash.setParams({ tab: ALIAS[fromLink] }); }
   else if (TABS.includes(fromLink)) { show(fromLink); dash.setParams({ tab: fromLink }); }
   else show(dash.params().tab);
   SSD.onData(() => show(dash.params().tab));
@@ -2781,9 +2751,8 @@ SSD.calc('up3_yoy', {
 })();
 </script>
 
-<script src="peny-tab.js"></script>
+<script src="db-tab.js?v=20261117"></script>
 <script src="hi-tab.js?v=20261116w"></script>
-<script src="gi-tab.js?v=20261117b"></script>
 
 <script>
 (() => {
