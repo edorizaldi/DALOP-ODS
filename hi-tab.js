@@ -371,6 +371,71 @@
     } catch (e) { msg('Excel gagal dibuat: ' + ((e && e.message) || e)); }
     btn.disabled = false;
   });
+  // ---------- Download PDF daftar penyulang (summary penyulang) sesuai filter dan pencarian ----------
+  const loadJs = (src, ok) => new Promise((res, rej) => { if (ok()) return res(); const sc = document.createElement('script'); sc.src = src; sc.onload = () => (ok() ? res() : rej(new Error('pustaka PDF tidak termuat'))); sc.onerror = () => rej(new Error('pustaka PDF gagal dimuat, periksa koneksi')); document.head.appendChild(sc); });
+  const loadPdf = async () => {
+    await loadJs('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', () => window.jspdf && window.jspdf.jsPDF);
+    await loadJs('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js', () => window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API && window.jspdf.jsPDF.API.autoTable);
+    return window.jspdf.jsPDF;
+  };
+  const hexRgb = (h) => { let x = String(h).replace('#', ''); if (x.length === 3) x = x.split('').map((c) => c + c).join(''); return [0, 2, 4].map((i) => parseInt(x.slice(i, i + 2), 16)); };
+  const pdfTxt = (t) => String(t == null ? '' : t).replace(/≥/g, '>=').replace(/≤/g, '<=').replace(/[–—]/g, '-').replace(/[·•]/g, '|').replace(/[^\x20-\x7E -ÿ]/g, '');
+  $('hi-list-pdf').addEventListener('click', async () => {
+    const btn = $('hi-list-pdf'), msg = (t) => { $('hi-list-msg').textContent = t || ''; };
+    if (!S || !S.list) { msg('Data belum siap.'); return; }
+    btn.disabled = true; msg('Menyiapkan PDF…');
+    try {
+      const JsPDF = await loadPdf();
+      const { rows, upto, hpOn, bbTxt } = S.list;
+      const ulpOf = (g) => { const fromDb = g.ulp.size > 0; return [...(fromDb ? g.ulp : g.ulpH)].sort((a, b) => b[1] - a[1]).map(([x]) => x); };
+      const now = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth(), M = 10;
+      const head = ['No', 'Penyulang', 'ULP', 'UID', ...upto.map((m) => BS[m - 1])];
+      if (hpOn) head.push(`${bbTxt} P`, `${bbTxt} S`, `${bbTxt} total`);
+      head.push(hpOn ? `Kelas ${bbTxt}` : `Kelas ${BS[upto[upto.length - 1] - 1]}`);
+      const NM = 4 + upto.length; // kolom bulan: indeks 4 .. NM-1
+      const body = rows.map((g, i) => {
+        const r = [String(i + 1), g.peny, ulpOf(g).join(', '), uname(g.u)];
+        upto.forEach((m) => { const o = g.mo[m]; const n = o ? o[0] + o[1] : 0; r.push(!IX.ada.has(m + '|' + g.u) ? '-' : n ? fmt(n) : '0'); });
+        const bb = g.bb; const nb = bb ? bb[0] + bb[1] : 0;
+        if (hpOn) r.push(fmt(bb ? bb[0] : 0), fmt(bb ? bb[1] : 0), fmt(nb));
+        const lm = upto[upto.length - 1]; const ol = g.mo[lm]; const nl = hpOn ? nb : ol ? ol[0] + ol[1] : 0;
+        const kk = katOf(nl); r.push(kk ? KBY[kk].nm : 'Tanpa gangguan');
+        return r.map(pdfTxt);
+      });
+      const kelasOf = (row) => { const v = row[row.length - 1]; return KAT.find((k) => k.nm === v); };
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(20, 30, 45);
+      doc.text(pdfTxt(`Health Index Penyulang - ${ctx.name.replace(/_/g, ' ')}`), M, 13);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(80, 90, 100);
+      doc.text(pdfTxt(`${S.where} | ${S.fTxt}${q ? ` | pencarian "${q}"` : ''} | ${fmt(rows.length)} penyulang`), M, 18.5);
+      doc.text(pdfTxt(`Jumlah gangguan (permanen + sesaat) per bulan. Kelas: Kronis >= 6 kali, Sakit 2-5 kali, Sehat 1 kali; "-" = bulan belum ada data. Diunduh ${now} WIB.`), M, 23);
+      let lx = M; [...KAT].forEach((k) => { doc.setFillColor(...hexRgb(k.c)); doc.rect(lx, 25.6, 3, 3, 'F'); doc.setTextColor(60, 70, 80); doc.text(pdfTxt(`${k.nm} ${k.ket}`), lx + 4, 28.2); lx += 32; });
+      doc.autoTable({
+        head: [head.map(pdfTxt)], body, startY: 31, margin: { left: M, right: M, top: 14, bottom: 12 },
+        theme: 'grid', styles: { font: 'helvetica', fontSize: 6.8, cellPadding: 1.1, lineColor: [215, 222, 228], lineWidth: 0.1, textColor: [30, 38, 48], valign: 'middle', overflow: 'linebreak' },
+        headStyles: { fillColor: [19, 37, 74], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 6.8 },
+        columnStyles: Object.assign({ 0: { halign: 'right', cellWidth: 8 }, 1: { cellWidth: 38, fontStyle: 'bold' }, 2: { cellWidth: 30 }, 3: { cellWidth: 22 } }, Object.fromEntries(head.slice(4).map((_, i) => [4 + i, { halign: 'center' }]))),
+        didParseCell: (d) => {
+          if (d.section !== 'body') return;
+          const c = d.column.index; const row = d.row.raw;
+          if (c >= 4 && c < NM) { const n = Number(String(row[c]).replace(/\./g, '')); const kk = isFinite(n) && row[c] !== '-' ? katOf(n) : null; if (kk) { d.cell.styles.fillColor = hexRgb(KBY[kk].c); d.cell.styles.textColor = hexRgb(KBY[kk].fg); d.cell.styles.fontStyle = 'bold'; } else d.cell.styles.textColor = [150, 158, 166]; }
+          if (c === head.length - 1) { const k = kelasOf(row); if (k) { d.cell.styles.textColor = hexRgb(k.c === '#E9A23B' ? '#9A5B00' : k.c); d.cell.styles.fontStyle = 'bold'; } else d.cell.styles.textColor = [150, 158, 166]; }
+        },
+        didDrawPage: (d) => {
+          const H = doc.internal.pageSize.getHeight();
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(120, 128, 136);
+          doc.text(pdfTxt(`Dashboard Keandalan Sumkal 2026 - Health Index Penyulang - ${ctx.name.replace(/_/g, ' ')}`), M, H - 5);
+          doc.text(`Halaman ${d.pageNumber}`, W - M, H - 5, { align: 'right' });
+          if (d.pageNumber > 1) { doc.setFontSize(8); doc.setTextColor(60, 70, 80); doc.text(pdfTxt(`Health Index Penyulang - ${ctx.name.replace(/_/g, ' ')} (lanjutan)`), M, 9); }
+        },
+      });
+      const filename = `Health_Index_Penyulang_${ctx.name.replace(/[^A-Za-z0-9]+/g, '_')}.pdf`;
+      const ok = await saveFile(doc.output('blob'), filename);
+      msg(ok ? `${fmt(rows.length)} penyulang diunduh (PDF).` : '');
+    } catch (e) { msg('PDF gagal dibuat: ' + ((e && e.message) || e)); }
+    btn.disabled = false;
+  });
   // ---------- Top 3 penyulang kronis per UID, bulan berjalan (laporan harian, sheet Detil Kode), semua UID dalam satu tabel ----------
   function renderTop() {
     if (!S || !IX) return;
