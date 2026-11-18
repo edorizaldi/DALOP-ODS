@@ -1,6 +1,7 @@
 // Penyusun dataset Hirarki Aset dari ALL_DATA_ASET_JARINGAN.xlsx (sheet GI, FEEDER, ZONA, SECTION, SEGMENT, LATERAL, GARDU, TRAFO).
 // Dipakai di tab Update Data Bulanan (unggah database aset). Masukan: { NAMA_SHEET: rows } (baris pertama = judul kolom).
-// Keluaran: { files: { hx_gi: [...], ... }, stats } — isi tiap file sama bentuknya dengan hx_*.js yang dimuat tab Hirarki Aset.
+// Keluaran: { files: { hx_gi: [...], ..., gi_identitas: [...] }, stats } — isi tiap file sama bentuknya dengan hx_*.js yang dimuat tab Hirarki Aset.
+// gi_identitas = identitas GI dari sheet GI (kode jaringan, koordinat, UID, UP3, ULP, status) untuk tab Database Penyulang & Gardu Induk.
 (function (root) {
   'use strict';
   const NET = ['GI', 'FEEDER', 'ZONA', 'SECTION', 'SEGMENT', 'LATERAL'];
@@ -213,8 +214,28 @@
     files.hx_ringkasan_unit = [];
     Object.entries(U).forEach(([k, o]) => { const [w, u] = k.split('|'); ['GI', 'FEEDER', 'ZONA', 'SECTION', 'SEGMENT', 'LATERAL', 'GARDU', 'TRAFO'].forEach((lv) => { const c = o[lv]; if (!c) return;
       const r = { w, u, level: lv, terhubung: c.t, putus: c.p, selevel: c.s, padam: c.d }; if (Object.keys(c.sb).length) r.sebab = c.sb; files.hx_ringkasan_unit.push(r); }); });
-    const stats = { gi: files.hx_gi.length, feeder: files.hx_feeder.length, gardu: GD.length, garduOk: GD.filter((g) => g.ok).length, trafo: TR.length, trafoOk: trOk, anomali: AN.length, metode: met };
+    files.gi_identitas = giIdentitas(sheet('GI'));
+    const stats = { gi: files.hx_gi.length, giXY: files.gi_identitas.filter((g) => g.lat !== '').length, feeder: files.hx_feeder.length, gardu: GD.length, garduOk: GD.filter((g) => g.ok).length, trafo: TR.length, trafoOk: trOk, anomali: AN.length, metode: met };
     return { files, stats };
+  }
+
+  // identitas GI dari sheet GI: semua kolom selain KODE_ASSET dan NAMA opsional
+  const DIST = { 110: 'ACEH', 120: 'SUMUT', 131: 'SUMBAR', 140: 'S2JB', 161: 'BABEL', 171: 'LAMPUNG', 180: 'RKR', 210: 'KALBAR', 221: 'KALSELTENG', 230: 'KALTIMRA' };
+  const WIL = { 'WILAYAH ACEH': 'ACEH', 'WILAYAH SUMATERA UTARA': 'SUMUT', 'WILAYAH SUMATERA BARAT': 'SUMBAR', 'WILAYAH SUMATERA SELATAN, JAMBI & BENGKULU (S2JB)': 'S2JB', 'WILAYAH BANGKA BELITUNG': 'BABEL', 'DISTRIBUSI LAMPUNG': 'LAMPUNG', 'WILAYAH RIAU DAN KEPULAUAN RIAU': 'RKR', 'WILAYAH KALIMANTAN BARAT': 'KALBAR', 'WILAYAH KALIMANTAN SELATAN DAN TENGAH': 'KALSELTENG', 'WILAYAH KALIMANTAN TIMUR': 'KALTIMRA' };
+  const titleOf = (s, pre) => S(s).replace(new RegExp('^' + pre + '\\s+', 'i'), '').toLowerCase().split(/\s+/).filter(Boolean).map((w) => (w === 'dan' || w === 'di' ? w : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
+  const isoOf = (v) => { if (v == null || v === '') return ''; if (typeof v === 'number' && v > 20000 && v < 80000) return new Date(Math.round((v - 25569) * 864e5)).toISOString().slice(0, 10); if (v instanceof Date && !isNaN(v)) return v.toISOString().slice(0, 10); const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(S(v)); return m ? m[0] : ''; };
+  function giIdentitas(rows) {
+    if (!rows || !rows.length) return [];
+    const H = rows[0].map((h) => NORM(h)); const ix = (k) => H.indexOf(NORM(k)); const g = (r, k) => (ix(k) >= 0 ? r[ix(k)] : '');
+    const tc = (x) => S(x).toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+    return rows.slice(1).filter((r) => r && S(g(r, 'KODE_ASSET')) && S(g(r, 'NAMA'))).map((r) => {
+      let lat = num(g(r, 'LATITUDE')), lon = num(g(r, 'LONGITUDE'));
+      if (lat == null || lon == null || !(lat > -9 && lat < 8 && lon > 94 && lon < 120)) lat = lon = null;
+      return { kode: S(g(r, 'KODE_JARINGAN')), aset: S(g(r, 'KODE_ASSET')), nama: S(g(r, 'NAMA')), alamat: S(g(r, 'ALAMAT')),
+        lat: lat == null ? '' : Math.round(lat * 1e6) / 1e6, lon: lon == null ? '' : Math.round(lon * 1e6) / 1e6,
+        uid: DIST[num(g(r, 'DIST'))] || WIL[S(g(r, 'NAMA_DIST')).toUpperCase()] || '', up3: titleOf(g(r, 'NAMA_UP3'), 'UP3'), ulp: titleOf(g(r, 'NAMA_UNIT'), 'ULP'),
+        status: [tc(g(r, 'STATUS_NYALA')), tc(g(r, 'STATUS_ASSET'))].filter(Boolean).join(' · '), dibuat: isoOf(g(r, 'CREATED_DATE')), diubah: isoOf(g(r, 'UPDATED_DATE')) };
+    });
   }
 
   // tulis satu dataset sebagai file .js seperti hx_*.js di repo (kolom + baris, agar ringkas)
@@ -224,7 +245,7 @@
     return 'window.__D=window.__D||{};window.__D[' + JSON.stringify(id) + ']=(function(c,r){return r.map(function(a){var o={};for(var i=0;i<c.length;i++)o[c[i]]=a[i];return o;});})(' + JSON.stringify(cols).replace(/,/g, ', ') + ',' + JSON.stringify(rows.map((r) => cols.map((c) => (r[c] == null ? '' : r[c])))) + ');\n';
   }
 
-  const api = { build, toJs };
+  const api = { build, toJs, giIdentitas };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.SSHxBuild = api;
 })(typeof window !== 'undefined' ? window : globalThis);

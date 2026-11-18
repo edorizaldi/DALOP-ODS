@@ -1,6 +1,6 @@
 // Tab Database > Database Penyulang & Gardu Induk (satu layout).
 // Filter UID → UP3 → Gardu induk → Penyulang dari GI itu. Profil GI dan profil penyulang tampil berdampingan.
-// Data: gi_master (Master GI), gi_tegangan (tegangan max harian 20 kV per trafo), hx_feeder (feeder per GI, dimuat saat dibutuhkan),
+// Data: gi_identitas (identitas GI dari Database Aset Jaringan sheet GI), gi_tegangan (tegangan max harian 20 kV per trafo), hx_feeder (feeder per GI, dimuat saat dibutuhkan),
 //       peny_profil (database penyulang), peny_bulanan (kali gangguan per bulan).
 (() => {
   const $ = (id) => document.getElementById(id);
@@ -182,7 +182,7 @@
   }
 
   function render() {
-    const M = SSD.data('gi_master'), T = SSD.data('gi_tegangan'), P = SSD.data('peny_profil'), B = SSD.data('peny_bulanan');
+    const M = SSD.data('gi_identitas'), T = SSD.data('gi_tegangan'), P = SSD.data('peny_profil'), B = SSD.data('peny_bulanan');
     const sts = [M, T, P, B];
     if (sts.some((d) => d.status === 'error')) { [chartG, chartP].forEach((c) => { c.classList.remove('dash-skeleton'); c.replaceChildren(mk('div', 'Failed to load', 'ss-fail')); }); return; }
     if (sts.some((d) => d.status !== 'ok')) return;
@@ -269,7 +269,7 @@
         row('Kode jaringan · aset', `${selG.kode || '—'} · ${selG.aset || '—'}`);
         row('UP3 · UID', `${selG.up3 || '—'}${selG.uid ? ' · ' + (ULABEL[selG.uid] || selG.uid) : ''}`);
         row('ULP', selG.ulp); row('Alamat', selG.alamat);
-        row('Koordinat', selG.hasXY ? `${selG.lat}, ${selG.lon}` : 'belum ada di Master GI');
+        row('Koordinat', selG.hasXY ? `${selG.lat}, ${selG.lon}` : 'belum ada di Database Aset Jaringan');
         row('Status', selG.status); row('Penyulang', `${fmt(selG.feeders.length)} penyulang`);
         row('Trafo/incoming dipantau', selG.t.length ? selG.t.map((t) => t.trafo || t.apd).join(', ') : 'belum ada di file monitoring tegangan');
         if (selG.t.length) {
