@@ -7,7 +7,7 @@
   const fmt = (v) => (v === '' || v == null ? '–' : f0.format(Number(v)));
   const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   const SHEETS = ['GI', 'FEEDER', 'ZONA', 'SECTION', 'SEGMENT', 'LATERAL', 'GARDU', 'TRAFO'];
-  const IDS = ['hx_gi', 'hx_feeder', 'hx_zona', 'hx_section', 'hx_segment', 'hx_lateral', 'hx_gardu_1', 'hx_gardu_2', 'hx_gardu_3', 'hx_anomali', 'hx_ringkasan', 'hx_trafo_metode', 'hx_ringkasan_unit'];
+  const IDS = ['hx_gi', 'hx_feeder', 'hx_zona', 'hx_section', 'hx_segment', 'hx_lateral', 'hx_gardu_1', 'hx_gardu_2', 'hx_gardu_3', 'hx_anomali', 'hx_ringkasan', 'hx_trafo_metode', 'hx_ringkasan_unit', 'gi_identitas'];
   const msg = (t, cls) => { const m = $('up-a-msg'); m.textContent = t || ''; m.className = 'ss-up-msg' + (cls ? ' ' + cls : ''); };
   const loaded = {};
   const load = (src, test) => {
@@ -51,7 +51,7 @@
       const pick = {}; const norm = (x) => String(x).toUpperCase().replace(/[^A-Z0-9]/g, '');
       const miss = SHEETS.filter((n) => { const sh = sheets.find((x) => norm(x.name) === norm(n)); if (sh) pick[n] = sh.rows; return !sh; });
       if (miss.length) throw new Error(`sheet ${miss.join(', ')} tidak ada di file ini`);
-      lab.textContent = 'Menyusun hirarki…'; await load('hx-build.js', () => !!window.SSHxBuild);
+      lab.textContent = 'Menyusun hirarki…'; await load('hx-build.js?v=20261118', () => !!window.SSHxBuild);
       await new Promise((r) => setTimeout(r, 30));
       const out = window.SSHxBuild.build(pick, (t) => { lab.textContent = t + '…'; });
       pending = { name: file.name, out };
