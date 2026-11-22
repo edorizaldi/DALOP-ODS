@@ -112,7 +112,7 @@
     L.control.scale({ position: 'bottomleft', imperial: false }).addTo(map);
     map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
     setBase();
-    if (window.innerWidth <= 760) { $('hxm-panel').classList.remove('open'); $('hxm-panel-t').setAttribute('aria-expanded', 'false'); }
+    if (window.innerWidth < 1600) { $('hxm-panel').classList.remove('open'); $('hxm-panel-t').setAttribute('aria-expanded', 'false'); }
     map.on('mousemove', (e) => { $('hxm-coord').textContent = `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`; });
     let z9 = map.getZoom() >= 9;
     map.on('moveend zoomend', () => { const z = map.getZoom() >= 9; if (z !== z9) { z9 = z; draw(); } else { drawGardu(); drawTable(); } $('hxm-zoomnote').hidden = map.getZoom() >= 12 || !st.lay.gardu || !uidCur; });
@@ -218,12 +218,13 @@
     const list = map && uidCur ? shown().filter(inView).sort((a, b) => a.nama.localeCompare(b.nama)) : [];
     const sel = P().hx_feeder;
     const head = mk('thead'); const hr = mk('tr');
-    [['Penyulang', 'ss-l'], ['Gardu Induk', 'ss-l'], ['ULP', 'ss-l ss-hide-n hxm-wide'], ['Gardu'], ['Trafo'], ['kVA gardu', 'ss-hide-n hxm-wide'], ['Panjang (km)'], ['Keliru', 'ss-hide-n']].forEach(([h, c]) => hr.append(mk('th', h, c || '')));
+    [['Penyulang', 'ss-l'], ['GI', 'ss-l'], ['ULP', 'ss-l ss-hide-n hxm-wide'], ['Gardu'], ['Trafo'], ['kVA gardu', 'ss-hide-n hxm-wide'], ['Km'], ['Keliru', 'ss-hide-n']].forEach(([h, c]) => hr.append(mk('th', h, c || '')));
     head.append(hr); const body = mk('tbody');
     list.slice(0, 300).forEach((f) => {
       const tr = mk('tr'); tr.tabIndex = 0; if (f.kode === sel) tr.className = 'on';
       const n = mk('td', null, 'ss-l'); const sw = mk('i', null, 'hxm-sw'); sw.style.background = st.color === 'gi' ? f.gColor : f.color; n.append(sw, f.nama);
-      tr.append(n, mk('td', f.giNama.replace(/^GI\s+/, ''), 'ss-l'), mk('td', f.ulp.replace(/^ULP\s+/, ''), 'ss-l ss-hide-n hxm-wide'), mk('td', fmt(f.nG)), mk('td', fmt(f.nT)), mk('td', fmt(f.kv), 'ss-hide-n hxm-wide'), mk('td', f1.format(f.km)), mk('td', f.jauh + f.tanpa ? fmt(f.jauh + f.tanpa) : '—', 'ss-hide-n'));
+      n.title = f.nama; const gtd = mk('td', f.giNama.replace(/^GI\s+/, ''), 'ss-l'); gtd.title = f.giNama;
+      tr.append(n, gtd, mk('td', f.ulp.replace(/^ULP\s+/, ''), 'ss-l ss-hide-n hxm-wide'), mk('td', fmt(f.nG)), mk('td', fmt(f.nT)), mk('td', fmt(f.kv), 'ss-hide-n hxm-wide'), mk('td', f1.format(f.km)), mk('td', f.jauh + f.tanpa ? fmt(f.jauh + f.tanpa) : '—', 'ss-hide-n'));
       const go = () => { fitKey = ''; setP({ hx_gi: f.gi, hx_feeder: f.kode }); };
       tr.addEventListener('click', go); tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
       body.append(tr);

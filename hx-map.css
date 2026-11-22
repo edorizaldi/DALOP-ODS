@@ -94,3 +94,38 @@
   #hxm-tbl .hxm-wide { display: none; }
   #hxm-tbl thead th { position: sticky; top: 0; z-index: 1; }
 }
+/* proporsi: peta dominan, panel lapisan dan tabel ramping */
+.hxm-body { height: clamp(480px, 76vh, 860px); }
+.hxm-panel { width: 196px; padding: 2px 11px 10px; font-size: 12px; top: 54px; }
+.hxm-panel h4 { font-size: 10.5px; margin: 9px 0 4px; }
+.hxm-panel label { gap: 6px; padding: 2px 0; }
+.hxm-panel label small { display: none; }
+.hxm-base { gap: 4px; }
+.hxm-base button { font-size: 10.5px; gap: 2px; padding: 2px; }
+.hxm-base i { height: 22px; }
+.hxm-lg { font-size: 11.5px; gap: 6px; }
+.hxm-lg i { width: 16px; }
+.hxm-fab { height: 32px; font-size: 12.5px; padding: 0 10px; }
+@media (min-width: 1100px) {
+  .hxm-split { grid-template-columns: minmax(0, 1fr) clamp(300px, 22vw, 380px); }
+  .hxm-attr { height: clamp(480px, 76vh, 860px); }
+  #hxm-tbl { font-size: 12px; }
+  #hxm-tbl th, #hxm-tbl td { padding-left: 6px; padding-right: 6px; }
+  #hxm-tbl th:last-child, #hxm-tbl td:last-child { display: none; }
+  .hxm-attr-h h4 { font-size: 13px; }
+}
+@media (max-width: 760px) { .hxm-body { height: 460px; } }
+@media (min-width: 1100px) {
+  #hxm-tbl { width: 100%; table-layout: fixed; }
+  #hxm-tbl th, #hxm-tbl td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #hxm-tbl th:nth-child(1), #hxm-tbl td:nth-child(1) { width: 31%; }
+  #hxm-tbl th:nth-child(2), #hxm-tbl td:nth-child(2) { width: 29%; }
+  #hxm-tbl th:nth-child(4), #hxm-tbl td:nth-child(4), #hxm-tbl th:nth-child(5), #hxm-tbl td:nth-child(5) { width: 12%; }
+  #hxm-tbl th:nth-child(7), #hxm-tbl td:nth-child(7) { width: 16%; }
+}
+@media (min-width: 1100px) {
+  #hxm-tbl th:nth-child(1), #hxm-tbl td:nth-child(1) { width: 29%; }
+  #hxm-tbl th:nth-child(2), #hxm-tbl td:nth-child(2) { width: 25%; }
+  #hxm-tbl th:nth-child(4), #hxm-tbl td:nth-child(4), #hxm-tbl th:nth-child(5), #hxm-tbl td:nth-child(5) { width: 15%; text-overflow: clip; }
+  #hxm-tbl th:nth-child(7), #hxm-tbl td:nth-child(7) { width: 16%; }
+}
