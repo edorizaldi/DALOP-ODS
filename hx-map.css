@@ -153,3 +153,9 @@
 .hxm-head { align-items: flex-end; }
 /* lapisan Leaflet (z-index 400-1000) dikurung di dalam peta agar tidak menutupi menu turun di header */
 .hxm-body { isolation: isolate; z-index: 0; }
+.hxm-pop-tr { margin: 0 0 8px; border-top: 1px solid #e3e8ee; padding-top: 6px; }
+.hxm-pop-trh { display: block; color: #6b7785; font-size: 12px; margin-bottom: 3px; }
+.hxm-pop-tr ul { list-style: none; margin: 0; padding: 0; max-height: 110px; overflow: auto; }
+.hxm-pop-tr li { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; font-size: 12.5px; }
+.hxm-pop-tr code { font: 12px ui-monospace, Menlo, monospace; color: #1b2733; }
+.hxm-pop-tr li span { color: #6b7785; white-space: nowrap; }

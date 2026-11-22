@@ -79,7 +79,7 @@
   function decode(raw, hxF, giMap) {
     const out = [];
     (raw.f || []).forEach((r) => {
-      const [kode, nama, gi, glon, glat, km, flat, codes, names, kva, tr] = r;
+      const [kode, nama, gi, glon, glat, km, flat, codes, names, kva, tr, ts] = r;
       const n = codes.length; const pt = new Array(n); const par = new Int32Array(n);
       for (let i = 0; i < n; i++) { const lo = flat[i * 3], la = flat[i * 3 + 1]; par[i] = flat[i * 3 + 2]; pt[i] = par[i] === -3 ? null : [la / 1e5, lo / 1e5]; }
       const giLL = glat != null ? [glat, glon] : null;
@@ -87,7 +87,7 @@
       const ext = (p) => { if (!p) return; if (!b) b = [p[0], p[1], p[0], p[1]]; else { if (p[0] < b[0]) b[0] = p[0]; if (p[1] < b[1]) b[1] = p[1]; if (p[0] > b[2]) b[2] = p[0]; if (p[1] > b[3]) b[3] = p[1]; } };
       for (let i = 0; i < n; i++) { if (par[i] >= 0) { segs.push([pt[par[i]], pt[i]]); ext(pt[i]); } else if (par[i] === -1) { if (giLL) segs.push([giLL, pt[i]]); ext(pt[i]); } }
       const fx = hxF.get(kode) || {}; const g = giMap.get(gi) || {};
-      out.push({ kode, nama, gi, giNama: g.nama || gi, up3: g.up3 || '', ulp: fx.ulp || '', km, pt, par, codes, names, kva, tr, segs, bb: b, giLL,
+      out.push({ kode, nama, gi, giNama: g.nama || gi, up3: g.up3 || '', ulp: fx.ulp || '', km, pt, par, codes, names, kva, tr, ts: ts || [], segs, bb: b, giLL,
         nG: n, nT: tr.reduce((a, x) => a + x, 0), kv: kva.reduce((a, x) => a + x, 0), jauh: Array.prototype.filter.call(par, (x) => x === -2).length, tanpa: Array.prototype.filter.call(par, (x) => x === -3).length,
         color: PAL[hash(kode) % PAL.length], gColor: PAL[hash(gi) % PAL.length] });
     });
@@ -134,8 +134,14 @@
     const d = mk('div', null, 'hxm-pop');
     d.append(mk('b', f.names[i] || f.codes[i]), mk('span', f.codes[i], 'hxm-pop-k'));
     const dl = mk('dl');
-    [['Penyulang', f.nama], ['Gardu Induk', f.giNama], ['kVA', f.kva[i] ? fmt(f.kva[i]) : '—'], ['Trafo', fmt(f.tr[i])], ['Koordinat', f.pt[i] ? `${f.pt[i][0].toFixed(5)}, ${f.pt[i][1].toFixed(5)}` : '—'], ['Status garis', f.par[i] === -2 ? 'tidak disambung (jauh dari penyulangnya)' : 'tersambung']].forEach(([k, v]) => dl.append(mk('dt', k), mk('dd', v)));
+    [['Penyulang', f.nama], ['Gardu Induk', f.giNama], ['kVA gardu', f.kva[i] ? fmt(f.kva[i]) : '—'], ['Jumlah trafo', fmt(f.tr[i])], ['Koordinat', f.pt[i] ? `${f.pt[i][0].toFixed(5)}, ${f.pt[i][1].toFixed(5)}` : '—'], ['Status garis', f.par[i] === -2 ? 'tidak disambung (jauh dari penyulangnya)' : 'tersambung']].forEach(([k, v]) => dl.append(mk('dt', k), mk('dd', v)));
     d.append(dl);
+    // trafo di gardu ini: SSOT Number trafo dari Database Aset Jaringan sheet TRAFO
+    const tl = String(f.ts[i] || '').split(';').filter(Boolean).map((x) => x.split(':'));
+    const tw = mk('div', null, 'hxm-pop-tr');
+    tw.append(mk('span', tl.length ? 'SSOT Number trafo' : 'Belum ada trafo yang cocok ke gardu ini di sheet TRAFO', 'hxm-pop-trh'));
+    if (tl.length) { const ul = mk('ul'); tl.forEach(([ss, kv]) => { const li = mk('li'); li.append(mk('code', ss), mk('span', kv ? fmt(kv) + ' kVA' : '')); ul.append(li); }); tw.append(ul); }
+    d.append(tw);
     const b = mk('button', 'Telusuri hirarki penyulang ini', 'hxm-pop-b'); b.type = 'button';
     b.addEventListener('click', () => { setP({ hx_gi: f.gi, hx_feeder: f.kode }); setTimeout(() => { const c = $('hx-fd-card'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 250); });
     d.append(b); return d;

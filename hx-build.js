@@ -16,8 +16,9 @@
   const NORM = (x) => S(x).toUpperCase().replace(/[^A-Z0-9]/g, '');
   const isEmpty = (p) => !p || p === '0' || p === '-';
   const num = (v) => { const n = Number(String(v == null ? '' : v).replace(',', '.')); return v === '' || v == null || !isFinite(n) ? null : n; };
-  // nama untuk mencocokkan trafo ke gardu: tanpa awalan TRAFO/nomor/GD/GARDU dan tanpa spasi atau tanda baca
-  const nm = (x) => { let v = S(x).toUpperCase().replace(/^(TRAFO|TRF)\s*/, '').replace(/^\d+\s+/, ''); let prev; do { prev = v; v = v.replace(/^(GARDU|GD)[\s.\-]*/, ''); } while (v !== prev); return v.replace(/[^A-Z0-9]/g, ''); };
+  // nama untuk mencocokkan trafo ke gardu: tanpa awalan TRAFO/nomor/GDDIST/GD/GARDU dan tanpa spasi atau tanda baca
+  // (juga pola "TRAFO_01_GDDIST_SYA204-00" yang dipakai di beberapa UID)
+  const nm = (x) => { let v = S(x).toUpperCase().replace(/^(TRAFO|TRF)[\s_]*/, '').replace(/^\d+[\s_]+/, ''); let prev; do { prev = v; v = v.replace(/^(GDDIST|GD\s*DIST|GARDU|GD)[\s._\-]*/, ''); } while (v !== prev); return v.replace(/[^A-Z0-9]/g, ''); };
 
   function table(rows, need, sheet) {
     if (!rows || !rows.length) throw new Error(`Sheet ${sheet} kosong atau tidak ada.`);
@@ -132,10 +133,10 @@
     });
     // ---------- trafo ----------
     step('Mencocokkan trafo ke gardu');
-    const tt = table(sheet('TRAFO'), ['KODE_TRAFO', 'KODE_GARDU', 'NO_TIANG_TRAFO', 'KVA', 'NAMA_UID', 'NAMA_UP3', 'NAMA_ULP', 'LATITUDE', 'LONGITUDE'], 'TRAFO');
+    const tt = table(sheet('TRAFO'), ['SSOTNUMBER', 'KODE_TRAFO', 'KODE_GARDU', 'NO_TIANG_TRAFO', 'KVA', 'NAMA_UID', 'NAMA_UP3', 'NAMA_ULP', 'LATITUDE', 'LONGITUDE'], 'TRAFO');
     const met = { KODE_GARDU: 0, 'NAMA (cadangan)': 0, 'TIDAK COCOK': 0 }; const TR = [];
     tt.rows.forEach((r, i) => {
-      const t = { row: i + 2, kode: tt.get(r, 'KODE_TRAFO'), kg: tt.get(r, 'KODE_GARDU'), nama: tt.get(r, 'NO_TIANG_TRAFO'), kva: tt.get(r, 'KVA'), wilayah: tt.get(r, 'NAMA_UID'), up3: tt.get(r, 'NAMA_UP3'), ulp: tt.get(r, 'NAMA_ULP'), lat: tt.get(r, 'LATITUDE'), lon: tt.get(r, 'LONGITUDE') };
+      const t = { row: i + 2, ssot: tt.get(r, 'SSOTNUMBER'), kode: tt.get(r, 'KODE_TRAFO'), kg: tt.get(r, 'KODE_GARDU'), nama: tt.get(r, 'NO_TIANG_TRAFO'), kva: tt.get(r, 'KVA'), wilayah: tt.get(r, 'NAMA_UID'), up3: tt.get(r, 'NAMA_UP3'), ulp: tt.get(r, 'NAMA_ULP'), lat: tt.get(r, 'LATITUDE'), lon: tt.get(r, 'LONGITUDE') };
       if (!t.kode && !t.kg) return;
       let g = gdByCode.get(t.kg) || gdBySsot.get(t.kg) || null; let m = 'KODE_GARDU';
       if (!g) { g = gdByName.get(t.ulp + '|' + nm(t.nama)) || null; m = 'NAMA (cadangan)'; }
@@ -223,7 +224,7 @@
     stats.lokasiXY = lokasi.filter((x) => num(x.lat) != null && num(x.lon) != null).length; stats.lokasi = lokasi.length;
     // titik gardu untuk peta jaringan (hx-geo.js menyusun garis penyulang dari titik-titik ini)
     const geo = [];
-    GD.forEach((g) => { if (!g.ok || !g.feeder) return; geo.push({ f: g.feeder, k: g.kode, n: g.nama, v: g.kva, t: g.trafo.length, a: g.alamat, lat: g.lat, lon: g.lon }); });
+    GD.forEach((g) => { if (!g.ok || !g.feeder) return; geo.push({ f: g.feeder, k: g.kode, n: g.nama, v: g.kva, t: g.trafo.length, s: g.trafoXY.map((t) => [t.ssot || t.kode, t.kva || ''].join(':')).join(';'), a: g.alamat, lat: g.lat, lon: g.lon }); });
     return { files, stats, lokasi, geo };
   }
 

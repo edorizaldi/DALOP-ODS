@@ -2,7 +2,7 @@
 // - Titik awal penyulang = koordinat GI sumbernya (gi_identitas). Bila GI belum berkoordinat, mulai dari gardu yang paling dekat ke pusat titik-titik penyulang itu.
 // - Garis = pohon jarak terdekat (minimum spanning tree, algoritma Prim): mulai dari GI, setiap langkah menyambung gardu yang paling dekat ke jaringan yang sudah tersambung.
 // - Gardu yang jauh dari kumpulan titik penyulangnya (lebih dari 60 km dari titik tengah) dianggap koordinat keliru: tetap disimpan, tidak disambung.
-// Keluaran per UID: hx_geo_<UID> = { v, uid, f: [[kode feeder, nama, kode GI, lonGI, latGI, panjang km, [lonE5, latE5, induk, ...], [kode gardu...], [nama...], [kVA...], [trafo...]], ...] }
+// Keluaran per UID: hx_geo_<UID> = { v, uid, f: [[kode feeder, nama, kode GI, lonGI, latGI, panjang km, [lonE5, latE5, induk, ...], [kode gardu...], [nama...], [kVA...], [jumlah trafo...], ["SSOT trafo:kVA;..." per gardu]], ...] }
 // induk = indeks gardu induk di daftar yang sama, -1 = GI, -2 = tidak disambung (koordinat keliru), -3 = tanpa koordinat.
 (function (root) {
   const UID = { 'WILAYAH ACEH': 'ACEH', 'WILAYAH SUMATERA UTARA': 'SUMUT', 'WILAYAH SUMATERA BARAT': 'SUMBAR', 'WILAYAH SUMATERA SELATAN, JAMBI & BENGKULU (S2JB)': 'S2JB', 'WILAYAH BANGKA BELITUNG': 'BABEL', 'DISTRIBUSI LAMPUNG': 'LAMPUNG', 'WILAYAH RIAU DAN KEPULAUAN RIAU': 'RKR', 'WILAYAH KALIMANTAN BARAT': 'KALBAR', 'WILAYAH KALIMANTAN SELATAN DAN TENGAH': 'KALSELTENG', 'WILAYAH KALIMANTAN TIMUR': 'KALTIMRA' };
@@ -59,7 +59,7 @@
       const flat = []; list.forEach((it, i) => { const p = pts[i]; flat.push(p ? Math.round(p[0] * 1e5) : 0, p ? Math.round(p[1] * 1e5) : 0, parent[i]); });
       const km = Math.round(len * 10) / 10;
       box.f.push([f.kode, f.nama, f.gi, hasGi ? Math.round(gn * 1e5) / 1e5 : null, hasGi ? Math.round(gl * 1e5) / 1e5 : null, km, flat,
-        list.map((it) => it.k), list.map((it) => String(it.n || '').slice(0, 28)), list.map((it) => { const v = num(it.v); return v == null ? 0 : Math.round(v); }), list.map((it) => it.t || 0)]);
+        list.map((it) => it.k), list.map((it) => String(it.n || '').slice(0, 28)), list.map((it) => { const v = num(it.v); return v == null ? 0 : Math.round(v); }), list.map((it) => it.t || 0), list.map((it) => it.s || '')]);
       st.feeder++; if (hasGi) st.feederGI++; st.gardu += list.length; st.garduXY += xy.length; st.jauh += xy.length - idx.length; st.km += km;
     });
     st.km = Math.round(st.km);

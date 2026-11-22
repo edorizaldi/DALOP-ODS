@@ -52,7 +52,7 @@
       const pick = {}; const norm = (x) => String(x).toUpperCase().replace(/[^A-Z0-9]/g, '');
       const miss = SHEETS.filter((n) => { const sh = sheets.find((x) => norm(x.name) === norm(n)); if (sh) pick[n] = sh.rows; return !sh; });
       if (miss.length) throw new Error(`sheet ${miss.join(', ')} tidak ada di file ini`);
-      lab.textContent = 'Menyusun hirarki…'; await load('hx-build.js?v=20261123', () => !!window.SSHxBuild);
+      lab.textContent = 'Menyusun hirarki…'; await load('hx-build.js?v=20261124', () => !!window.SSHxBuild);
       await new Promise((r) => setTimeout(r, 30));
       const out = window.SSHxBuild.build(pick, (t) => { lab.textContent = t + '…'; });
       // koordinat GI yang kosong di file baru diisi dari data saat ini (agar titik awal penyulang di peta tidak hilang)
@@ -68,7 +68,7 @@
       delete out.lokasi;
       // garis penyulang untuk peta jaringan: pohon jarak terdekat dari GI melalui titik-titik gardu
       lab.textContent = 'Menyusun garis penyulang untuk peta…';
-      await load('hx-geo.js?v=20261122', () => !!window.SSHxGeo);
+      await load('hx-geo.js?v=20261123', () => !!window.SSHxGeo);
       await new Promise((r) => setTimeout(r, 30));
       const geo = window.SSHxGeo.build(out.geo || [], out.files.hx_feeder, out.files.gi_identitas, out.files.hx_gi);
       Object.assign(out.files, geo.files); out.stats.geo = geo.stats; delete out.geo;
