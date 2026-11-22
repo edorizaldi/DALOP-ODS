@@ -1,0 +1,12 @@
+/* Tab Disaster Dashboard */
+#bencana .b-bad { color: var(--color-bad); font-weight: 600; }
+#bencana .b-ok { color: var(--color-ok); }
+#bencana .b-tile-bad .ss-big > span:first-child { color: var(--color-bad); }
+#bencana .b-tile-ok .ss-big > span:first-child { color: var(--color-ok); }
+#bencana .b-center { margin-top: 8px; }
+#bencana .b-link { all: unset; cursor: pointer; color: var(--ss-acc); font-weight: 600; text-decoration: underline; margin-left: 4px; }
+#bencana .b-link:focus-visible { outline: 2px solid var(--ss-acc); outline-offset: 2px; }
+#bencana #b-tfilter { margin: 4px 0 10px; }
+#bencana .b-q-table tr.b-q-big td:first-child { box-shadow: inset 3px 0 0 #E07B00; }
+#bencana .b-q-table .ss-chip { white-space: nowrap; }
+#bencana #b-up-card .h-drop { margin-top: 8px; }

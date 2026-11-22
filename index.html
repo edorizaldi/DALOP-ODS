@@ -19,11 +19,12 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261116ig">
 <link rel="stylesheet" href="hi-tab.css?v=20261116u">
 <link rel="stylesheet" href="db-tab.css?v=20261117">
+<link rel="stylesheet" href="bencana-tab.css?v=20261122">
 <link rel="stylesheet" href="acct.css">
 <link rel="stylesheet" href="lgp-tab.css?v=20261115d">
 <script src="d3.min.js"></script>
 <script src="config.js"></script>
-<script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="gi_identitas.js"></script><script src="gi_tegangan.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
+<script src="bulanan.js"></script><script src="gangguan.js"></script><script src="gangguan_dupont.js"></script><script src="gangguan_ps.js"></script><script src="gangguan_up3.js"></script><script src="info_update.js"></script><script src="workplan.js"></script><script src="kc_bulanan.js"></script><script src="koordinat.js"></script><script src="kumulatif.js"></script><script src="laporan_harian.js"></script><script src="peny_bulanan.js"></script><script src="peny_profil.js"></script><script src="peta.js"></script><script src="gi_identitas.js"></script><script src="bencana.js"></script><script src="bencana_status.js"></script><script src="gi_tegangan.js"></script><script src="target.js"></script><script src="harian_latest.js"></script>
 <script src="admin-keys.js"></script>
 <script src="shim-auth.js?v=20261103"></script>
 <script src="viewer-key.js"></script>
@@ -646,6 +647,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="ss-mg-pop" id="mg-harian" role="menu" aria-labelledby="mg-harian-b" hidden>
           <button type="button" class="ss-tab" id="tab-harian" data-tab-to="harian" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h3M8 17h6"/></svg><span class="ss-tab-t"><b>Infografis Laporan Harian</b><small>Infografis laporan harian H-1</small></span></button>
           <button type="button" class="ss-tab" id="tab-kondisi" data-tab-to="kondisi" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><path d="M12.8 6.5 10 10.8h2.4l-.9 3.7 2.9-4.4H12z"/></svg><span class="ss-tab-t"><b>Kondisi Sistem</b><small>Status sistem grid dan isolated, monitoring defisit</small></span></button>
+          <button type="button" class="ss-tab" id="tab-bencana" data-tab-to="bencana" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg><span class="ss-tab-t"><b>Disaster Dashboard</b><small>Tanggap darurat: aset terpapar, status pemulihan, gempa BMKG</small></span></button>
           <button type="button" class="ss-tab" id="tab-lgp" data-tab-to="lgp" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M14 3.5V8h4"/><path d="m12.6 10-2.4 3.6h2.2l-.8 3.4 2.6-4h-2.1z"/></svg><span class="ss-tab-t"><b>Laporan Gangguan Penyulang</b><small>Rekap kumulatif laporan harian per UID</small></span></button>
         </div></li>
       <li class="ss-mg" data-group="bulanan"><button type="button" class="ss-mg-btn" id="mg-bulanan-b" aria-haspopup="true" aria-expanded="false" aria-controls="mg-bulanan"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Bulanan</span><svg class="ss-mg-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
@@ -1549,6 +1551,69 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       </div>
     </template>
   </section>
+  <section class="ss-sec" id="bencana" data-tab="bencana" hidden>
+    <header class="ss-hero" id="b-ringkasan">
+      <div class="ss-hero-main">
+        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg>Tanggap darurat bencana · aset terpapar · pemulihan</span>
+        <h1 class="ss-title">Disaster Dashboard <span class="gi-draft">Draft</span></h1>
+        <p class="ss-take dash-skeleton" id="b-take" data-source="bencana bencana_status gi_identitas peny_profil">—</p>
+        <div class="ss-filters" id="b-filter" data-source="bencana">
+          <div class="ss-frow"><span class="ss-flabel">Kejadian</span><select id="b-f-kej" aria-label="Kejadian bencana"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">Radius</span><select id="b-f-rad" aria-label="Radius area terdampak"></select></div>
+          <div class="ss-frow"><span class="ss-flabel">Peta</span><div class="ss-chips" id="b-f-view" role="group" aria-label="Cakupan peta"><button type="button" class="ss-chip" data-v="">Area bencana</button><button type="button" class="ss-chip" data-v="sumkal">Seluruh Sumkal</button></div></div>
+        </div>
+        <p class="ss-note b-center"><span id="b-center"></span> <button type="button" class="b-link" id="b-reset" hidden>Kembali ke titik kejadian</button></p>
+      </div>
+      <figure class="ss-map" id="b-peta-wrap">
+        <div class="ss-mapbox" id="b-map" data-source="peta koordinat gi_identitas peny_profil bencana bencana_status"></div>
+        <div class="ss-legend gi-map-legend" id="b-map-legend"></div>
+        <figcaption class="ss-map-note">Lingkaran putus-putus = area terdampak. Klik peta untuk memindahkan titik bencana; klik titik gempa untuk memakainya sebagai titik.</figcaption>
+      </figure>
+    </header>
+    <div class="ss-tiles" id="b-kpi" data-source="bencana_status gi_identitas peny_profil hx_feeder">
+      <div class="ss-tile b-tile-bad"><div class="ss-tile-label">Penyulang masih padam</div><div class="ss-big"><span class="dash-skeleton" id="b-t1">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="b-t1-sub"></div></div>
+      <div class="ss-tile b-tile-ok"><div class="ss-tile-label">Penyulang sudah pulih</div><div class="ss-big"><span class="dash-skeleton" id="b-t2">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="b-t2-sub"></div></div>
+      <div class="ss-tile"><div class="ss-tile-label">Penyulang terpapar</div><div class="ss-big"><span class="dash-skeleton" id="b-t3">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="b-t3-sub"></div></div>
+      <div class="ss-tile"><div class="ss-tile-label">Gardu terpapar</div><div class="ss-big"><span class="dash-skeleton" id="b-t4">—</span><span class="ss-unit">gardu</span></div><div class="ss-sub" id="b-t4-sub"></div></div>
+    </div>
+    <div class="ss-grid ss-pair">
+      <div class="ss-card" id="b-up3-card">
+        <h3>Pemulihan per UP3</h3>
+        <p class="ss-note">Dari laporan posko kejadian terpilih dan penyulang terpapar dalam radius.</p>
+        <div class="ss-tablewrap" data-source="bencana_status"><table class="ss-table ss-p-table" id="b-up3"></table></div>
+      </div>
+      <div class="ss-card" id="b-chart-card">
+        <h3>Penyulang padam dan pulih menurut waktu</h3>
+        <p class="ss-note">Kumulatif penyulang yang dilaporkan padam (merah) dan yang sudah pulih (hijau); area di antaranya = masih padam. Waktu WIB.</p>
+        <div class="ss-chart ss-short dash-skeleton" id="b-chart" data-source="bencana_status"></div>
+      </div>
+    </div>
+    <div class="ss-card" id="b-tabel-card">
+      <div class="ss-sechead">
+        <div><h3>Status penyulang</h3>
+          <p class="ss-note" id="b-tabel-note"></p></div>
+        <input class="ss-search" id="b-search" type="search" placeholder="Cari penyulang, GI, UP3 atau ULP" aria-label="Cari penyulang">
+      </div>
+      <div class="ss-chips" id="b-tfilter" role="group" aria-label="Saring status"><button type="button" class="ss-chip" data-v="">Semua</button><button type="button" class="ss-chip" data-v="padam">Masih padam</button><button type="button" class="ss-chip" data-v="pulih">Pulih</button><button type="button" class="ss-chip" data-v="ter">Terpapar, belum dilaporkan</button></div>
+      <div class="ss-tablewrap" data-source="bencana_status peny_profil hx_feeder peny_bulanan"><table class="ss-table ss-p-table" id="b-tabel"></table></div>
+    </div>
+    <div class="ss-card" id="b-q-card">
+        <div class="ss-sechead"><div><h3>Gempa terkini BMKG</h3><p class="ss-note" id="b-q-note"></p></div><button type="button" class="h-act" id="b-q-reload">Muat ulang</button></div>
+        <div id="b-q-list" data-source="BMKG data.bmkg.go.id"></div>
+    </div>
+    <div class="ss-card" id="b-up-card">
+        <h3>Unggah laporan posko</h3>
+        <p class="ss-note">Isi <a href="template_posko_bencana.xlsx" download>template laporan posko bencana (.xlsx)</a>: sheet <b>Kejadian</b> (nama, jenis, titik, radius, waktu mulai, status) dan <b>Status Penyulang</b> (penyulang, waktu padam, waktu nyala, gardu, pelanggan, keterangan). Unggah daftar lengkap terbaru setiap kali ada perubahan; kejadian dengan nama sama diganti seluruhnya. Tersimpan untuk semua pembaca bila sudah login admin.</p>
+        <label class="h-drop" id="b-up-drop" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><b>Tarik file laporan posko ke sini, atau klik untuk memilih</b><span class="ss-note">Format .xlsx sesuai template</span><input type="file" id="b-up-file" accept=".xlsx" hidden></label>
+        <div id="b-up-review" class="ss-up-review" hidden>
+          <p class="ss-note" id="b-up-sum"></p>
+          <div class="ss-tablewrap"><table class="ss-table ss-up-table"><thead><tr><th>Kejadian</th><th>Jenis</th><th>Titik · radius</th><th>Mulai</th><th>Status</th><th class="num">Penyulang (file)</th><th class="num">Penyulang (saat ini)</th></tr></thead><tbody id="b-up-body"></tbody></table></div>
+          <div class="ss-up-row"><button type="button" class="h-act h-act-primary" id="b-up-go" disabled>Simpan laporan posko</button><button type="button" class="h-act" id="b-up-cancel">Batal</button></div>
+        </div>
+        <p class="ss-up-msg" id="b-up-msg" role="status"></p>
+    </div>
+  </section>
+
   <section class="ss-sec" id="lgp" data-tab="lgp" hidden>
     <div class="h-actions"><div class="ss-dbinfo ss-dbinfo-inline" data-dbinfo="lgp" data-source="info_update"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span class="ss-dbinfo-t">Memuat info update database…</span></div><span class="h-act-msg" id="lgp-act-msg" role="status"></span><button type="button" class="h-act" id="lgp-btn-update" aria-expanded="false" aria-controls="lgp-upload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>Upload laporan harian</button><button type="button" class="h-act h-act-primary" id="lgp-btn-xlsx"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 21h16"/></svg>Unduh Excel</button></div>
     <div class="h-upload ss-card" id="lgp-upload" hidden>
@@ -1772,7 +1837,7 @@ window.SSD = (() => {
 </script>
 <script>
 (() => {
-  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'workplan', 'penyulang', 'hi', 'hirarki', 'update', 'harian', 'kondisi', 'lgp', 'slides'];
+  const TABS = ['saidi', 'gangguan', 'kc', 'dp', 'workplan', 'penyulang', 'hi', 'hirarki', 'update', 'harian', 'kondisi', 'bencana', 'lgp', 'slides'];
   window.SSC = ['var(--x-c0)', 'var(--x-c1)', 'var(--x-c2)', 'var(--x-c3)', 'var(--x-c4)', 'var(--x-c5)', 'var(--x-c6)', 'var(--x-c7)'];
   const ALIAS = { gi: 'penyulang' }; // #gi membuka Database Penyulang & Gardu Induk
   const show = (tab) => {
@@ -2284,30 +2349,43 @@ SSD.calc('up3_yoy', {
     const merc = ([lon, lat]) => [lon * Math.PI / 180, -Math.log(Math.tan(Math.PI / 4 + Math.max(-85, Math.min(85, lat)) * Math.PI / 360))];
     const polys = (geom) => (geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates);
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    focus.forEach((ft) => polys(ft.geometry).forEach((p) => p.forEach((ring) => ring.forEach((c) => { const [x, y] = merc(c); if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }))));
+    // o.fit = [[lon0, lat0], [lon1, lat1]]: batas tampilan dari kotak koordinat (mis. area bencana), bukan dari wilayah UID
+    if (o.fit) o.fit.forEach((c) => { const [x, y] = merc(c); if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; });
+    else focus.forEach((ft) => polys(ft.geometry).forEach((p) => p.forEach((ring) => ring.forEach((c) => { const [x, y] = merc(c); if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }))));
     const pad = 14, k = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad) / (y1 - y0));
     const ox = (W - k * (x1 - x0)) / 2 - k * x0, oy = (H - k * (y1 - y0)) / 2 - k * y0;
     const proj = (c) => { const [x, y] = merc(c); return [ox + k * x, oy + k * y]; };
     const path = (ft) => polys(ft.geometry).map((p) => p.map((ring) => 'M' + ring.map((c) => proj(c).map((v) => v.toFixed(1)).join(',')).join('L') + 'Z').join('')).join('');
+    const unproj = (px, py) => { const x = (px - ox) / k, y = (py - oy) / k; return [x * 180 / Math.PI, (2 * Math.atan(Math.exp(-y)) - Math.PI / 2) * 180 / Math.PI]; };
     const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', o.label || 'Peta');
     const cid = 'mapclip-' + box.id;
     svg.append('defs').append('clipPath').attr('id', cid).append('rect').attr('width', W).attr('height', H).attr('rx', 8);
     const g = svg.append('g').attr('clip-path', `url(#${cid})`);
+    // o.onMap(lon, lat): klik di mana saja pada peta (laut maupun wilayah) memberi koordinatnya
+    const mapClick = (ev) => { if (!o.onMap) return false; const r = svg.node().getBoundingClientRect(); const sc = W / r.width; o.onMap(...unproj((ev.clientX - r.left) * sc, (ev.clientY - r.top) * sc)); return true; };
+    if (o.onMap) g.append('rect').attr('width', W).attr('height', H).attr('fill', 'transparent').style('cursor', 'crosshair').on('click', mapClick);
     const tip = tipFor(box);
     const showTip = (ev, head, rows) => { tipRows(tip, head, rows); const r = box.getBoundingClientRect(); placeTip(tip, box, ev.clientX - r.left, ev.clientY - r.top); };
     if (o.focus) g.append('g').selectAll('path').data(feats.filter((x) => x.properties.uid !== o.focus)).join('path').attr('d', path).attr('fill-rule', 'evenodd')
       .attr('fill', 'color-mix(in srgb, var(--color-fg) 5%, transparent)').attr('stroke', 'color-mix(in srgb, var(--color-fg) 14%, transparent)').attr('stroke-width', .6)
-      .style('cursor', 'pointer').on('click', (ev, d) => o.onRegion && o.onRegion(d.properties.uid));
+      .style('cursor', o.onMap ? 'crosshair' : 'pointer').on('click', (ev, d) => { if (!mapClick(ev) && o.onRegion) o.onRegion(d.properties.uid); });
     const baseFill = (uid) => (o.fill ? o.fill(uid) : 'color-mix(in srgb, var(--ss-acc) 22%, var(--color-panel))');
     g.append('g').attr('class', 'ss-fade').selectAll('path').data(focus).join('path').attr('d', path).attr('fill-rule', 'evenodd')
       .attr('fill', (d) => baseFill(d.properties.uid))
       .attr('stroke', (d) => (o.selected === d.properties.uid ? 'var(--color-fg)' : 'color-mix(in srgb, var(--ss-acc) 70%, transparent)'))
       .attr('stroke-width', (d) => (o.selected === d.properties.uid ? 1.8 : o.focus ? 1.1 : .7)).attr('stroke-linejoin', 'round')
-      .style('cursor', o.onRegion ? 'pointer' : 'default')
+      .style('cursor', o.onMap ? 'crosshair' : o.onRegion ? 'pointer' : 'default')
       .on('mouseenter', function () { d3.select(this).attr('fill-opacity', .75); })
       .on('mouseleave', function () { d3.select(this).attr('fill-opacity', 1); tip.hidden = true; })
       .on('mousemove', (ev, d) => { const t = o.regionTip && o.regionTip(d.properties.uid, d.properties.provinsi); if (t) showTip(ev, t[0], t[1]); })
-      .on('click', (ev, d) => o.onRegion && o.onRegion(d.properties.uid));
+      .on('click', (ev, d) => { if (!mapClick(ev) && o.onRegion) o.onRegion(d.properties.uid); });
+    // o.circle = { lon, lat, km, color }: lingkaran radius (km) di permukaan bumi
+    if (o.circle && isFinite(o.circle.lon) && isFinite(o.circle.lat) && o.circle.km > 0) {
+      const R0 = 6371, dd = o.circle.km / R0, la = o.circle.lat * Math.PI / 180, lo = o.circle.lon * Math.PI / 180;
+      const ring = d3.range(0, 361, 6).map((b) => { const br = b * Math.PI / 180; const la2 = Math.asin(Math.sin(la) * Math.cos(dd) + Math.cos(la) * Math.sin(dd) * Math.cos(br)); const lo2 = lo + Math.atan2(Math.sin(br) * Math.sin(dd) * Math.cos(la), Math.cos(dd) - Math.sin(la) * Math.sin(la2)); return proj([lo2 * 180 / Math.PI, la2 * 180 / Math.PI]); });
+      const c = o.circle.color || 'var(--color-bad)';
+      g.append('path').attr('d', 'M' + ring.map((p) => p.map((v) => v.toFixed(1)).join(',')).join('L') + 'Z').attr('fill', c).attr('fill-opacity', .08).attr('stroke', c).attr('stroke-width', 1.6).attr('stroke-dasharray', '6 4').style('pointer-events', 'none');
+    }
     const pts = (o.points || []).map((p) => { const [x, y] = proj([Number(p.lon), Number(p.lat)]); return { ...p, x, y }; }).filter((p) => isFinite(p.x) && isFinite(p.y));
     const pg = g.append('g');
     pts.slice().sort((a, b) => (b.r || 6) - (a.r || 6)).forEach((p) => {
@@ -2317,7 +2395,7 @@ SSD.calc('up3_yoy', {
         .style('cursor', p.onClick ? 'pointer' : 'default')
         .on('mousemove', (ev) => p.tip && showTip(ev, p.tip[0], p.tip[1]))
         .on('mouseleave', () => { tip.hidden = true; })
-        .on('click', () => p.onClick && p.onClick());
+        .on('click', (ev) => { if (p.onClick) p.onClick(); else mapClick(ev); });
     });
     const placed = [];
     const lg = g.append('g').style('pointer-events', 'none');
@@ -2768,6 +2846,8 @@ SSD.calc('up3_yoy', {
 </script>
 
 <script src="db-tab.js?v=20261118"></script>
+<script src="bencana-posko.js?v=20261122"></script>
+<script src="bencana-tab.js?v=20261122"></script>
 <script src="hi-tab.js?v=20261116w"></script>
 
 <script>
