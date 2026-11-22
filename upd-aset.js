@@ -7,7 +7,7 @@
   const fmt = (v) => (v === '' || v == null ? '–' : f0.format(Number(v)));
   const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   const SHEETS = ['GI', 'FEEDER', 'ZONA', 'SECTION', 'SEGMENT', 'LATERAL', 'GARDU', 'TRAFO'];
-  const IDS = ['hx_gi', 'hx_feeder', 'hx_zona', 'hx_section', 'hx_segment', 'hx_lateral', 'hx_gardu_1', 'hx_gardu_2', 'hx_gardu_3', 'hx_anomali', 'hx_ringkasan', 'hx_trafo_metode', 'hx_ringkasan_unit', 'gi_identitas'];
+  const IDS = ['hx_gi', 'hx_feeder', 'hx_zona', 'hx_section', 'hx_segment', 'hx_lateral', 'hx_gardu_1', 'hx_gardu_2', 'hx_gardu_3', 'hx_anomali', 'hx_ringkasan', 'hx_trafo_metode', 'hx_ringkasan_unit', 'gi_identitas', 'trafo_wilayah'];
   const msg = (t, cls) => { const m = $('up-a-msg'); m.textContent = t || ''; m.className = 'ss-up-msg' + (cls ? ' ' + cls : ''); };
   const loaded = {};
   const load = (src, test) => {
@@ -51,9 +51,16 @@
       const pick = {}; const norm = (x) => String(x).toUpperCase().replace(/[^A-Z0-9]/g, '');
       const miss = SHEETS.filter((n) => { const sh = sheets.find((x) => norm(x.name) === norm(n)); if (sh) pick[n] = sh.rows; return !sh; });
       if (miss.length) throw new Error(`sheet ${miss.join(', ')} tidak ada di file ini`);
-      lab.textContent = 'Menyusun hirarki…'; await load('hx-build.js?v=20261118', () => !!window.SSHxBuild);
+      lab.textContent = 'Menyusun hirarki…'; await load('hx-build.js?v=20261122', () => !!window.SSHxBuild);
       await new Promise((r) => setTimeout(r, 30));
       const out = window.SSHxBuild.build(pick, (t) => { lab.textContent = t + '…'; });
+      // lokasi trafo per kecamatan untuk Disaster Dashboard (koordinat trafo/gardu bila ada, lalu ALAMAT, lalu lokasi penyulang/GI)
+      lab.textContent = 'Menempatkan trafo ke kecamatan…';
+      await load('wilayah-assign.js?v=20261122', () => !!window.SSWilayah);
+      await load('wilayah_kec.js', () => !!(window.__D && window.__D.wilayah_kec)); await load('wilayah_desa.js', () => !!(window.__D && window.__D.wilayah_desa));
+      await new Promise((r) => setTimeout(r, 30));
+      out.files.trafo_wilayah = window.SSWilayah.make({ kec: window.__D.wilayah_kec, desa: window.__D.wilayah_desa, feeders: out.files.hx_feeder, gi: out.files.gi_identitas, pp: (window.__D && window.__D.peny_profil) || [] })(out.lokasi || []);
+      delete out.lokasi;
       pending = { name: file.name, out };
     } catch (e) { msg('File tidak bisa dibaca: ' + ((e && e.message) || e), 'bad'); }
     bar.hidden = true; lab.textContent = '';
