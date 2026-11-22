@@ -151,3 +151,5 @@
 .hxm .hxm-dbinfo { margin-top: 6px; padding: 0; border: 0; background: none; font-size: 11.5px; gap: 6px; }
 .hxm .hxm-dbinfo svg { width: 14px; height: 14px; }
 .hxm-head { align-items: flex-end; }
+/* lapisan Leaflet (z-index 400-1000) dikurung di dalam peta agar tidak menutupi menu turun di header */
+.hxm-body { isolation: isolate; z-index: 0; }
