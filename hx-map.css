@@ -1,0 +1,202 @@
+/* Peta jaringan Hirarki Aset (gaya ArcGIS) */
+.hxm { display: grid; gap: 12px; }
+.hxm-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.hxm-tt { min-width: 0; flex: 1 1 240px; }
+.hxm > * { min-width: 0; }
+.hxm { min-width: 0; }
+.hxm-tt h3 { margin: 0; }
+.hxm-tt .ss-note { margin: 4px 0 0; }
+.hxm-search { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--color-border-line, #d0d7e2); border-radius: 999px; padding: 0 14px; height: 38px; background: var(--color-panel); min-width: 0; flex: 0 1 340px; }
+.hxm-search svg { width: 17px; height: 17px; fill: none; stroke: var(--color-fg-muted); stroke-width: 1.8; stroke-linecap: round; flex: none; }
+.hxm-search input { all: unset; flex: 1; min-width: 0; font-size: 14px; color: var(--color-fg); }
+.hxm-search:focus-within { outline: 2px solid var(--x-lime, #b7e34c); outline-offset: 1px; }
+.hxm-uid { flex-wrap: wrap; }
+.hxm-body { box-sizing: border-box; position: relative; height: clamp(440px, 68vh, 760px); border-radius: 12px; overflow: hidden; border: 1px solid var(--color-border-line, #d0d7e2); background: #e9ecef; }
+.hxm-body:fullscreen { height: 100vh; border-radius: 0; }
+.hxm-map { position: absolute; inset: 0; font: inherit; background: #dfe3e8; }
+.hxm-map .leaflet-control-attribution { font-size: 10.5px; }
+/* panel lapisan seperti widget ArcGIS */
+.hxm-panel { position: absolute; z-index: 500; top: 56px; left: 12px; width: 236px; max-height: calc(100% - 120px); overflow-y: auto; background: rgba(255,255,255,.97); color: #1b2733; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.22); padding: 6px 14px 12px; font-size: 13px; display: none; }
+.hxm-panel.open { display: block; }
+.hxm-panel h4 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .6px; color: #5b6b7b; margin: 12px 0 6px; font-weight: 600; }
+.hxm-panel label { display: flex; align-items: center; gap: 8px; padding: 3px 0; cursor: pointer; }
+.hxm-panel label small { color: #7a8794; }
+.hxm-panel input { accent-color: #0079c1; margin: 0; }
+.hxm-fab { position: absolute; z-index: 501; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 12px; border: 0; border-radius: 4px; background: #fff; color: #1b2733; box-shadow: 0 1px 6px rgba(0,0,0,.25); font: 600 13px var(--font-anthropic-sans, sans-serif); cursor: pointer; }
+.hxm-fab svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linejoin: round; }
+.hxm-fab[aria-expanded="true"] { background: #0079c1; color: #fff; }
+.hxm-fab:focus-visible, .hxm-tools button:focus-visible, .hxm-base button:focus-visible { outline: 2px solid #0079c1; outline-offset: 2px; }
+.hxm-base { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.hxm-base button { all: unset; cursor: pointer; display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; color: #33414e; text-align: center; border-radius: 4px; padding: 3px; border: 2px solid transparent; }
+.hxm-base button[aria-pressed="true"] { border-color: #0079c1; color: #0079c1; font-weight: 600; }
+.hxm-base i { display: block; height: 38px; border-radius: 3px; }
+.hxm-base .b-abu { background: linear-gradient(135deg, #e6e6e6 0 55%, #cfcfcf 55%); }
+.hxm-base .b-topo { background: linear-gradient(135deg, #cfe2c6 0 40%, #f3ecd8 40% 70%, #a9cbe6 70%); }
+.hxm-base .b-citra { background: radial-gradient(circle at 30% 40%, #567a3c, #2c4a2a 60%, #1d3550); }
+.hxm-base .b-jalan { background: linear-gradient(160deg, #f2efe9 0 45%, #fff 45% 52%, #f2efe9 52% 70%, #f9d56e 70% 74%, #f2efe9 74%); }
+.hxm-legend { display: grid; gap: 5px; }
+.hxm-lg { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+.hxm-lg i { flex: none; width: 22px; height: 4px; border-radius: 2px; }
+.hxm-lg i.dot { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #9aa5b1; }
+.hxm-lg i.hxm-x { border-color: #c92a2a; box-shadow: none; }
+.hxm-tools { position: absolute; z-index: 500; top: 86px; right: 10px; display: flex; flex-direction: column; gap: 6px; }
+.hxm-tools button { width: 34px; height: 34px; border: 0; border-radius: 4px; background: #fff; box-shadow: 0 1px 5px rgba(0,0,0,.25); display: grid; place-items: center; cursor: pointer; }
+.hxm-tools svg { width: 18px; height: 18px; fill: none; stroke: #33414e; stroke-width: 1.7; stroke-linejoin: round; stroke-linecap: round; }
+.hxm-map .leaflet-top.leaflet-right { top: 0; }
+.hxm-map .leaflet-control-zoom { margin-top: 10px; }
+.hxm-selbar { position: absolute; z-index: 500; top: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; max-width: 60%; }
+.hxm-selbar:has(#hxm-clear[hidden]) { display: none; }
+.hxm-selbar span { background: rgba(19,37,74,.92); color: #fff; border-radius: 4px; padding: 7px 12px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hxm-selbar button { border: 0; border-radius: 4px; background: #fff; color: #c92a2a; font: 600 12.5px var(--font-anthropic-sans, sans-serif); padding: 7px 10px; box-shadow: 0 1px 5px rgba(0,0,0,.25); cursor: pointer; white-space: nowrap; }
+.hxm-zoomnote { position: absolute; z-index: 499; bottom: 30px; left: 50%; transform: translateX(-50%); margin: 0; background: rgba(255,255,255,.92); color: #33414e; font-size: 12px; padding: 4px 10px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.15); pointer-events: none; }
+.hxm-coord { position: absolute; z-index: 499; bottom: 22px; right: 8px; background: rgba(255,255,255,.85); color: #33414e; font: 11.5px ui-monospace, Menlo, monospace; padding: 2px 6px; border-radius: 3px; pointer-events: none; }
+.hxm-coord:empty { display: none; }
+/* popup dan label */
+.hxm-pop { font: 13px var(--font-anthropic-sans, sans-serif); color: #1b2733; min-width: 220px; }
+.hxm-pop > b { display: block; font-size: 14.5px; }
+.hxm-pop-k { display: block; color: #6b7785; font-size: 11.5px; margin-bottom: 6px; }
+.hxm-pop dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0 0 8px; border-top: 1px solid #e3e8ee; padding-top: 6px; }
+.hxm-pop dt { color: #6b7785; }
+.hxm-pop dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.hxm-pop-b { width: 100%; border: 0; border-radius: 4px; background: #0079c1; color: #fff; font: 600 12.5px var(--font-anthropic-sans, sans-serif); padding: 7px; cursor: pointer; }
+.hxm-pop-b:hover { background: #005e95; }
+.leaflet-tooltip.hxm-tip { font: 600 12px var(--font-anthropic-sans, sans-serif); padding: 3px 7px; }
+.leaflet-tooltip.hxm-gilab { background: transparent; border: 0; box-shadow: none; padding: 0; font: 700 11.5px var(--font-anthropic-sans, sans-serif); color: #13254a; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; }
+.leaflet-tooltip.hxm-gilab::before { display: none; }
+.hxm-dark .leaflet-tooltip.hxm-gilab { color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
+/* tabel atribut */
+.hxm-attr-h { display: flex; align-items: baseline; gap: 10px; }
+.hxm-attr-h h4 { margin: 0; font-size: 14px; }
+.hxm-tw { max-height: 300px; overflow: auto; }
+#hxm-tbl tbody tr { cursor: pointer; }
+#hxm-tbl tbody tr:hover td { background: color-mix(in srgb, #0079c1 7%, transparent); }
+#hxm-tbl tbody tr.on td { background: color-mix(in srgb, #e8590c 14%, transparent); font-weight: 600; }
+#hxm-tbl tbody tr:focus-visible { outline: 2px solid #0079c1; outline-offset: -2px; }
+.hxm-sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; vertical-align: -1px; }
+.hxm-note { margin: 0; }
+@media (max-width: 760px) {
+  .hxm-body { height: 460px; }
+  .hxm-panel { top: 54px; left: 8px; width: calc(100% - 70px); max-height: calc(100% - 70px); }
+  .hxm-panel:not(.open) { display: none; }
+  .hxm-selbar { left: 120px; transform: none; max-width: calc(100% - 180px); }
+  .hxm-selbar span { display: none; }
+}
+/* tabel atribut di samping peta */
+.hxm-split { display: grid; gap: 12px; min-width: 0; }
+.hxm-attr { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+@media (min-width: 1100px) {
+  .hxm-split { grid-template-columns: minmax(0, 1fr) clamp(380px, 32vw, 520px); align-items: stretch; }
+  .hxm-attr { box-sizing: border-box; height: clamp(440px, 68vh, 760px); border: 1px solid var(--color-border-line, #d0d7e2); border-radius: 12px; padding: 10px 0 0; overflow: hidden; }
+  .hxm-attr-h { padding: 0 12px; flex-wrap: wrap; }
+  .hxm-tw { flex: 1; max-height: none; min-height: 0; overflow: auto; }
+  #hxm-tbl { font-size: 12.5px; }
+  #hxm-tbl th, #hxm-tbl td { padding-left: 8px; padding-right: 8px; }
+  #hxm-tbl .hxm-wide { display: none; }
+  #hxm-tbl thead th { position: sticky; top: 0; z-index: 1; }
+}
+/* proporsi: peta dominan, panel lapisan dan tabel ramping */
+.hxm-body { height: clamp(480px, 76vh, 860px); }
+.hxm-panel { width: 196px; padding: 2px 11px 10px; font-size: 12px; top: 54px; }
+.hxm-panel h4 { font-size: 10.5px; margin: 9px 0 4px; }
+.hxm-panel label { gap: 6px; padding: 2px 0; }
+.hxm-panel label small { display: none; }
+.hxm-base { gap: 4px; }
+.hxm-base button { font-size: 10.5px; gap: 2px; padding: 2px; }
+.hxm-base i { height: 22px; }
+.hxm-lg { font-size: 11.5px; gap: 6px; }
+.hxm-lg i { width: 16px; }
+.hxm-fab { height: 32px; font-size: 12.5px; padding: 0 10px; }
+@media (min-width: 1100px) {
+  .hxm-split { grid-template-columns: minmax(0, 1fr) clamp(300px, 22vw, 380px); }
+  .hxm-attr { height: clamp(480px, 76vh, 860px); }
+  #hxm-tbl { font-size: 12px; }
+  #hxm-tbl th, #hxm-tbl td { padding-left: 6px; padding-right: 6px; }
+  #hxm-tbl th:last-child, #hxm-tbl td:last-child { display: none; }
+  .hxm-attr-h h4 { font-size: 13px; }
+}
+@media (max-width: 760px) { .hxm-body { height: 460px; } }
+@media (min-width: 1100px) {
+  #hxm-tbl { width: 100%; table-layout: fixed; }
+  #hxm-tbl th, #hxm-tbl td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #hxm-tbl th:nth-child(1), #hxm-tbl td:nth-child(1) { width: 31%; }
+  #hxm-tbl th:nth-child(2), #hxm-tbl td:nth-child(2) { width: 29%; }
+  #hxm-tbl th:nth-child(4), #hxm-tbl td:nth-child(4), #hxm-tbl th:nth-child(5), #hxm-tbl td:nth-child(5) { width: 12%; }
+  #hxm-tbl th:nth-child(7), #hxm-tbl td:nth-child(7) { width: 16%; }
+}
+@media (min-width: 1100px) {
+  #hxm-tbl th:nth-child(1), #hxm-tbl td:nth-child(1) { width: 29%; }
+  #hxm-tbl th:nth-child(2), #hxm-tbl td:nth-child(2) { width: 25%; }
+  #hxm-tbl th:nth-child(4), #hxm-tbl td:nth-child(4), #hxm-tbl th:nth-child(5), #hxm-tbl td:nth-child(5) { width: 15%; text-overflow: clip; }
+  #hxm-tbl th:nth-child(7), #hxm-tbl td:nth-child(7) { width: 16%; }
+}
+.leaflet-tooltip.hxm-gilab.hxm-faint { opacity: .35 !important; }
+/* GI sebagai pangkal jaringan: titik berkedip dengan gelombang */
+.leaflet-marker-icon.hxm-gi { background: none; border: 0; }
+.hxm-gi i { position: absolute; inset: 2px; border-radius: 50%; background: #13254a; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(19,37,74,.5), 0 1px 4px rgba(0,0,0,.35); animation: hxm-blink 1.4s ease-in-out infinite; }
+.hxm-gi::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #13254a; animation: hxm-ring 1.4s ease-out infinite; pointer-events: none; }
+.hxm-gi.on i { inset: 0; background: #e8590c; }
+.hxm-gi.on::after { border-color: #e8590c; }
+.hxm-gi.faint { opacity: .3; }
+.hxm-gi.faint i, .hxm-gi.faint::after { animation: none; }
+.hxm-gi.faint::after { display: none; }
+.hxm-dark .hxm-gi::after { border-color: #fff; }
+@keyframes hxm-blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes hxm-ring { 0% { transform: scale(.8); opacity: .9; } 100% { transform: scale(2.6); opacity: 0; } }
+.hxm-lg i.hxm-lg-gi { animation: hxm-blink 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .hxm-gi i, .hxm-gi::after, .hxm-lg i.hxm-lg-gi { animation: none; } }
+/* judul halaman dan info database menyatu di kepala kartu peta */
+.hxm-eyebrow { display: block; font-size: 11px; letter-spacing: .9px; text-transform: uppercase; color: var(--color-fg-muted); }
+.hxm .hxm-title { font-family: inherit; font-weight: 700; letter-spacing: -.3px; font-size: clamp(22px, 2vw, 28px); line-height: 1.15; margin: 2px 0 4px; }
+.hxm-tt .ss-note { margin: 0; }
+.hxm .hxm-dbinfo { margin-top: 6px; padding: 0; border: 0; background: none; font-size: 11.5px; gap: 6px; }
+.hxm .hxm-dbinfo svg { width: 14px; height: 14px; }
+.hxm-head { align-items: flex-end; }
+/* lapisan Leaflet (z-index 400-1000) dikurung di dalam peta agar tidak menutupi menu turun di header */
+.hxm-body { isolation: isolate; z-index: 0; }
+.hxm-pop-tr { margin: 0 0 8px; border-top: 1px solid #e3e8ee; padding-top: 6px; }
+.hxm-pop-trh { display: block; color: #6b7785; font-size: 12px; margin-bottom: 3px; }
+.hxm-pop-tr ul { list-style: none; margin: 0; padding: 0; max-height: 110px; overflow: auto; }
+.hxm-pop-tr li { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; font-size: 12.5px; }
+.hxm-pop-tr code { font: 12px ui-monospace, Menlo, monospace; color: #1b2733; }
+.hxm-pop-tr li span { color: #6b7785; white-space: nowrap; }
+/* alur pilih UID → GI → penyulang, profil di panel kanan */
+.hxm-pick { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end; }
+.hxm-pick > label:not(.hxm-search) { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--color-fg-muted); min-width: 0; flex: 0 1 220px; }
+.hxm-pick > label:nth-child(2) { flex-basis: 340px; }
+.hxm-pick select { font: inherit; font-size: 14px; color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line, #d0d7e2); border-radius: 8px; height: 38px; padding: 0 10px; min-width: 0; width: 100%; }
+.hxm-pick select:disabled { opacity: .55; }
+.hxm-pick select:focus-visible { outline: 2px solid #0079c1; outline-offset: 1px; }
+.hxm-pick .hxm-search { margin-left: auto; }
+.hxm-attr-h { align-items: center; }
+.hxm-back { border: 1px solid var(--color-border-line, #d0d7e2); background: var(--color-panel); border-radius: 6px; width: 26px; height: 26px; font: 600 18px/1 var(--font-anthropic-sans, sans-serif); color: #0079c1; cursor: pointer; flex: none; padding: 0; }
+.hxm-back:focus-visible { outline: 2px solid #0079c1; outline-offset: 1px; }
+.hxm-list[hidden], .hxm-tw[hidden] { display: none; }
+.hxm-prof { flex: 1; min-height: 0; overflow: auto; padding: 4px 12px 12px; font-size: 13px; }
+.hxm-prof[hidden] { display: none; }
+.hxm-prof-top { display: flex; flex-direction: column; gap: 2px; padding: 4px 0 8px; border-bottom: 1px solid var(--color-border-line, #e3e8ee); }
+.hxm-prof-top > b { font-size: 17px; display: flex; align-items: center; }
+.hxm-prof-top .ss-p-flag { align-self: flex-start; margin-top: 4px; }
+.hxm-prof h5 { margin: 12px 0 4px; font-size: 11px; letter-spacing: .6px; text-transform: uppercase; color: var(--color-fg-muted); font-weight: 600; }
+.hxm-prof dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 6px 0 0; }
+.hxm-prof dt { color: var(--color-fg-muted); }
+.hxm-prof dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.hxm-pchart { margin-top: 8px; color: var(--color-fg); }
+.hxm-plg { display: flex; gap: 12px; font-size: 11.5px; color: var(--color-fg-muted); }
+.hxm-plg span { display: inline-flex; align-items: center; gap: 5px; }
+.hxm-plg i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.hxm-prof-act { display: grid; gap: 6px; margin-top: 12px; }
+.hxm-pop-b.hxm-ghost { background: transparent; color: #0079c1; border: 1px solid #0079c1; }
+.hxm-pop-b.hxm-ghost:hover { background: color-mix(in srgb, #0079c1 8%, transparent); }
+@media (min-width: 1100px) { #hxm-tbl th:last-child, #hxm-tbl td:last-child { display: table-cell; } #hxm-tbl th:nth-child(n), #hxm-tbl td:nth-child(n) { width: auto; } #hxm-tbl th:first-child, #hxm-tbl td:first-child { width: 46%; } }
+/* peta utuh dalam tampilan awal: tinggi dihitung dari sisa layar (hx-map.js) */
+@media (min-width: 761px) {
+  .hxm .hxm-body { height: var(--hxm-h, clamp(480px, 76vh, 860px)); }
+  .hxm .hxm-attr { height: var(--hxm-h, clamp(480px, 76vh, 860px)); }
+  .hxm { gap: 8px; }
+  .hxm .hxm-tt .ss-note { font-size: 12.5px; }
+  .hxm-pick > label:not(.hxm-search) { flex-direction: row; align-items: center; gap: 8px; }
+  .hxm-pick > label:not(.hxm-search) > span { white-space: nowrap; }
+  .hxm-pick select, .hxm-search { height: 34px; }
+}
+.hxm .hxm-note { font-size: 11.5px; margin-top: -2px; }
+.hxm .hxm-note { max-width: none; width: 100%; }

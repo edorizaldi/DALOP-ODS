@@ -7,7 +7,8 @@
   const fmt = (v) => (v === '' || v == null ? '–' : f0.format(Number(v)));
   const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   const SHEETS = ['GI', 'FEEDER', 'ZONA', 'SECTION', 'SEGMENT', 'LATERAL', 'GARDU', 'TRAFO'];
-  const IDS = ['hx_gi', 'hx_feeder', 'hx_zona', 'hx_section', 'hx_segment', 'hx_lateral', 'hx_gardu_1', 'hx_gardu_2', 'hx_gardu_3', 'hx_anomali', 'hx_ringkasan', 'hx_trafo_metode', 'hx_ringkasan_unit', 'gi_identitas', 'trafo_wilayah'];
+  const IDS = ['hx_gi', 'hx_feeder', 'hx_zona', 'hx_section', 'hx_segment', 'hx_lateral', 'hx_gardu_1', 'hx_gardu_2', 'hx_gardu_3', 'hx_anomali', 'hx_ringkasan', 'hx_trafo_metode', 'hx_ringkasan_unit', 'gi_identitas', 'trafo_wilayah',
+    'hx_geo_ACEH', 'hx_geo_SUMUT', 'hx_geo_SUMBAR', 'hx_geo_RKR', 'hx_geo_S2JB', 'hx_geo_BABEL', 'hx_geo_LAMPUNG', 'hx_geo_KALBAR', 'hx_geo_KALSELTENG', 'hx_geo_KALTIMRA'];
   const msg = (t, cls) => { const m = $('up-a-msg'); m.textContent = t || ''; m.className = 'ss-up-msg' + (cls ? ' ' + cls : ''); };
   const loaded = {};
   const load = (src, test) => {
@@ -51,9 +52,13 @@
       const pick = {}; const norm = (x) => String(x).toUpperCase().replace(/[^A-Z0-9]/g, '');
       const miss = SHEETS.filter((n) => { const sh = sheets.find((x) => norm(x.name) === norm(n)); if (sh) pick[n] = sh.rows; return !sh; });
       if (miss.length) throw new Error(`sheet ${miss.join(', ')} tidak ada di file ini`);
-      lab.textContent = 'Menyusun hirarki…'; await load('hx-build.js?v=20261122', () => !!window.SSHxBuild);
+      lab.textContent = 'Menyusun hirarki…'; await load('hx-build.js?v=20261124', () => !!window.SSHxBuild);
       await new Promise((r) => setTimeout(r, 30));
       const out = window.SSHxBuild.build(pick, (t) => { lab.textContent = t + '…'; });
+      // koordinat GI yang kosong di file baru diisi dari data saat ini (agar titik awal penyulang di peta tidak hilang)
+      await load('gi_identitas.js', () => !!(window.__D && window.__D.gi_identitas)).catch(() => {});
+      const curGi = new Map(((window.__D && window.__D.gi_identitas) || []).map((g) => [g.aset, g]));
+      out.files.gi_identitas.forEach((g) => { const c = curGi.get(g.aset); if (g.lat === '' && c && c.lat !== '') { g.lat = c.lat; g.lon = c.lon; } });
       // lokasi trafo per kecamatan untuk Disaster Dashboard (koordinat trafo/gardu bila ada, lalu ALAMAT, lalu lokasi penyulang/GI)
       lab.textContent = 'Menempatkan trafo ke kecamatan…';
       await load('wilayah-assign.js?v=20261122', () => !!window.SSWilayah);
@@ -61,6 +66,12 @@
       await new Promise((r) => setTimeout(r, 30));
       out.files.trafo_wilayah = window.SSWilayah.make({ kec: window.__D.wilayah_kec, desa: window.__D.wilayah_desa, feeders: out.files.hx_feeder, gi: out.files.gi_identitas, pp: (window.__D && window.__D.peny_profil) || [] })(out.lokasi || []);
       delete out.lokasi;
+      // garis penyulang untuk peta jaringan: pohon jarak terdekat dari GI melalui titik-titik gardu
+      lab.textContent = 'Menyusun garis penyulang untuk peta…';
+      await load('hx-geo.js?v=20261123', () => !!window.SSHxGeo);
+      await new Promise((r) => setTimeout(r, 30));
+      const geo = window.SSHxGeo.build(out.geo || [], out.files.hx_feeder, out.files.gi_identitas, out.files.hx_gi);
+      Object.assign(out.files, geo.files); out.stats.geo = geo.stats; delete out.geo;
       pending = { name: file.name, out };
     } catch (e) { msg('File tidak bisa dibaca: ' + ((e && e.message) || e), 'bad'); }
     bar.hidden = true; lab.textContent = '';
@@ -87,7 +98,7 @@
     if (A && A.isAdmin() && A.putMany) {
       const bar = $('up-a-bar'), lab = $('up-a-barlabel'); bar.hidden = false;
       try {
-        const files = IDS.map((id) => ({ path: id + '.js', text: window.SSHxBuild.toJs(id, out.files[id]) }));
+        const files = IDS.map((id) => ({ path: id + '.js', text: (/^hx_geo_/.test(id) ? window.SSHxGeo : window.SSHxBuild).toJs(id, out.files[id]) }));
         files.push({ path: 'info_update.js', text: 'window.__D=window.__D||{};window.__D["info_update"]=' + JSON.stringify(info) + ';\n' });
         await A.putMany(files, `Update database aset jaringan (Hirarki Aset) dari ${name} di dashboard`, (t, f) => { bar.value = Math.round(f * 100); lab.textContent = t; msg(t + '…'); });
         saved = true;
