@@ -19,7 +19,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261116ig">
 <link rel="stylesheet" href="hi-tab.css?v=20261116u">
 <link rel="stylesheet" href="db-tab.css?v=20261117">
-<link rel="stylesheet" href="hx-map.css?v=20261132">
+<link rel="stylesheet" href="hx-map.css?v=20261134">
 <link rel="stylesheet" href="bencana-tab.css?v=20261131">
 <link rel="stylesheet" href="acct.css">
 <link rel="stylesheet" href="lgp-tab.css?v=20261115d">
@@ -1448,9 +1448,12 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
           <p class="ss-note" id="hxm-msg">Memuat peta jaringan…</p>
           <div class="ss-dbinfo ss-dbinfo-inline hxm-dbinfo" data-dbinfo="hirarki" data-source="info_update"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg><span class="ss-dbinfo-t">Memuat info update database…</span></div>
         </div>
+      </div>
+      <div class="hxm-pick">
+        <label><span>Unit (UID)</span><select id="hxm-f-uid" aria-label="Unit (UID)"></select></label>
+        <label><span>Gardu Induk</span><select id="hxm-f-gi" aria-label="Gardu Induk"></select></label>
         <label class="hxm-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="hxm-q" type="search" list="hxm-qlist" placeholder="Cari penyulang, GI, atau kode gardu" aria-label="Cari penyulang, GI, atau kode gardu"><datalist id="hxm-qlist"></datalist></label>
       </div>
-      <div class="ss-chips hxm-uid" id="hxm-uid" role="group" aria-label="Unit"><button type="button" class="ss-chip" data-u="">Sumkal</button><button type="button" class="ss-chip" data-u="ACEH">Aceh</button><button type="button" class="ss-chip" data-u="SUMUT">Sumut</button><button type="button" class="ss-chip" data-u="SUMBAR">Sumbar</button><button type="button" class="ss-chip" data-u="RKR">RKR</button><button type="button" class="ss-chip" data-u="S2JB">S2JB</button><button type="button" class="ss-chip" data-u="BABEL">Babel</button><button type="button" class="ss-chip" data-u="LAMPUNG">Lampung</button><button type="button" class="ss-chip" data-u="KALBAR">Kalbar</button><button type="button" class="ss-chip" data-u="KALSELTENG">Kalselteng</button><button type="button" class="ss-chip" data-u="KALTIMRA">Kaltimra</button></div>
       <div class="hxm-split">
   <div class="hxm-body" id="hxm-body">
           <div class="hxm-map" id="hxm-map" role="region" aria-label="Peta jaringan distribusi"></div>
@@ -1478,10 +1481,11 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
           <p class="hxm-zoomnote" id="hxm-zoomnote" hidden>Perbesar peta untuk melihat titik gardu</p>
           <div class="hxm-coord" id="hxm-coord" aria-hidden="true"></div>
         </div>
-        <div class="hxm-attr">
-          <div class="hxm-attr-h"><h4>Tabel atribut</h4><span class="ss-note" id="hxm-tcount"></span></div>
-          <div class="ss-tablewrap hxm-tw"><table class="ss-table" id="hxm-tbl"></table></div>
-        </div>
+        <aside class="hxm-attr" id="hxm-side" aria-live="polite">
+          <div class="hxm-attr-h"><button type="button" class="hxm-back" id="hxm-back" hidden>‹</button><h4 id="hxm-side-h">Penyulang</h4><span class="ss-note" id="hxm-tcount"></span></div>
+          <div class="ss-tablewrap hxm-tw" id="hxm-list"><table class="ss-table" id="hxm-tbl"></table></div>
+          <div class="hxm-prof" id="hxm-prof" hidden></div>
+        </aside>
       </div>
       <p class="ss-note hxm-note">Titik gardu dari koordinat sheet GARDU (Database Aset Jaringan). Garis penyulang adalah perkiraan, bukan jalur kabel sebenarnya: dimulai dari koordinat GI sumbernya, lalu tiap gardu disambung ke titik terdekat yang sudah tersambung (pohon jarak terdekat / minimum spanning tree). Gardu yang lebih dari 60 km dari kumpulan gardu penyulangnya dianggap koordinat keliru dan tidak disambung. Peta dasar © Esri dan © OpenStreetMap contributors.</p>
     </div>
@@ -3432,7 +3436,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 <script src="kondisi_update.js"></script>
 <script src="kondisi-tab.js?v=20261104b"></script>
 <script src="hirarki-tab.js"></script>
-<script src="hx-map.js?v=20261131"></script>
+<script src="hx-map.js?v=20261133"></script>
 <script src="acct.js"></script>
 <script src="workplan-tab.js"></script>
 
