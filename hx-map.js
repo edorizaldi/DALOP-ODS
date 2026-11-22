@@ -225,9 +225,11 @@
       if (st.lay.jauh) box.append(sw('#fff', 'Koordinat gardu keliru', 'dot hxm-x'));
     }
   }
+  // urutan tabel: nama GI (tanpa awalan GI), lalu nama penyulang A–Z
+  const giKey = (f) => String(f.giNama || '').toUpperCase().replace(/^GI\s+/, '');
   function drawTable() {
     const tb = $('hxm-tbl'); if (!tb) return;
-    const list = map && uidCur ? shown().filter(inView).sort((a, b) => a.nama.localeCompare(b.nama)) : [];
+    const list = map && uidCur ? shown().filter(inView).sort((a, b) => giKey(a).localeCompare(giKey(b), 'id', { numeric: true }) || a.nama.localeCompare(b.nama, 'id', { numeric: true })) : [];
     const sel = P().hx_feeder;
     const head = mk('thead'); const hr = mk('tr');
     [['Penyulang', 'ss-l'], ['GI', 'ss-l'], ['ULP', 'ss-l ss-hide-n hxm-wide'], ['Gardu'], ['Trafo'], ['kVA gardu', 'ss-hide-n hxm-wide'], ['Km'], ['Keliru', 'ss-hide-n']].forEach(([h, c]) => hr.append(mk('th', h, c || '')));
