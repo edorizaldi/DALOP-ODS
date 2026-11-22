@@ -1,1 +1,1 @@
-window.__D=window.__D||{};window.__D["bencana"]=[];
+window.__D=window.__D||{};window.__D["bencana"]=[{"nama":"Gempa M6,1 Lampung Barat Nov 2026","jenis":"Gempa bumi","lat":-4.95,"lon":104.05,"radius_km":50,"mulai":"2026-11-22T09:14","status":"Berlangsung","keterangan":"CONTOH UJI - bukan kejadian nyata. Episentrum 12 km utara Liwa, kedalaman 10 km"}];
