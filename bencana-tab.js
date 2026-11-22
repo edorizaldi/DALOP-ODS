@@ -381,7 +381,7 @@
       const head = document.querySelector('.ss-head'); $('b-ringkasan').style.setProperty('--b-off', ((head ? head.offsetHeight : 112) + 30) + 'px');
       const mb = $('b-map'), mw = mb.clientWidth || 800, wide = window.innerWidth > 760;
       const mh = wide && mb.clientHeight > 200 ? mb.clientHeight : Math.round(Math.max(360, Math.min(660, mw * 0.85)));
-      const gr = mb.parentElement.querySelector('.b-glass-row'); const padB = wide && gr ? gr.offsetHeight + 8 : 0;
+      const gr = mb.parentElement.querySelector('.b-glass-row'); const rail = gr && gr.offsetWidth < mb.parentElement.clientWidth * 0.5; const padB = wide && gr && !rail ? gr.offsetHeight + 8 : 0;
       window.SSMAP(mb, { label: 'Peta area bencana', fit, height: mh, padBottom: padB, fill: () => (layer === 'panas' ? '#7cc4e2' : 'color-mix(in srgb, var(--ss-acc) 10%, var(--color-panel))'), areas, circle: center ? { lon: center.lon, lat: center.lat, km: rad } : null,
         onMap: (lon, lat) => { if (!(lon > 92 && lon < 122 && lat > -11 && lat < 9)) return; kj.lat.value = lat.toFixed(4); kj.lon.value = lon.toFixed(4); set({ b_lat: lat.toFixed(4), b_lon: lon.toFixed(4), b_rad: String(Number(kj.rad.value) || rad) }); }, points: pts });
       const lgd = $('b-map-legend'); lgd.replaceChildren();
