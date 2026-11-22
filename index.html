@@ -19,7 +19,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261116ig">
 <link rel="stylesheet" href="hi-tab.css?v=20261116u">
 <link rel="stylesheet" href="db-tab.css?v=20261117">
-<link rel="stylesheet" href="bencana-tab.css?v=20261122">
+<link rel="stylesheet" href="bencana-tab.css?v=20261123">
 <link rel="stylesheet" href="acct.css">
 <link rel="stylesheet" href="lgp-tab.css?v=20261115d">
 <script src="d3.min.js"></script>
@@ -1554,9 +1554,9 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
   <section class="ss-sec" id="bencana" data-tab="bencana" hidden>
     <header class="ss-hero" id="b-ringkasan">
       <div class="ss-hero-main">
-        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg>Tanggap darurat bencana · aset terpapar · pemulihan</span>
+        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg>Tanggap darurat bencana · penyulang → gardu → trafo → wilayah</span>
         <h1 class="ss-title">Disaster Dashboard <span class="gi-draft">Draft</span></h1>
-        <p class="ss-take dash-skeleton" id="b-take" data-source="bencana bencana_status gi_identitas peny_profil">—</p>
+        <p class="ss-take dash-skeleton" id="b-take" data-source="bencana bencana_status gi_identitas peny_profil hx_feeder trafo_wilayah wilayah_kec">—</p>
         <div class="ss-filters" id="b-filter" data-source="bencana">
           <div class="ss-frow"><span class="ss-flabel">Kejadian</span><select id="b-f-kej" aria-label="Kejadian bencana"></select></div>
           <div class="ss-frow"><span class="ss-flabel">Radius</span><select id="b-f-rad" aria-label="Radius area terdampak"></select></div>
@@ -1565,45 +1565,64 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <p class="ss-note b-center"><span id="b-center"></span> <button type="button" class="b-link" id="b-reset" hidden>Kembali ke titik kejadian</button></p>
       </div>
       <figure class="ss-map" id="b-peta-wrap">
-        <div class="ss-mapbox" id="b-map" data-source="peta koordinat gi_identitas peny_profil bencana bencana_status"></div>
+        <div class="ss-mapbox" id="b-map" data-source="wilayah_kec trafo_wilayah gi_identitas peny_profil bencana bencana_status"></div>
         <div class="ss-legend gi-map-legend" id="b-map-legend"></div>
-        <figcaption class="ss-map-note">Lingkaran putus-putus = area terdampak. Klik peta untuk memindahkan titik bencana; klik titik gempa untuk memakainya sebagai titik.</figcaption>
+        <figcaption class="ss-map-note" id="b-map-note">Klik peta untuk memilih titik bencana.</figcaption>
       </figure>
     </header>
-    <div class="ss-tiles" id="b-kpi" data-source="bencana_status gi_identitas peny_profil hx_feeder">
-      <div class="ss-tile b-tile-bad"><div class="ss-tile-label">Penyulang masih padam</div><div class="ss-big"><span class="dash-skeleton" id="b-t1">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="b-t1-sub"></div></div>
-      <div class="ss-tile b-tile-ok"><div class="ss-tile-label">Penyulang sudah pulih</div><div class="ss-big"><span class="dash-skeleton" id="b-t2">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="b-t2-sub"></div></div>
-      <div class="ss-tile"><div class="ss-tile-label">Penyulang terpapar</div><div class="ss-big"><span class="dash-skeleton" id="b-t3">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="b-t3-sub"></div></div>
-      <div class="ss-tile"><div class="ss-tile-label">Gardu terpapar</div><div class="ss-big"><span class="dash-skeleton" id="b-t4">—</span><span class="ss-unit">gardu</span></div><div class="ss-sub" id="b-t4-sub"></div></div>
+    <div class="ss-card" id="b-k-card">
+      <h3>1 · Titik dan tipe bencana</h3>
+      <p class="ss-note">Klik peta untuk mengisi koordinat. Radius terdampak terisi otomatis menurut tipe bencana dan bisa diubah. Lingkaran di peta langsung mengikuti isian ini.</p>
+      <div class="b-form">
+        <label class="b-fld b-fld-wide"><span>Nama kejadian</span><input id="b-k-nama" type="text" placeholder="mis. Banjir Bandar Lampung Nov 2026"></label>
+        <label class="b-fld"><span>Tipe bencana</span><select id="b-k-jenis"></select></label>
+        <label class="b-fld"><span>Latitude</span><input id="b-k-lat" type="number" step="0.0001" inputmode="decimal" placeholder="klik peta"></label>
+        <label class="b-fld"><span>Longitude</span><input id="b-k-lon" type="number" step="0.0001" inputmode="decimal" placeholder="klik peta"></label>
+        <label class="b-fld"><span>Radius (km)</span><input id="b-k-rad" type="number" min="0.5" step="0.5" value="10"></label>
+        <label class="b-fld"><span>Waktu mulai (WIB)</span><input id="b-k-mulai" type="datetime-local"></label>
+        <label class="b-fld"><span>Status</span><select id="b-k-status"><option>Berlangsung</option><option>Pemulihan</option><option>Selesai</option></select></label>
+      </div>
+      <div class="ss-up-row"><button type="button" class="h-act h-act-primary" id="b-k-save">Simpan kejadian</button></div>
+      <p class="ss-up-msg" id="b-k-msg" role="status"></p>
+    </div>
+    <div class="ss-tiles" id="b-kpi" data-source="bencana_status hx_feeder trafo_wilayah wilayah_kec">
+      <div class="ss-tile b-tile-bad"><div class="ss-tile-label">Penyulang padam</div><div class="ss-big"><span class="dash-skeleton" id="b-t1">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="b-t1-sub"></div></div>
+      <div class="ss-tile b-tile-bad"><div class="ss-tile-label">Trafo padam</div><div class="ss-big"><span class="dash-skeleton" id="b-t2">—</span><span class="ss-unit">trafo</span></div><div class="ss-sub" id="b-t2-sub"></div></div>
+      <div class="ss-tile"><div class="ss-tile-label">Kecamatan terdampak</div><div class="ss-big"><span class="dash-skeleton" id="b-t3">—</span><span class="ss-unit">kecamatan</span></div><div class="ss-sub" id="b-t3-sub"></div></div>
+      <div class="ss-tile"><div class="ss-tile-label">Penyulang terpapar radius</div><div class="ss-big"><span class="dash-skeleton" id="b-t4">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="b-t4-sub"></div></div>
+    </div>
+    <div class="ss-card" id="b-wil-card">
+      <div class="ss-sechead">
+        <div><h3>Wilayah terdampak</h3>
+          <p class="ss-note">Trafo padam dan nyala kembali menurut lokasi trafo, dibandingkan dengan semua trafo PLN di wilayah itu. Status trafo mengikuti status penyulangnya di laporan posko.</p></div>
+        <div class="ss-chips" id="b-wlv" role="group" aria-label="Tingkat wilayah"><button type="button" class="ss-chip" data-v="prov">Provinsi</button><button type="button" class="ss-chip" data-v="kab">Kab/Kota</button><button type="button" class="ss-chip" data-v="">Kecamatan</button></div>
+      </div>
+      <div class="ss-tablewrap" data-source="trafo_wilayah wilayah_kec wilayah_kab wilayah_prov bencana_status"><table class="ss-table ss-p-table" id="b-wil"></table></div>
     </div>
     <div class="ss-grid ss-pair">
       <div class="ss-card" id="b-up3-card">
         <h3>Pemulihan per UP3</h3>
         <p class="ss-note">Dari laporan posko kejadian terpilih dan penyulang terpapar dalam radius.</p>
-        <div class="ss-tablewrap" data-source="bencana_status"><table class="ss-table ss-p-table" id="b-up3"></table></div>
+        <div class="ss-tablewrap" data-source="bencana_status hx_feeder trafo_wilayah"><table class="ss-table ss-p-table" id="b-up3"></table></div>
       </div>
       <div class="ss-card" id="b-chart-card">
-        <h3>Penyulang padam dan pulih menurut waktu</h3>
-        <p class="ss-note">Kumulatif penyulang yang dilaporkan padam (merah) dan yang sudah pulih (hijau); area di antaranya = masih padam. Waktu WIB.</p>
+        <h3>Penyulang trip dan nyala kembali menurut waktu</h3>
+        <p class="ss-note">Kumulatif penyulang trip (merah) dan yang nyala kembali (hijau); area di antaranya = masih padam. Waktu WIB.</p>
         <div class="ss-chart ss-short dash-skeleton" id="b-chart" data-source="bencana_status"></div>
       </div>
     </div>
     <div class="ss-card" id="b-tabel-card">
       <div class="ss-sechead">
-        <div><h3>Status penyulang</h3>
+        <div><h3>Status penyulang, gardu dan trafo</h3>
           <p class="ss-note" id="b-tabel-note"></p></div>
-        <input class="ss-search" id="b-search" type="search" placeholder="Cari penyulang, GI, UP3 atau ULP" aria-label="Cari penyulang">
+        <input class="ss-search" id="b-search" type="search" placeholder="Cari penyulang, GI, UP3, ULP atau kecamatan" aria-label="Cari penyulang">
       </div>
-      <div class="ss-chips" id="b-tfilter" role="group" aria-label="Saring status"><button type="button" class="ss-chip" data-v="">Semua</button><button type="button" class="ss-chip" data-v="padam">Masih padam</button><button type="button" class="ss-chip" data-v="pulih">Pulih</button><button type="button" class="ss-chip" data-v="ter">Terpapar, belum dilaporkan</button></div>
-      <div class="ss-tablewrap" data-source="bencana_status peny_profil hx_feeder peny_bulanan"><table class="ss-table ss-p-table" id="b-tabel"></table></div>
-    </div>
-    <div class="ss-card" id="b-q-card">
-        <div class="ss-sechead"><div><h3>Gempa terkini BMKG</h3><p class="ss-note" id="b-q-note"></p></div><button type="button" class="h-act" id="b-q-reload">Muat ulang</button></div>
-        <div id="b-q-list" data-source="BMKG data.bmkg.go.id"></div>
+      <div class="ss-chips" id="b-tfilter" role="group" aria-label="Saring status"><button type="button" class="ss-chip" data-v="">Semua</button><button type="button" class="ss-chip" data-v="padam">Padam</button><button type="button" class="ss-chip" data-v="pulih">Nyala kembali</button><button type="button" class="ss-chip" data-v="ter">Terpapar, belum dilaporkan</button></div>
+      <div class="ss-tablewrap" data-source="bencana_status peny_profil hx_feeder trafo_wilayah peny_bulanan"><table class="ss-table ss-p-table" id="b-tabel"></table></div>
     </div>
     <div class="ss-card" id="b-up-card">
-        <h3>Unggah laporan posko</h3>
-        <p class="ss-note">Isi <a href="template_posko_bencana.xlsx" download>template laporan posko bencana (.xlsx)</a>: sheet <b>Kejadian</b> (nama, jenis, titik, radius, waktu mulai, status) dan <b>Status Penyulang</b> (penyulang, waktu padam, waktu nyala, gardu, pelanggan, keterangan). Unggah daftar lengkap terbaru setiap kali ada perubahan; kejadian dengan nama sama diganti seluruhnya. Tersimpan untuk semua pembaca bila sudah login admin.</p>
+        <h3>2 · Unggah laporan posko</h3>
+        <p class="ss-note">Isi <a href="template_posko_bencana.xlsx" download>template laporan posko bencana (.xlsx)</a>, sheet <b>Status Penyulang</b>: penyulang, <b>jam trip</b>, <b>jam nyala</b> dan <b>status saat ini</b> (Padam/Nyala). Sheet <b>Kejadian</b> boleh dihapus bila kejadian sudah dibuat di atas; laporan lalu masuk ke kejadian terpilih. Unggah daftar lengkap terbaru setiap kali ada perubahan; kejadian dengan nama sama diganti seluruhnya. Tersimpan untuk semua pembaca bila sudah login admin.</p>
         <label class="h-drop" id="b-up-drop" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><b>Tarik file laporan posko ke sini, atau klik untuk memilih</b><span class="ss-note">Format .xlsx sesuai template</span><input type="file" id="b-up-file" accept=".xlsx" hidden></label>
         <div id="b-up-review" class="ss-up-review" hidden>
           <p class="ss-note" id="b-up-sum"></p>
@@ -1612,6 +1631,11 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         </div>
         <p class="ss-up-msg" id="b-up-msg" role="status"></p>
     </div>
+    <div class="ss-card" id="b-q-card">
+        <div class="ss-sechead"><div><h3>Gempa terkini BMKG</h3><p class="ss-note" id="b-q-note"></p></div><button type="button" class="h-act" id="b-q-reload">Muat ulang</button></div>
+        <div id="b-q-list" data-source="BMKG data.bmkg.go.id"></div>
+    </div>
+    <p class="ss-note b-credit">Batas wilayah: <a href="https://github.com/cahyadsn/wilayah_boundaries" target="_blank" rel="noopener">cahyadsn/wilayah_boundaries</a> (MIT), disederhanakan. Kode dan nama wilayah: Kepmendagri 2025 melalui <a href="https://github.com/prodhokter/dataset-wilayah-indonesia" target="_blank" rel="noopener">prodhokter/dataset-wilayah-indonesia</a>. Lokasi trafo dari Database Aset Jaringan (koordinat trafo/gardu, alamat gardu, atau lokasi penyulang/GI).</p>
   </section>
 
   <section class="ss-sec" id="lgp" data-tab="lgp" hidden>
@@ -2379,6 +2403,18 @@ SSD.calc('up3_yoy', {
       .on('mouseleave', function () { d3.select(this).attr('fill-opacity', 1); tip.hidden = true; })
       .on('mousemove', (ev, d) => { const t = o.regionTip && o.regionTip(d.properties.uid, d.properties.provinsi); if (t) showTip(ev, t[0], t[1]); })
       .on('click', (ev, d) => { if (!mapClick(ev) && o.onRegion) o.onRegion(d.properties.uid); });
+    // o.areas = [{ g: [[ring [lon, lat]...]...] (multipoligon), fill, stroke, op, width, tip: [head, rows], onClick }]: poligon tambahan (mis. kecamatan)
+    if (o.areas && o.areas.length) {
+      const ag = g.append('g');
+      const apath = (gm) => gm.map((poly) => poly.map((ring) => 'M' + ring.map((c) => proj(c).map((v) => v.toFixed(1)).join(',')).join('L') + 'Z').join('')).join('');
+      o.areas.forEach((a) => {
+        ag.append('path').attr('d', apath(a.g)).attr('fill-rule', 'evenodd').attr('fill', a.fill || 'none').attr('fill-opacity', a.op == null ? 0.55 : a.op)
+          .attr('stroke', a.stroke || 'var(--color-panel)').attr('stroke-width', a.width || 0.6).attr('stroke-linejoin', 'round')
+          .style('cursor', a.onClick ? 'pointer' : o.onMap ? 'crosshair' : 'default')
+          .on('mousemove', (ev) => a.tip && showTip(ev, a.tip[0], a.tip[1])).on('mouseleave', () => { tip.hidden = true; })
+          .on('click', (ev) => { if (a.onClick) a.onClick(); else mapClick(ev); });
+      });
+    }
     // o.circle = { lon, lat, km, color }: lingkaran radius (km) di permukaan bumi
     if (o.circle && isFinite(o.circle.lon) && isFinite(o.circle.lat) && o.circle.km > 0) {
       const R0 = 6371, dd = o.circle.km / R0, la = o.circle.lat * Math.PI / 180, lo = o.circle.lon * Math.PI / 180;
@@ -2846,8 +2882,8 @@ SSD.calc('up3_yoy', {
 </script>
 
 <script src="db-tab.js?v=20261118"></script>
-<script src="bencana-posko.js?v=20261122"></script>
-<script src="bencana-tab.js?v=20261122"></script>
+<script src="bencana-posko.js?v=20261123"></script>
+<script src="bencana-tab.js?v=20261123"></script>
 <script src="hi-tab.js?v=20261116w"></script>
 
 <script>

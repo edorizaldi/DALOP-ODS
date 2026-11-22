@@ -23,7 +23,7 @@
     if (!rows || !rows.length) throw new Error(`Sheet ${sheet} kosong atau tidak ada.`);
     const H = rows[0].map((h) => NORM(h));
     const ix = {}; need.forEach((k) => { ix[k] = H.indexOf(NORM(k)); });
-    const miss = need.filter((k) => ix[k] < 0 && !/^(NAMA|NO_TIANG|SSOTNUMBER|KODE_JARINGAN|ALAMAT|NAMA_UNIT|NAMA_DIST|NAMA_UP3|STATUS_NYALA|KVA|NAMA_ULP|NO_TIANG_TRAFO|NAMA_UID)$/.test(k));
+    const miss = need.filter((k) => ix[k] < 0 && !/^(NAMA|NO_TIANG|SSOTNUMBER|KODE_JARINGAN|ALAMAT|NAMA_UNIT|NAMA_DIST|NAMA_UP3|STATUS_NYALA|KVA|NAMA_ULP|NO_TIANG_TRAFO|NAMA_UID|LATITUDE|LONGITUDE)$/.test(k));
     if (miss.length) throw new Error(`Sheet ${sheet}: kolom ${miss.join(', ')} tidak ditemukan.`);
     return { rows: rows.slice(1).filter((r) => r && r.some((v) => v !== '' && v != null)), get: (r, k) => (ix[k] >= 0 ? S(r[ix[k]]) : '') };
   }
@@ -117,11 +117,11 @@
     });
     // ---------- gardu ----------
     step('Membaca gardu');
-    const tg = table(sheet('GARDU'), ['SSOTNUMBER', 'KODE_ASSET', 'PARENT_ASSET', 'NAMA_GARDU', 'ALAMAT', 'KVA', 'NAMA_UID', 'NAMA_UP3', 'NAMA_ULP'], 'GARDU');
+    const tg = table(sheet('GARDU'), ['SSOTNUMBER', 'KODE_ASSET', 'PARENT_ASSET', 'NAMA_GARDU', 'ALAMAT', 'KVA', 'NAMA_UID', 'NAMA_UP3', 'NAMA_ULP', 'LATITUDE', 'LONGITUDE'], 'GARDU');
     const GD = []; const gdByCode = new Map(), gdBySsot = new Map(), gdByName = new Map();
     tg.rows.forEach((r, i) => {
       const g = { row: i + 2, kode: tg.get(r, 'KODE_ASSET'), ssot: tg.get(r, 'SSOTNUMBER'), parent: tg.get(r, 'PARENT_ASSET'), nama: tg.get(r, 'NAMA_GARDU'), alamat: tg.get(r, 'ALAMAT'),
-        kva: tg.get(r, 'KVA'), wilayah: tg.get(r, 'NAMA_UID'), up3: tg.get(r, 'NAMA_UP3'), ulp: tg.get(r, 'NAMA_ULP'), trafo: [], kvaT: 0, kvaTn: 0 };
+        kva: tg.get(r, 'KVA'), wilayah: tg.get(r, 'NAMA_UID'), up3: tg.get(r, 'NAMA_UP3'), ulp: tg.get(r, 'NAMA_ULP'), lat: tg.get(r, 'LATITUDE'), lon: tg.get(r, 'LONGITUDE'), trafo: [], trafoXY: [], kvaT: 0, kvaTn: 0 };
       if (!g.kode) return;
       GD.push(g);
       if (!gdByCode.has(g.kode)) gdByCode.set(g.kode, g);
@@ -132,16 +132,16 @@
     });
     // ---------- trafo ----------
     step('Mencocokkan trafo ke gardu');
-    const tt = table(sheet('TRAFO'), ['KODE_TRAFO', 'KODE_GARDU', 'NO_TIANG_TRAFO', 'KVA', 'NAMA_UID', 'NAMA_UP3', 'NAMA_ULP'], 'TRAFO');
+    const tt = table(sheet('TRAFO'), ['KODE_TRAFO', 'KODE_GARDU', 'NO_TIANG_TRAFO', 'KVA', 'NAMA_UID', 'NAMA_UP3', 'NAMA_ULP', 'LATITUDE', 'LONGITUDE'], 'TRAFO');
     const met = { KODE_GARDU: 0, 'NAMA (cadangan)': 0, 'TIDAK COCOK': 0 }; const TR = [];
     tt.rows.forEach((r, i) => {
-      const t = { row: i + 2, kode: tt.get(r, 'KODE_TRAFO'), kg: tt.get(r, 'KODE_GARDU'), nama: tt.get(r, 'NO_TIANG_TRAFO'), kva: tt.get(r, 'KVA'), wilayah: tt.get(r, 'NAMA_UID'), up3: tt.get(r, 'NAMA_UP3'), ulp: tt.get(r, 'NAMA_ULP') };
+      const t = { row: i + 2, kode: tt.get(r, 'KODE_TRAFO'), kg: tt.get(r, 'KODE_GARDU'), nama: tt.get(r, 'NO_TIANG_TRAFO'), kva: tt.get(r, 'KVA'), wilayah: tt.get(r, 'NAMA_UID'), up3: tt.get(r, 'NAMA_UP3'), ulp: tt.get(r, 'NAMA_ULP'), lat: tt.get(r, 'LATITUDE'), lon: tt.get(r, 'LONGITUDE') };
       if (!t.kode && !t.kg) return;
       let g = gdByCode.get(t.kg) || gdBySsot.get(t.kg) || null; let m = 'KODE_GARDU';
       if (!g) { g = gdByName.get(t.ulp + '|' + nm(t.nama)) || null; m = 'NAMA (cadangan)'; }
       if (!g) m = 'TIDAK COCOK';
       met[m]++; t.g = g; TR.push(t);
-      if (g) { g.trafo.push(t.kode); const k = num(t.kva); if (k != null) { g.kvaT += k; g.kvaTn++; } }
+      if (g) { g.trafo.push(t.kode); g.trafoXY.push(t); const k = num(t.kva); if (k != null) { g.kvaT += k; g.kvaTn++; } }
     });
     // ---------- keluaran per level ----------
     step('Menyusun dataset');
@@ -216,7 +216,12 @@
       const r = { w, u, level: lv, terhubung: c.t, putus: c.p, selevel: c.s, padam: c.d }; if (Object.keys(c.sb).length) r.sebab = c.sb; files.hx_ringkasan_unit.push(r); }); });
     files.gi_identitas = giIdentitas(sheet('GI'));
     const stats = { gi: files.hx_gi.length, giXY: files.gi_identitas.filter((g) => g.lat !== '').length, feeder: files.hx_feeder.length, gardu: GD.length, garduOk: GD.filter((g) => g.ok).length, trafo: TR.length, trafoOk: trOk, anomali: AN.length, metode: met };
-    return { files, stats };
+    // lokasi trafo untuk Disaster Dashboard (trafo_wilayah disusun di upd-aset.js dengan wilayah-assign.js):
+    // koordinat trafo, bila kosong koordinat gardu; ALAMAT gardu sebagai cadangan
+    const lokasi = [];
+    GD.forEach((g) => { if (!g.ok || !g.feeder) return; g.trafoXY.forEach((t) => { const tl = num(t.lat), tn = num(t.lon); lokasi.push({ feeder: g.feeder, n: 1, kva: t.kva, alamat: g.alamat, lat: tl != null && tn != null ? tl : g.lat, lon: tl != null && tn != null ? tn : g.lon }); }); });
+    stats.lokasiXY = lokasi.filter((x) => num(x.lat) != null && num(x.lon) != null).length; stats.lokasi = lokasi.length;
+    return { files, stats, lokasi };
   }
 
   // identitas GI dari sheet GI: semua kolom selain KODE_ASSET dan NAMA opsional

@@ -10,3 +10,11 @@
 #bencana .b-q-table tr.b-q-big td:first-child { box-shadow: inset 3px 0 0 #E07B00; }
 #bencana .b-q-table .ss-chip { white-space: nowrap; }
 #bencana #b-up-card .h-drop { margin-top: 8px; }
+#bencana .b-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px 12px; margin: 10px 0 4px; }
+#bencana .b-fld { display: flex; flex-direction: column; gap: 4px; font-size: var(--cds-font-size-caption, 12px); color: var(--color-fg-muted); min-width: 0; }
+#bencana .b-fld-wide { grid-column: span 2; }
+#bencana .b-fld input, #bencana .b-fld select { font: inherit; font-size: 14px; color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border, color-mix(in srgb, var(--color-fg) 20%, transparent)); border-radius: 8px; padding: 7px 9px; min-width: 0; width: 100%; box-sizing: border-box; }
+#bencana .b-fld input:focus-visible, #bencana .b-fld select:focus-visible { outline: 2px solid var(--ss-acc); outline-offset: 1px; }
+#bencana #b-wlv { flex-shrink: 0; }
+#bencana .b-credit { margin: 4px 2px 0; }
+@media (max-width: 520px) { #bencana .b-fld-wide { grid-column: auto; } }
