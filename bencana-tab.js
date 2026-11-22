@@ -48,6 +48,22 @@
   $('b-reset').addEventListener('click', () => set({ b_lat: null, b_lon: null, b_rad: null }));
   $('b-tfilter').addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) set({ b_f: b.dataset.v || null }); });
   $('b-wlv').addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) set({ b_lv: b.dataset.v || null }); });
+  $('b-layer').addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) set({ b_ly: b.dataset.v || null }); });
+  $('b-ringkasan').querySelector('.b-nav').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-go]'); if (!b) return;
+    e.currentTarget.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+    const t = $(b.dataset.go); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  // cari kecamatan / kab-kota → jadikan titik bencana
+  $('b-loc').addEventListener('change', (e) => {
+    const v = e.target.value.trim().toUpperCase(); if (!v || !A) return;
+    const hit = LOC.find((x) => x.label.toUpperCase() === v) || LOC.find((x) => x.label.toUpperCase().startsWith(v)) || LOC.find((x) => x.label.toUpperCase().includes(v));
+    if (!hit) return;
+    kj.lat.value = hit.c[1].toFixed(4); kj.lon.value = hit.c[0].toFixed(4);
+    set({ b_lat: hit.c[1].toFixed(4), b_lon: hit.c[0].toFixed(4), b_rad: String(Number(kj.rad.value) || 10), b_view: null });
+    e.target.value = ''; e.target.blur();
+  });
+  let LOC = [];
   let q = '';
   $('b-search').addEventListener('input', (e) => { q = e.target.value.trim().toUpperCase(); drawTable(); });
 
@@ -191,10 +207,17 @@
     const [G, Pp, B, K, S] = base;
     const ck = [G.data, Pp.data, B.data, ...L.map((d) => d.data)];
     if (!cacheKey || ck.some((v, i) => v !== cacheKey[i])) { cacheKey = ck; A = build(G.data, Pp.data, L[0].data, B.data, L[1].data, L[2].data, L[3].data, L[4].data); }
+    if (!LOC.length && A) {
+      LOC = [...A.W.kab.values()].filter((k) => k.c).map((k) => ({ label: k.n, c: k.c }))
+        .concat([...A.W.kec.values()].filter((k) => k.c).map((k) => ({ label: `Kec. ${k.n}, ${wname('kab', k.id.slice(0, 4)).replace(/^Kabupaten /, 'Kab. ')}`, c: k.c })));
+      $('b-loc-list').replaceChildren(...LOC.map((x) => new Option(x.label)));
+    }
     if (quakes === null && !quakeAt) loadQuakes();
     const prm = dash.params();
     filt = ['padam', 'pulih', 'ter'].includes(prm.b_f) ? prm.b_f : 'semua';
     wl = LV[prm.b_lv] ? prm.b_lv : 'kec';
+    const layer = ['status', 'aset'].includes(prm.b_ly) ? prm.b_ly : 'panas';
+    $('b-layer').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.v || 'panas') === layer)));
     const KJ = K.data || [];
     const kej = KJ.find((k) => k.nama === prm.b_kej) || KJ.find((k) => k.status !== 'Selesai') || KJ[0] || null;
     const custom = prm.b_lat != null && prm.b_lon != null && isFinite(Number(prm.b_lat)) && isFinite(Number(prm.b_lon));
@@ -202,9 +225,9 @@
     const rad = Number(prm.b_rad) > 0 ? Number(prm.b_rad) : kej && !custom ? Number(kej.radius_km) || P().RADIUS[kej.jenis] || 10 : Number(kj.rad.value) || 10;
 
     // kontrol
-    $('b-f-kej').replaceChildren(...(KJ.length ? KJ.map((k) => new Option(`${k.nama} · ${k.jenis} · ${k.status}`, k.nama)) : [new Option('Belum ada kejadian', '')])); $('b-f-kej').value = kej ? kej.nama : ''; $('b-f-kej').disabled = !KJ.length;
+    $('b-f-kej').replaceChildren(...(KJ.length ? KJ.map((k) => new Option(`${k.jenis} · ${k.nama}${k.status === 'Selesai' ? ' (selesai)' : ''}`, k.nama)) : [new Option('Belum ada kejadian', '')])); $('b-f-kej').value = kej ? kej.nama : ''; $('b-f-kej').disabled = !KJ.length;
     const radOpts = [3, 5, 10, 15, 20, 25, 50, 75, 100, 150]; if (!radOpts.includes(rad)) radOpts.push(rad); radOpts.sort((a, b) => a - b);
-    $('b-f-rad').replaceChildren(...radOpts.map((r) => new Option(`${r} km`, String(r)))); $('b-f-rad').value = String(rad);
+    $('b-f-rad').replaceChildren(...radOpts.map((r) => new Option(`Radius ${r} km`, String(r)))); $('b-f-rad').value = String(rad);
     const view = prm.b_view === 'sumkal' || !center ? 'sumkal' : 'area';
     $('b-f-view').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.v || 'area') === view)));
     $('b-reset').hidden = !custom && !prm.b_rad;
@@ -274,12 +297,47 @@
       if (center) tk.append(`Dalam radius ${rad} km: ${fmt(giIn.length)} GI, ${fmt(expoRows.length)} penyulang dan ${fmt(kecIn.length)} kecamatan terpapar.`);
     }
 
-    // tile
+    // panel kiri dan kartu kaca
     const done = (id, t) => { const e = $(id); e.textContent = t; e.classList.remove('dash-skeleton'); };
-    done('b-t1', fmt(nPad.length)); $('b-t1-sub').textContent = nRep ? `${fmt(nPul.length)} nyala kembali dari ${fmt(nRep)} penyulang trip` : 'belum ada laporan posko';
-    done('b-t2', fmt(trPad)); $('b-t2-sub').textContent = nRep ? `${fmt(gdPad)} gardu padam · ${fmt(trPul)} trafo nyala kembali` : '—';
-    done('b-t3', fmt(kecPad)); $('b-t3-sub').textContent = kecPad ? `di ${fmt(kabPad)} kab/kota, ${fmt(provPad)} provinsi` : 'belum ada trafo padam';
-    done('b-t4', fmt(expoRows.length)); $('b-t4-sub').textContent = center ? `${fmt(giIn.length)} GI · ${fmt(kecIn.length)} kecamatan dalam radius ${rad} km` : 'tentukan titik bencana';
+    $('b-title').textContent = kej ? kej.nama : 'Sumatera & Kalimantan';
+    $('b-eyebrow').textContent = kej ? `${kej.jenis} · mulai ${tfmt(kej.mulai)} WIB · ${kej.status}` : 'Disaster Dashboard · pilih titik bencana di peta';
+    $('b-area').textContent = center ? `${fmt(Math.PI * rad * rad)} km² · ${rad} km` : 'Belum ada titik';
+    done('b-r1', center ? fmt(giIn.length) : '—'); done('b-r2', center ? fmt(expoRows.length) : '—'); done('b-r3', center ? fmt(kecIn.length) : '—');
+    done('b-t1', fmt(nPad.length)); $('b-t1-sub').textContent = nRep ? `dari ${fmt(nRep)} penyulang trip` : 'belum ada laporan posko';
+    done('b-t2', fmt(trPad)); $('b-t2-sub').textContent = nRep ? `${fmt(gdPad)} gardu padam` : '—';
+    done('b-t3', fmt(kecPad)); $('b-t3-sub').textContent = kecPad ? `${fmt(kabPad)} kab/kota · ${fmt(provPad)} provinsi` : 'belum ada trafo padam';
+    done('b-t4', fmt(nPul.length)); $('b-t4-sub').textContent = nRep ? `penyulang · ${fmt(trPul)} trafo` : '—';
+    {
+      const affTot = [...WIL.kec.values()].filter((o) => o.pad).reduce((a2, o) => a2 + o.tot, 0);
+      const sh = affTot ? trPad / affTot : 0;
+      const d1 = $('b-g1-d'); d1.textContent = affTot ? `${pct(trPad, affTot)} trafo wilayah` : 'belum ada'; d1.className = 'b-delta ' + (trPad ? 'warn' : 'flat');
+      $('b-g1').textContent = fmt(trPad);
+      const cells = 36, on = Math.round(sh * cells); $('b-g1-w').replaceChildren(...Array.from({ length: cells }, (_, i) => mk('i', null, i < on ? 'on' : '')));
+      const rp = nRep ? nPul.length / nRep : 0;
+      const d2 = $('b-g2-d'); d2.textContent = nRep ? `${fmt(nPul.length)} dari ${fmt(nRep)} trip` : 'belum ada'; d2.className = 'b-delta ' + (nPul.length ? 'up' : 'flat');
+      $('b-g2').textContent = nRep ? Math.round(rp * 100) + '%' : '—';
+      const ga = $('b-g2-a'); ga.replaceChildren();
+      { const W = 200, H = 74, r = 84, cx = W / 2, cy = H + 22; const sv = d3.select(ga).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('preserveAspectRatio', 'xMidYMax meet');
+        const gid = 'b-gg'; const lg = sv.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 1);
+        [['0%', '#ff4d3d'], ['55%', '#f7cf3c'], ['100%', '#7ee08f']].forEach(([o2, c2]) => lg.append('stop').attr('offset', o2).attr('stop-color', c2));
+        const arc = d3.arc().innerRadius(r - 11).outerRadius(r).startAngle(-Math.PI / 2 * 0.92).cornerRadius(4);
+        sv.append('path').attr('transform', `translate(${cx},${cy})`).attr('d', arc.endAngle(Math.PI / 2 * 0.92)()).attr('fill', 'rgba(255,255,255,.16)');
+        if (rp > 0) sv.append('path').attr('transform', `translate(${cx},${cy})`).attr('d', arc.endAngle(-Math.PI / 2 * 0.92 + Math.PI * 0.92 * rp)()).attr('fill', `url(#${gid})`); }
+      const top = nPad.slice(0, 3);
+      const d3e = $('b-g3-d'); d3e.textContent = top.length ? top[0].nama : 'tidak ada'; d3e.className = 'b-delta flat';
+      $('b-g3').textContent = top.length ? jam(top[0].dur) : '—';
+      const mx = top.length ? top[0].dur : 1;
+      $('b-g3-b').replaceChildren(...top.slice().reverse().map((r) => { const d = mk('div'); const e = mk('em'); e.style.height = Math.max(6, 40 * r.dur / mx) + 'px'; d.append(mk('span', r.nama), mk('i'), e); return d; }));
+      const d4 = $('b-g4-d'); d4.textContent = kej ? kej.jenis : center ? 'titik pilihan' : 'belum ada titik'; d4.className = 'b-delta flat';
+      $('b-g4').textContent = center ? `${rad} km` : '—';
+      const rr = $('b-g4-r'); rr.replaceChildren();
+      { const W = 200, H = 74; const sv = d3.select(rr).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('preserveAspectRatio', 'xMaxYMax meet');
+        const cx = W - 40, cy = H - 4; [16, 32, 48, 64].forEach((r, i) => sv.append('circle').attr('cx', cx).attr('cy', cy).attr('r', r).attr('fill', 'none').attr('stroke', 'rgba(255,255,255,' + (0.42 - i * 0.08) + ')').attr('stroke-dasharray', i === 3 ? '3 4' : null));
+        const kinPad = kecIn.filter((k) => (WIL.kec.get(k.id) || {}).pad).length; const share = center && kecIn.length ? kinPad / kecIn.length : 0;
+        sv.append('path').attr('transform', `translate(${cx},${cy})`).attr('d', d3.arc().innerRadius(0).outerRadius(64).startAngle(-Math.PI / 2).endAngle(-Math.PI / 2 + Math.PI / 2 * Math.max(0.12, share))()).attr('fill', 'rgba(255,122,107,.55)');
+        sv.append('circle').attr('cx', cx).attr('cy', cy).attr('r', 3.5).attr('fill', '#fff');
+        sv.append('text').attr('x', W).attr('y', 10).attr('text-anchor', 'end').attr('fill', 'rgba(255,255,255,.7)').style('font-size', '11px').text(center ? `${fmt(kinPad)}/${fmt(kecIn.length)} kec. radius padam` : ''); }
+    }
 
     // peta
     if (window.SSMAP) {
@@ -289,24 +347,42 @@
       const inBB = (k) => !bb || (k.c && k.c[0] > bb[0] - 0.3 && k.c[0] < bb[2] + 0.3 && k.c[1] > bb[1] - 0.3 && k.c[1] < bb[3] + 0.3);
       const areas = [];
       const kinSet = new Set(kecIn.map((k) => k.id));
+      const HEAT = d3.interpolateRgbBasis(['#4fb3dd', '#8fd3c7', '#f2dc5d', '#f6a03a', '#ea4b2a', '#b81d18']);
       A.W.kec.forEach((k, id) => {
         const o = WIL.kec.get(id); const hit = o && (o.pad || o.pul);
         if (!hit && !(view === 'area' && inBB(k))) return; if (!inBB(k)) return;
         const share = o && o.tot ? o.pad / o.tot : 0;
-        const fill = o && o.pad ? C.padam : o && o.pul ? C.pulih : kinSet.has(id) ? 'var(--color-warn)' : 'var(--color-panel)';
-        const op = o && o.pad ? 0.25 + 0.6 * Math.min(1, share * 2) : o && o.pul ? 0.35 : kinSet.has(id) ? 0.12 : 0.05;
-        areas.push({ g: k.g, fill, op, stroke: 'color-mix(in srgb, var(--color-fg) 25%, transparent)', width: view === 'area' ? 0.6 : 0.3,
+        let fill, op;
+        if (layer === 'panas') {
+          const h = o && o.pad ? 0.55 + 0.45 * Math.min(1, share * 1.6) : o && o.pul ? 0.2 : kinSet.has(id) ? 0.42 : 0;
+          fill = HEAT(h); op = 0.92;
+        } else if (layer === 'status') {
+          fill = o && o.pad ? C.padam : o && o.pul ? C.pulih : kinSet.has(id) ? 'var(--color-warn)' : 'var(--color-panel)';
+          op = o && o.pad ? 0.25 + 0.6 * Math.min(1, share * 2) : o && o.pul ? 0.35 : kinSet.has(id) ? 0.12 : 0.05;
+        } else { fill = kinSet.has(id) ? '#ffffff' : 'var(--color-panel)'; op = kinSet.has(id) ? 0.35 : 0.12; }
+        areas.push({ g: k.g, fill, op, stroke: layer === 'panas' ? 'rgba(255,255,255,.55)' : 'color-mix(in srgb, var(--color-fg) 25%, transparent)', width: view === 'area' ? (layer === 'panas' ? 0.9 : 0.6) : 0.3,
           tip: [`Kec. ${k.n}`, [[null, 'Kab/Kota', wname('kab', id.slice(0, 4))], [null, 'Trafo di kecamatan', fmt(A.kecTot.get(id) || 0)], [null, 'Trafo padam', o ? `${fmt(o.pad)} (${pct(o.pad, o.tot)})` : '0'], [null, 'Nyala kembali', o ? fmt(o.pul) : '0'], [null, 'Dalam radius', kinSet.has(id) ? 'ya' : 'tidak']]] });
       });
       const pts = [];
       giIn.forEach((g) => pts.push({ lon: g.lon, lat: g.lat, r: 6, color: C.gi, label: g.nama, tip: [g.nama, [[null, 'UP3', g.up3 || '—'], [null, 'Jarak', f1.format(hv(center.lat, center.lon, +g.lat, +g.lon)) + ' km'], [null, 'Feeder', fmt((A.feedByGi.get(g.aset) || []).length)]]] }));
-      rows.forEach((r) => { if (!xy(r.prof)) return; pts.push({ lon: r.prof.lon, lat: r.prof.lat, r: r.st === 'ter' ? 3 : 4.6, color: C[r.st], label: r.st === 'padam' && r === nPad[0] ? r.nama : '',
+      rows.forEach((r) => { if (!xy(r.prof) || (layer === 'panas' && r.st === 'ter')) return; pts.push({ lon: r.prof.lon, lat: r.prof.lat, r: r.st === 'ter' ? 3 : 4.6, color: C[r.st], label: r.st === 'padam' && r === nPad[0] ? r.nama : '',
         tip: ['Penyulang ' + r.nama, [[null, 'Status', r.st === 'padam' ? 'Padam' : r.st === 'pulih' ? 'Nyala kembali' : 'Terpapar'], [null, 'Lama padam', r.rep ? jam(r.dur) : '—'], [null, 'Gardu · trafo', r.feeds.length ? `${fmt(r.gardu)} · ${fmt(r.trafo)}` : '—']]] }); });
       (quakes || []).forEach((g) => { if (!(g.lon > 92 && g.lon < 122 && g.lat > -11 && g.lat < 9)) return; pts.push({ lon: g.lon, lat: g.lat, r: Math.max(4, g.m * 1.6), color: C.gempa, label: view === 'sumkal' ? `M${f1.format(g.m)}` : '', tip: [`Gempa M${f1.format(g.m)}`, [[null, 'Waktu', g.tgl], [null, 'Kedalaman', g.dalam], [null, 'Wilayah', g.wil]]], onClick: () => useQuake(g) }); });
       if (center) pts.push({ lon: center.lon, lat: center.lat, r: 6, color: 'var(--color-bad)', pulse: true, label: kej && !custom ? kej.jenis : 'Titik bencana' });
-      window.SSMAP($('b-map'), { label: 'Peta area bencana', fit, fill: () => 'color-mix(in srgb, var(--ss-acc) 10%, var(--color-panel))', areas, circle: center ? { lon: center.lon, lat: center.lat, km: rad } : null,
+      const mw = $('b-map').clientWidth || 800;
+      window.SSMAP($('b-map'), { label: 'Peta area bencana', fit, height: Math.round(Math.max(360, Math.min(660, mw * (mw < 700 ? 0.85 : 0.6)))), fill: () => (layer === 'panas' ? '#7cc4e2' : 'color-mix(in srgb, var(--ss-acc) 10%, var(--color-panel))'), areas, circle: center ? { lon: center.lon, lat: center.lat, km: rad } : null,
         onMap: (lon, lat) => { if (!(lon > 92 && lon < 122 && lat > -11 && lat < 9)) return; kj.lat.value = lat.toFixed(4); kj.lon.value = lon.toFixed(4); set({ b_lat: lat.toFixed(4), b_lon: lon.toFixed(4), b_rad: String(Number(kj.rad.value) || rad) }); }, points: pts });
-      $('b-map-legend').replaceChildren(...[[C.padam, 'Kecamatan: trafo padam (makin pekat makin banyak)'], [C.pulih, 'Kecamatan: trafo nyala kembali'], ['var(--color-warn)', 'Kecamatan dalam radius'], [C.gi, 'GI dalam radius'], [C.gempa, 'Gempa BMKG']].map(([c, l]) => { const s = mk('span'); const i = mk('i', null, 'ss-sw'); i.style.background = c; s.append(i, l); return s; }));
+      const lgd = $('b-map-legend'); lgd.replaceChildren();
+      const dot = (c, l) => { const sp = mk('span'); const i = mk('i'); i.style.background = c; sp.append(i, l); return sp; };
+      if (layer === 'panas') {
+        const sc = mk('div', null, 'b-scale'); sc.style.background = `linear-gradient(90deg, ${[0, .2, .42, .6, .8, 1].map((t) => HEAT(t)).join(',')})`;
+        const lab = mk('div', null, 'b-scale-lab'); lab.append(mk('span', 'normal · nyala'), mk('span', 'radius'), mk('span', 'trafo padam ↑'));
+        lgd.append(mk('b', 'Kondisi kecamatan'), sc, lab, dot(C.gi, 'GI dalam radius'));
+      } else if (layer === 'status') lgd.append(dot(C.padam, 'Trafo padam'), dot(C.pulih, 'Trafo nyala kembali'), dot('var(--color-warn)', 'Dalam radius'), dot(C.gi, 'GI dalam radius'), dot(C.gempa, 'Gempa BMKG'));
+      else lgd.append(dot(C.padam, 'Penyulang padam'), dot(C.pulih, 'Penyulang nyala kembali'), dot(C.ter, 'Penyulang terpapar'), dot(C.gi, 'GI dalam radius'));
+      // peta mini: posisi titik di Sumkal
+      window.SSMAP($('b-mini'), { label: 'Posisi titik bencana di Sumatera dan Kalimantan', height: 190, fill: () => 'rgba(150, 200, 120, .42)', circle: center ? { lon: center.lon, lat: center.lat, km: Math.max(rad, 60), color: '#ff7a3d' } : null,
+        points: center ? [{ lon: center.lon, lat: center.lat, r: 4, color: '#ff4d3d', pulse: true }] : [], onRegion: () => set({ b_view: 'sumkal' }) });
       $('b-map-note').textContent = `Klik peta untuk memilih titik bencana; klik titik gempa untuk memakainya. Lokasi trafo per kecamatan: ${A.srcAll ? pct(A.srcXY, A.srcAll) : '0%'} dari koordinat trafo/gardu, sisanya dari alamat gardu atau lokasi penyulang/GI (akan memakai koordinat setelah Database Aset Jaringan diunggah ulang).`;
     }
 

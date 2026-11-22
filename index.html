@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SAIDI SAIFI Sumkal 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <style>:root{--color-fg:#1b1f17;--color-fg-muted:#667060;--color-bg:#ffffff;--color-panel:#f7f7f5;--color-border-line:#e3e5df;--color-ok:#2f7a3a;--color-warn:#a15c00;--color-bad:#b3261e;--cds-gap-xs:4px;--cds-gap-sm:8px;--cds-gap-md:12px;--cds-gap-lg:16px;--cds-gap-xl:24px;--cds-pad-xs:4px;--cds-pad-sm:8px;--cds-pad-md:12px;--cds-pad-lg:16px;--cds-pad-xl:24px;--cds-radius:8px;--cds-font-size-title:24px;--cds-font-size-caption:12px;--cds-font-size-body:14px;--cds-font-size-heading:16px;--cds-font-weight-medium:500;--cds-chart-grid:#ececea;--cds-chart-axis:#aaa;--cds-chart-reference:#666;--cds-chart-muted:#bbb;--cds-chart-status-critical:#c0392b;--cds-surface-popover:#fff;--cds-border:#ddd;--cds-shadow-popover:0 2px 8px #0002;--cds-text-secondary:#666;--font-anthropic-sans:Inter,system-ui,sans-serif;--font-anthropic-serif:Georgia,serif;--cds-dur-slow:.3s;--cds-ease-out:ease-out}body{margin:0}
 body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans)}
 #dash-root{margin:0;padding:0}
@@ -19,7 +19,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261116ig">
 <link rel="stylesheet" href="hi-tab.css?v=20261116u">
 <link rel="stylesheet" href="db-tab.css?v=20261117">
-<link rel="stylesheet" href="bencana-tab.css?v=20261123">
+<link rel="stylesheet" href="bencana-tab.css?v=20261125">
 <link rel="stylesheet" href="acct.css">
 <link rel="stylesheet" href="lgp-tab.css?v=20261115d">
 <script src="d3.min.js"></script>
@@ -1552,24 +1552,66 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
     </template>
   </section>
   <section class="ss-sec" id="bencana" data-tab="bencana" hidden>
-    <header class="ss-hero" id="b-ringkasan">
-      <div class="ss-hero-main">
-        <span class="ss-eyebrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg>Tanggap darurat bencana · penyulang → gardu → trafo → wilayah</span>
-        <h1 class="ss-title">Disaster Dashboard <span class="gi-draft">Draft</span></h1>
-        <p class="ss-take dash-skeleton" id="b-take" data-source="bencana bencana_status gi_identitas peny_profil hx_feeder trafo_wilayah wilayah_kec">—</p>
-        <div class="ss-filters" id="b-filter" data-source="bencana">
-          <div class="ss-frow"><span class="ss-flabel">Kejadian</span><select id="b-f-kej" aria-label="Kejadian bencana"></select></div>
-          <div class="ss-frow"><span class="ss-flabel">Radius</span><select id="b-f-rad" aria-label="Radius area terdampak"></select></div>
-          <div class="ss-frow"><span class="ss-flabel">Peta</span><div class="ss-chips" id="b-f-view" role="group" aria-label="Cakupan peta"><button type="button" class="ss-chip" data-v="">Area bencana</button><button type="button" class="ss-chip" data-v="sumkal">Seluruh Sumkal</button></div></div>
+    <div class="b-cc" id="b-ringkasan">
+      <aside class="b-side" aria-label="Ringkasan bencana">
+        <div class="b-side-top">
+          <span class="b-logo" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></svg></span>
+          <label class="b-pill b-pill-line"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg><span class="b-sr">Radius</span><select id="b-f-rad" aria-label="Radius area terdampak"></select></label>
         </div>
-        <p class="ss-note b-center"><span id="b-center"></span> <button type="button" class="b-link" id="b-reset" hidden>Kembali ke titik kejadian</button></p>
+        <nav class="b-nav" aria-label="Bagian Disaster Dashboard">
+          <button type="button" class="on" data-go="b-ringkasan" title="Peta"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="3.2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="3.2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="3.2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="3.2"/></svg></button>
+          <button type="button" data-go="b-k-card" title="Titik dan tipe bencana"><svg viewBox="0 0 24 24"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg></button>
+          <button type="button" data-go="b-wil-card" title="Wilayah terdampak"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.6 2.6 2.6 14.4 0 17M12 3.5c-2.6 2.6-2.6 14.4 0 17"/></svg></button>
+          <button type="button" data-go="b-tabel-card" title="Status penyulang"><svg viewBox="0 0 24 24"><path d="M13 3 6 13h5l-1 8 7-10h-5z"/></svg></button>
+          <button type="button" data-go="b-up-card" title="Unggah laporan posko"><svg viewBox="0 0 24 24"><path d="M12 15V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg></button>
+          <button type="button" data-go="b-q-card" title="Gempa BMKG"><svg viewBox="0 0 24 24"><path d="M2 12h4l2-5 3 10 3-13 3 11 2-3h3"/></svg></button>
+        </nav>
+        <h4>Area terdampak</h4>
+        <div class="b-seg" id="b-layer" role="group" aria-label="Tampilan peta"><button type="button" data-v="">Panas</button><button type="button" data-v="status">Status</button><button type="button" data-v="aset">Aset</button></div>
+        <div class="b-thumb">
+          <div class="ss-mapbox" id="b-mini" data-source="peta bencana"></div>
+          <span class="b-thumb-badge" id="b-area">—</span>
+          <div class="b-thumb-view" id="b-f-view" role="group" aria-label="Cakupan peta"><button type="button" data-v="" title="Perbesar ke area bencana">Area</button><button type="button" data-v="sumkal" title="Seluruh Sumatera dan Kalimantan">Sumkal</button></div>
+        </div>
+        <h4>Aset dalam radius</h4>
+        <div class="b-res" data-source="gi_identitas peny_profil hx_feeder wilayah_kec">
+          <div><b id="b-r1">—</b><span>Gardu induk</span></div>
+          <div><b id="b-r2">—</b><span>Penyulang</span></div>
+          <div><b id="b-r3">—</b><span>Kecamatan</span></div>
+        </div>
+        <div class="b-sgrid" id="b-kpi" data-source="bencana_status hx_feeder trafo_wilayah wilayah_kec">
+          <div class="b-stile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 6 13h5l-1 8 7-10h-5z"/></svg><span>Penyulang padam</span><b class="dash-skeleton b-hot" id="b-t1">—</b><small id="b-t1-sub"></small></div>
+          <div class="b-stile"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="7" width="14" height="10" rx="1.5"/><path d="M8 7V4M16 7V4M9 12h6"/></svg><span>Trafo padam</span><b class="dash-skeleton b-hot" id="b-t2">—</b><small id="b-t2-sub"></small></div>
+          <div class="b-stile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11zM9 20v-6h6v6"/></svg><span>Kecamatan terdampak</span><b class="dash-skeleton" id="b-t3">—</b><small id="b-t3-sub"></small></div>
+          <div class="b-stile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v4h-4"/></svg><span>Nyala kembali</span><b class="dash-skeleton b-cool" id="b-t4">—</b><small id="b-t4-sub"></small></div>
+        </div>
+      </aside>
+      <div class="b-stage">
+        <div class="b-head">
+          <div class="b-head-main">
+            <span class="b-eyebrow" id="b-eyebrow">Disaster Dashboard · Draft</span>
+            <h1 class="b-title" id="b-title">Sumatera &amp; Kalimantan</h1>
+          </div>
+          <div class="b-tools">
+            <label class="b-pill b-pill-ghost"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="b-loc" type="search" list="b-loc-list" placeholder="Cari wilayah" aria-label="Cari kecamatan atau kab/kota untuk titik bencana"><datalist id="b-loc-list"></datalist></label>
+            <label class="b-pill b-pill-yellow"><span class="b-sr">Kejadian</span><select id="b-f-kej" aria-label="Kejadian bencana"></select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></label>
+          </div>
+        </div>
+        <p class="b-take dash-skeleton" id="b-take" data-source="bencana bencana_status gi_identitas peny_profil hx_feeder trafo_wilayah wilayah_kec">—</p>
+        <div class="b-mapwrap">
+          <div class="ss-mapbox" id="b-map" data-source="wilayah_kec trafo_wilayah gi_identitas peny_profil bencana bencana_status"></div>
+          <div class="b-legend" id="b-map-legend"></div>
+          <p class="b-center"><span id="b-center"></span> <button type="button" class="b-link" id="b-reset" hidden>Kembali ke titik kejadian</button></p>
+        </div>
+        <div class="b-glass-row" data-source="bencana_status hx_feeder trafo_wilayah wilayah_kec">
+          <div class="b-glass"><span class="b-delta" id="b-g1-d">—</span><b id="b-g1">—</b><span class="b-glab">trafo padam</span><div class="b-waffle" id="b-g1-w" aria-hidden="true"></div></div>
+          <div class="b-glass"><span class="b-delta" id="b-g2-d">—</span><b id="b-g2">—</b><span class="b-glab">penyulang nyala kembali</span><div class="b-gauge" id="b-g2-a" aria-hidden="true"></div></div>
+          <div class="b-glass"><span class="b-delta" id="b-g3-d">—</span><b id="b-g3">—</b><span class="b-glab">padam terlama</span><div class="b-bars" id="b-g3-b" aria-hidden="true"></div></div>
+          <div class="b-glass"><span class="b-delta" id="b-g4-d">—</span><b id="b-g4">—</b><span class="b-glab">radius terdampak</span><div class="b-radar" id="b-g4-r" aria-hidden="true"></div></div>
+        </div>
+        <p class="b-mapnote" id="b-map-note"></p>
       </div>
-      <figure class="ss-map" id="b-peta-wrap">
-        <div class="ss-mapbox" id="b-map" data-source="wilayah_kec trafo_wilayah gi_identitas peny_profil bencana bencana_status"></div>
-        <div class="ss-legend gi-map-legend" id="b-map-legend"></div>
-        <figcaption class="ss-map-note" id="b-map-note">Klik peta untuk memilih titik bencana.</figcaption>
-      </figure>
-    </header>
+    </div>
     <div class="ss-card" id="b-k-card">
       <h3>1 · Titik dan tipe bencana</h3>
       <p class="ss-note">Klik peta untuk mengisi koordinat. Radius terdampak terisi otomatis menurut tipe bencana dan bisa diubah. Lingkaran di peta langsung mengikuti isian ini.</p>
@@ -1584,12 +1626,6 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       </div>
       <div class="ss-up-row"><button type="button" class="h-act h-act-primary" id="b-k-save">Simpan kejadian</button></div>
       <p class="ss-up-msg" id="b-k-msg" role="status"></p>
-    </div>
-    <div class="ss-tiles" id="b-kpi" data-source="bencana_status hx_feeder trafo_wilayah wilayah_kec">
-      <div class="ss-tile b-tile-bad"><div class="ss-tile-label">Penyulang padam</div><div class="ss-big"><span class="dash-skeleton" id="b-t1">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="b-t1-sub"></div></div>
-      <div class="ss-tile b-tile-bad"><div class="ss-tile-label">Trafo padam</div><div class="ss-big"><span class="dash-skeleton" id="b-t2">—</span><span class="ss-unit">trafo</span></div><div class="ss-sub" id="b-t2-sub"></div></div>
-      <div class="ss-tile"><div class="ss-tile-label">Kecamatan terdampak</div><div class="ss-big"><span class="dash-skeleton" id="b-t3">—</span><span class="ss-unit">kecamatan</span></div><div class="ss-sub" id="b-t3-sub"></div></div>
-      <div class="ss-tile"><div class="ss-tile-label">Penyulang terpapar radius</div><div class="ss-big"><span class="dash-skeleton" id="b-t4">—</span><span class="ss-unit">penyulang</span></div><div class="ss-sub" id="b-t4-sub"></div></div>
     </div>
     <div class="ss-card" id="b-wil-card">
       <div class="ss-sechead">
@@ -2367,7 +2403,7 @@ SSD.calc('up3_yoy', {
     if (P.status === 'error' || KO.status === 'error') { fail(box); return; }
     if (P.status !== 'ok' || KO.status !== 'ok') return;
     box.replaceChildren();
-    const W = Math.max(220, box.clientWidth), H = Math.max(260, Math.min(380, W * 0.78));
+    const W = Math.max(o.height ? 120 : 220, box.clientWidth), H = o.height ? Math.max(100, o.height) : Math.max(260, Math.min(380, W * 0.78));
     const feats = P.data.map((r) => ({ type: 'Feature', properties: { uid: r.uid, provinsi: r.provinsi }, geometry: typeof r.geometry === 'string' ? JSON.parse(r.geometry) : r.geometry }));
     let focus = o.focus ? feats.filter((x) => x.properties.uid === o.focus) : feats; if (!focus.length) focus = feats;
     const merc = ([lon, lat]) => [lon * Math.PI / 180, -Math.log(Math.tan(Math.PI / 4 + Math.max(-85, Math.min(85, lat)) * Math.PI / 360))];
@@ -2883,7 +2919,7 @@ SSD.calc('up3_yoy', {
 
 <script src="db-tab.js?v=20261118"></script>
 <script src="bencana-posko.js?v=20261124"></script>
-<script src="bencana-tab.js?v=20261124"></script>
+<script src="bencana-tab.js?v=20261125"></script>
 <script src="hi-tab.js?v=20261116w"></script>
 
 <script>
