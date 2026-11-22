@@ -239,3 +239,22 @@
   #bencana .b-waffle i { height: 5px; border-radius: 2px; }
 }
 @media (min-width: 1101px) and (max-height: 800px) { #bencana .b-glab { display: none; } #bencana .b-bars span { display: none; } }
+/* kepala panel ringkas agar peta lebih besar */
+@media (min-width: 761px) {
+  #bencana .b-stage { padding-top: 14px; }
+  #bencana .b-head { flex-wrap: nowrap; align-items: center; gap: 12px; }
+  #bencana .b-head-main { min-width: 0; }
+  #bencana .b-eyebrow { font-size: 12px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #bencana .b-title { font-size: clamp(20px, 1.9vw, 28px); line-height: 1.15; margin-top: 1px; letter-spacing: -.4px; -webkit-line-clamp: 1; white-space: nowrap; text-overflow: ellipsis; display: block; overflow: hidden; }
+  #bencana .b-tools { flex-wrap: nowrap; gap: 8px; flex-shrink: 0; }
+  #bencana .b-tools .b-pill { height: 36px; font-size: 14px; padding: 0 12px; }
+  #bencana .b-pill-ghost input { width: 130px; }
+  #bencana .b-pill-yellow select { max-width: 220px; }
+  #bencana .b-src { margin-top: 8px; gap: 6px 10px; flex-wrap: nowrap; }
+  #bencana .b-upbtn { height: 32px; padding: 0 14px 0 11px; font-size: 13.5px; gap: 7px; flex-shrink: 0; }
+  #bencana .b-upbtn svg { width: 16px; height: 16px; }
+  #bencana .b-src-info { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #bencana .b-mapwrap { margin-top: 10px; }
+  #bencana .b-wx-ov { padding: 6px 8px; gap: 5px; }
+  #bencana .b-wx-ov button { font-size: 12px; padding: 4px 9px; }
+}
