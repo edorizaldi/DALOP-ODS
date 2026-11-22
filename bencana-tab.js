@@ -409,7 +409,7 @@
         $('b-wx-ov').replaceChildren(...WXOV.map(([k, l]) => { const b = mk('button', l); b.type = 'button'; b.dataset.v = k; b.setAttribute('aria-pressed', String(k === ov)); return b; }));
         const c = center || { lat: -2.5, lon: 108 };
         const zoom = !center ? 5 : rad <= 8 ? 10 : rad <= 20 ? 9 : rad <= 45 ? 8 : rad <= 90 ? 7 : 6;
-        const q2 = new URLSearchParams({ lat: c.lat.toFixed(3), lon: c.lon.toFixed(3), detailLat: c.lat.toFixed(3), detailLon: c.lon.toFixed(3), zoom, level: 'surface', overlay: ov, product: 'ecmwf', menu: '', message: 'true', marker: center ? 'true' : '', calendar: 'now', pressure: '', type: 'map', location: 'coordinates', detail: center ? 'true' : '', metricWind: 'km/h', metricTemp: '°C', radarRange: '-1' });
+        const q2 = new URLSearchParams({ lat: c.lat.toFixed(3), lon: c.lon.toFixed(3), zoom, level: 'surface', overlay: ov, product: 'ecmwf', menu: '', message: 'true', marker: center ? 'true' : '', calendar: 'now', pressure: '', type: 'map', location: 'coordinates', detail: '', metricWind: 'km/h', metricTemp: '°C', radarRange: '-1' });
         const src = 'https://embed.windy.com/embed2.html?' + q2.toString();
         const fr = $('b-wx-frame'); if (fr.dataset.src !== src) { fr.dataset.src = src; fr.src = src; }
       }
