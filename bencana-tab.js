@@ -331,7 +331,7 @@
       const d3e = $('b-g3-d'); d3e.textContent = top.length ? top[0].nama : 'tidak ada'; d3e.className = 'b-delta flat';
       $('b-g3').textContent = top.length ? jam(top[0].dur) : '—';
       const mx = top.length ? top[0].dur : 1;
-      $('b-g3-b').replaceChildren(...top.slice().reverse().map((r) => { const d = mk('div'); const e = mk('em'); e.style.height = Math.max(6, 40 * r.dur / mx) + 'px'; d.append(mk('span', r.nama), mk('i'), e); return d; }));
+      $('b-g3-b').replaceChildren(...top.slice().reverse().map((r) => { const d = mk('div'); const e = mk('em'); e.style.height = Math.max(4, 22 * r.dur / mx) + 'px'; d.append(mk('span', r.nama), mk('i'), e); return d; }));
       const d4 = $('b-g4-d'); d4.textContent = kej ? kej.jenis : center ? 'titik pilihan' : 'belum ada titik'; d4.className = 'b-delta flat';
       $('b-g4').textContent = center ? `${rad} km` : '—';
       const rr = $('b-g4-r'); rr.replaceChildren();
@@ -373,8 +373,11 @@
         tip: ['Penyulang ' + r.nama, [[null, 'Status', r.st === 'padam' ? 'Padam' : r.st === 'pulih' ? 'Nyala kembali' : 'Terpapar'], [null, 'Lama padam', r.rep ? jam(r.dur) : '—'], [null, 'Gardu · trafo', r.feeds.length ? `${fmt(r.gardu)} · ${fmt(r.trafo)}` : '—']]] }); });
       (quakes || []).forEach((g) => { if (!(g.lon > 92 && g.lon < 122 && g.lat > -11 && g.lat < 9)) return; pts.push({ lon: g.lon, lat: g.lat, r: Math.max(4, g.m * 1.6), color: C.gempa, label: view === 'sumkal' ? `M${f1.format(g.m)}` : '', tip: [`Gempa M${f1.format(g.m)}`, [[null, 'Waktu', g.tgl], [null, 'Kedalaman', g.dalam], [null, 'Wilayah', g.wil]]], onClick: () => useQuake(g) }); });
       if (center) pts.push({ lon: center.lon, lat: center.lat, r: 6, color: 'var(--color-bad)', pulse: true, label: kej && !custom ? kej.jenis : 'Titik bencana' });
-      const mw = $('b-map').clientWidth || 800;
-      window.SSMAP($('b-map'), { label: 'Peta area bencana', fit, height: Math.round(Math.max(360, Math.min(660, mw * (mw < 700 ? 0.85 : 0.6)))), fill: () => (layer === 'panas' ? '#7cc4e2' : 'color-mix(in srgb, var(--ss-acc) 10%, var(--color-panel))'), areas, circle: center ? { lon: center.lon, lat: center.lat, km: rad } : null,
+      const head = document.querySelector('.ss-head'); $('b-ringkasan').style.setProperty('--b-off', ((head ? head.offsetHeight : 112) + 30) + 'px');
+      const mb = $('b-map'), mw = mb.clientWidth || 800, wide = window.innerWidth > 760;
+      const mh = wide && mb.clientHeight > 200 ? mb.clientHeight : Math.round(Math.max(360, Math.min(660, mw * 0.85)));
+      const gr = mb.parentElement.querySelector('.b-glass-row'); const padB = wide && gr ? gr.offsetHeight + 8 : 0;
+      window.SSMAP(mb, { label: 'Peta area bencana', fit, height: mh, padBottom: padB, fill: () => (layer === 'panas' ? '#7cc4e2' : 'color-mix(in srgb, var(--ss-acc) 10%, var(--color-panel))'), areas, circle: center ? { lon: center.lon, lat: center.lat, km: rad } : null,
         onMap: (lon, lat) => { if (!(lon > 92 && lon < 122 && lat > -11 && lat < 9)) return; kj.lat.value = lat.toFixed(4); kj.lon.value = lon.toFixed(4); set({ b_lat: lat.toFixed(4), b_lon: lon.toFixed(4), b_rad: String(Number(kj.rad.value) || rad) }); }, points: pts });
       const lgd = $('b-map-legend'); lgd.replaceChildren();
       const dot = (c, l) => { const sp = mk('span'); const i = mk('i'); i.style.background = c; sp.append(i, l); return sp; };
@@ -454,9 +457,13 @@
     drawTable(); drawWilayah();
   }
   SSD.onData(render);
+  let rz = 0, lastW = window.innerWidth, lastH = window.innerHeight;
+  window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (Math.abs(window.innerWidth - lastW) < 8 && Math.abs(window.innerHeight - lastH) < 40) return; lastW = window.innerWidth; lastH = window.innerHeight; render(); }, 200); });
 
   // ---------------- unggah laporan posko ----------------
-  const msg = (t, cls) => { const m = $('b-up-msg'); m.textContent = t || ''; m.className = 'ss-up-msg' + (cls ? ' ' + cls : ''); };
+  let msgT = 0;
+  const msg = (t, cls) => { const m = $('b-up-msg'); m.textContent = t || ''; m.className = 'ss-up-msg b-upmsg' + (cls ? ' ' + cls : ''); clearTimeout(msgT); if (t && !/…$/.test(t) && cls !== 'bad') msgT = setTimeout(() => { m.textContent = ''; }, 15000); };
+  $('b-up-msg').addEventListener('click', () => { $('b-up-msg').textContent = ''; });
   let pending = null;
   function review() {
     $('b-up-review').hidden = !pending; $('b-up-go').disabled = !pending; if (!pending) return;

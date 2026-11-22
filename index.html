@@ -19,7 +19,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261116ig">
 <link rel="stylesheet" href="hi-tab.css?v=20261116u">
 <link rel="stylesheet" href="db-tab.css?v=20261117">
-<link rel="stylesheet" href="bencana-tab.css?v=20261126">
+<link rel="stylesheet" href="bencana-tab.css?v=20261127">
 <link rel="stylesheet" href="acct.css">
 <link rel="stylesheet" href="lgp-tab.css?v=20261115d">
 <script src="d3.min.js"></script>
@@ -1582,7 +1582,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="b-sgrid" id="b-kpi" data-source="bencana_status hx_feeder trafo_wilayah wilayah_kec">
           <div class="b-stile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3 6 13h5l-1 8 7-10h-5z"/></svg><span>Penyulang padam</span><b class="dash-skeleton b-hot" id="b-t1">—</b><small id="b-t1-sub"></small></div>
           <div class="b-stile"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="7" width="14" height="10" rx="1.5"/><path d="M8 7V4M16 7V4M9 12h6"/></svg><span>Trafo padam</span><b class="dash-skeleton b-hot" id="b-t2">—</b><small id="b-t2-sub"></small></div>
-          <div class="b-stile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11zM9 20v-6h6v6"/></svg><span>Kecamatan terdampak</span><b class="dash-skeleton" id="b-t3">—</b><small id="b-t3-sub"></small></div>
+          <div class="b-stile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9l8-5 8 5v11zM9 20v-6h6v6"/></svg><span>Kecamatan padam</span><b class="dash-skeleton" id="b-t3">—</b><small id="b-t3-sub"></small></div>
           <div class="b-stile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v4h-4"/></svg><span>Nyala kembali</span><b class="dash-skeleton b-cool" id="b-t4">—</b><small id="b-t4-sub"></small></div>
         </div>
       </aside>
@@ -1607,20 +1607,23 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         </div>
           <p class="ss-up-msg b-upmsg" id="b-up-msg" role="status"></p>
         </div>
-        <p class="b-take dash-skeleton" id="b-take" data-source="bencana bencana_status gi_identitas peny_profil hx_feeder trafo_wilayah wilayah_kec">—</p>
         <div class="b-mapwrap">
           <div class="ss-mapbox" id="b-map" data-source="wilayah_kec trafo_wilayah gi_identitas peny_profil bencana bencana_status"></div>
           <div class="b-legend" id="b-map-legend"></div>
           <p class="b-center"><span id="b-center"></span> <button type="button" class="b-link" id="b-reset" hidden>Kembali ke titik kejadian</button></p>
+          <div class="b-glass-row" data-source="bencana_status hx_feeder trafo_wilayah wilayah_kec">
+            <div class="b-glass"><span class="b-delta" id="b-g1-d">—</span><b id="b-g1">—</b><span class="b-glab">trafo padam</span><div class="b-waffle" id="b-g1-w" aria-hidden="true"></div></div>
+            <div class="b-glass"><span class="b-delta" id="b-g2-d">—</span><b id="b-g2">—</b><span class="b-glab">penyulang nyala kembali</span><div class="b-gauge" id="b-g2-a" aria-hidden="true"></div></div>
+            <div class="b-glass"><span class="b-delta" id="b-g3-d">—</span><b id="b-g3">—</b><span class="b-glab">padam terlama</span><div class="b-bars" id="b-g3-b" aria-hidden="true"></div></div>
+            <div class="b-glass"><span class="b-delta" id="b-g4-d">—</span><b id="b-g4">—</b><span class="b-glab">radius terdampak</span><div class="b-radar" id="b-g4-r" aria-hidden="true"></div></div>
+          </div>
         </div>
-        <div class="b-glass-row" data-source="bencana_status hx_feeder trafo_wilayah wilayah_kec">
-          <div class="b-glass"><span class="b-delta" id="b-g1-d">—</span><b id="b-g1">—</b><span class="b-glab">trafo padam</span><div class="b-waffle" id="b-g1-w" aria-hidden="true"></div></div>
-          <div class="b-glass"><span class="b-delta" id="b-g2-d">—</span><b id="b-g2">—</b><span class="b-glab">penyulang nyala kembali</span><div class="b-gauge" id="b-g2-a" aria-hidden="true"></div></div>
-          <div class="b-glass"><span class="b-delta" id="b-g3-d">—</span><b id="b-g3">—</b><span class="b-glab">padam terlama</span><div class="b-bars" id="b-g3-b" aria-hidden="true"></div></div>
-          <div class="b-glass"><span class="b-delta" id="b-g4-d">—</span><b id="b-g4">—</b><span class="b-glab">radius terdampak</span><div class="b-radar" id="b-g4-r" aria-hidden="true"></div></div>
-        </div>
-        <p class="b-mapnote" id="b-map-note"></p>
       </div>
+    </div>
+    <div class="ss-card b-explain" id="b-explain">
+      <h3>Ringkasan kejadian</h3>
+      <p class="b-take dash-skeleton" id="b-take" data-source="bencana bencana_status gi_identitas peny_profil hx_feeder trafo_wilayah wilayah_kec">—</p>
+      <p class="ss-note b-mapnote" id="b-map-note"></p>
     </div>
     <div class="ss-card" id="b-k-card">
       <h3>1 · Titik dan tipe bencana</h3>
@@ -2411,8 +2414,8 @@ SSD.calc('up3_yoy', {
     // o.fit = [[lon0, lat0], [lon1, lat1]]: batas tampilan dari kotak koordinat (mis. area bencana), bukan dari wilayah UID
     if (o.fit) o.fit.forEach((c) => { const [x, y] = merc(c); if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; });
     else focus.forEach((ft) => polys(ft.geometry).forEach((p) => p.forEach((ring) => ring.forEach((c) => { const [x, y] = merc(c); if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }))));
-    const pad = 14, k = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad) / (y1 - y0));
-    const ox = (W - k * (x1 - x0)) / 2 - k * x0, oy = (H - k * (y1 - y0)) / 2 - k * y0;
+    const pad = 14, pb = o.padBottom || 0, k = Math.min((W - 2 * pad) / (x1 - x0), (H - 2 * pad - pb) / (y1 - y0));
+    const ox = (W - k * (x1 - x0)) / 2 - k * x0, oy = (H - pb - k * (y1 - y0)) / 2 - k * y0;
     const proj = (c) => { const [x, y] = merc(c); return [ox + k * x, oy + k * y]; };
     const path = (ft) => polys(ft.geometry).map((p) => p.map((ring) => 'M' + ring.map((c) => proj(c).map((v) => v.toFixed(1)).join(',')).join('L') + 'Z').join('')).join('');
     const unproj = (px, py) => { const x = (px - ox) / k, y = (py - oy) / k; return [x * 180 / Math.PI, (2 * Math.atan(Math.exp(-y)) - Math.PI / 2) * 180 / Math.PI]; };
@@ -2918,7 +2921,7 @@ SSD.calc('up3_yoy', {
 
 <script src="db-tab.js?v=20261118"></script>
 <script src="bencana-posko.js?v=20261124"></script>
-<script src="bencana-tab.js?v=20261126"></script>
+<script src="bencana-tab.js?v=20261127"></script>
 <script src="hi-tab.js?v=20261116w"></script>
 
 <script>

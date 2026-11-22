@@ -140,3 +140,72 @@
 #bencana .b-upmsg:empty { display: none; }
 #bencana .b-cc.b-over { outline: 3px dashed var(--b-ink); outline-offset: -10px; }
 #bencana .b-cc.b-over .b-upbtn { background: var(--b-hot); }
+
+/* ---------- satu layar: panel utama setinggi layar, penjelasan di bawah ---------- */
+#bencana .b-explain .b-take { margin: 6px 0 0; color: var(--color-fg); }
+#bencana .b-explain .b-mapnote { margin-top: 8px; }
+@media (min-width: 761px) {
+  #bencana .b-cc { height: calc(100dvh - var(--b-off, 140px)); min-height: 620px; max-height: 1080px; }
+  #bencana .b-side { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #333 transparent; gap: 10px; padding: 18px 18px 18px; margin: 14px 0 14px 14px; }
+  #bencana .b-side h4 { font-size: 16px; margin: 4px 0 0; }
+  #bencana .b-logo { width: 40px; height: 40px; } #bencana .b-logo svg { width: 20px; height: 20px; }
+  #bencana .b-side .b-pill { height: 40px; font-size: 15px; }
+  #bencana .b-nav { padding-bottom: 12px; } #bencana .b-nav button { width: 38px; height: 38px; } #bencana .b-nav button svg { width: 19px; height: 19px; }
+  #bencana .b-seg button { padding: 7px 0; font-size: 15px; }
+  #bencana .b-thumb { height: clamp(110px, 17vh, 170px); flex-shrink: 0; }
+  #bencana .b-res b { font-size: clamp(30px, 4.2vh, 42px); }
+  #bencana .b-res span { font-size: 13px; margin-top: 4px; }
+  #bencana .b-sgrid { margin-top: 2px; }
+  #bencana .b-stile { min-height: clamp(96px, 14vh, 140px); padding: 12px 12px 10px; border-radius: 16px; }
+  #bencana .b-stile svg { top: 10px; right: 10px; width: 22px; height: 22px; }
+  #bencana .b-stile b { font-size: clamp(30px, 4.2vh, 42px); }
+  #bencana .b-stile small { min-height: 0; }
+  #bencana .b-stage { padding: 18px 22px 18px 26px; min-height: 0; }
+  #bencana .b-title { font-size: clamp(26px, 2.7vw, 46px); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #bencana .b-tools .b-pill { height: 42px; }
+  #bencana .b-src { position: relative; margin-top: 10px; }
+  #bencana .b-upbtn { height: 40px; }
+  #bencana .b-review, #bencana .b-upmsg { position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 6; box-shadow: 0 14px 40px rgba(0,0,0,.18); }
+  #bencana .b-upmsg { background: rgba(255,255,255,.9); backdrop-filter: blur(8px); border-radius: 14px; padding: 10px 14px; }
+  #bencana .b-mapwrap { flex: 1 1 auto; min-height: 0; margin-top: 10px; }
+  #bencana .b-mapwrap #b-map { position: absolute; inset: 0; }
+  #bencana .b-legend { z-index: 3; }
+  #bencana .b-center { bottom: calc(var(--b-glass-h, 150px) + 10px); z-index: 3; }
+  #bencana .b-glass-row { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; }
+  #bencana .b-glass { height: var(--b-glass-h, 150px); padding: 12px 16px 0; border-radius: 22px 22px 16px 16px; }
+  #bencana .b-glass b { font-size: clamp(30px, 2.7vw, 48px); }
+  #bencana .b-delta { font-size: 14.5px; }
+  #bencana .b-glab { font-size: 12px; }
+  #bencana .b-gauge, #bencana .b-bars, #bencana .b-radar { height: 50px; }
+  #bencana .b-waffle { gap: 4px; padding-bottom: 10px; } #bencana .b-waffle i { height: 6px; }
+}
+@media (min-width: 761px) and (max-height: 760px) { #bencana { --b-glass-h: 128px; } #bencana .b-gauge, #bencana .b-bars, #bencana .b-radar { height: 36px; } #bencana .b-waffle i { height: 4px; } }
+@media (min-width: 761px) and (max-width: 1100px) {
+  /* panel kiri jadi pita di atas; pusat kendali tetap satu layar dengan peta lebih pendek */
+  #bencana .b-cc { height: auto; max-height: none; }
+  #bencana .b-side { overflow: visible; margin: 12px 12px 0; }
+  #bencana .b-mapwrap { flex: none; height: 62vh; min-height: 420px; }
+}
+@media (min-width: 761px) {
+  #bencana .b-upmsg { cursor: pointer; }
+  #bencana .b-stile span { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 26px; }
+  #bencana .b-stile { min-height: 0; justify-content: flex-start; padding-top: 12px; }
+  #bencana .b-stile b { font-size: clamp(28px, 3.6vh, 40px); }
+  #bencana .b-glass b { font-size: clamp(28px, 2.4vw, 44px); }
+  #bencana .b-bars { height: 40px; }
+}
+@media (min-width: 761px) and (max-height: 820px) {
+  #bencana .b-stile small { display: none; }
+  #bencana .b-side h4 { display: none; }
+  #bencana .b-side .b-seg { margin-top: 2px; }
+}
+@media (min-width: 761px) and (max-height: 800px) {
+  #bencana .b-thumb { height: 96px; }
+  #bencana .b-res b, #bencana .b-stile b { font-size: 28px; }
+}
+@media (min-width: 761px) {
+  #bencana .b-stile svg { display: none; }
+  #bencana .b-stile span { padding-right: 0; }
+  #bencana .b-bars { height: auto; padding-bottom: 10px; }
+  #bencana .b-glass > b { line-height: 1; }
+}
