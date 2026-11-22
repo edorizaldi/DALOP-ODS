@@ -19,7 +19,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261116ig">
 <link rel="stylesheet" href="hi-tab.css?v=20261116u">
 <link rel="stylesheet" href="db-tab.css?v=20261117">
-<link rel="stylesheet" href="bencana-tab.css?v=20261127">
+<link rel="stylesheet" href="bencana-tab.css?v=20261128">
 <link rel="stylesheet" href="acct.css">
 <link rel="stylesheet" href="lgp-tab.css?v=20261115d">
 <script src="d3.min.js"></script>
@@ -1567,7 +1567,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
           <button type="button" data-go="b-q-card" title="Gempa BMKG"><svg viewBox="0 0 24 24"><path d="M2 12h4l2-5 3 10 3-13 3 11 2-3h3"/></svg></button>
         </nav>
         <h4>Area terdampak</h4>
-        <div class="b-seg" id="b-layer" role="group" aria-label="Tampilan peta"><button type="button" data-v="">Panas</button><button type="button" data-v="status">Status</button><button type="button" data-v="aset">Aset</button></div>
+        <div class="b-seg" id="b-layer" role="group" aria-label="Tampilan peta"><button type="button" data-v="">Panas</button><button type="button" data-v="status">Status</button><button type="button" data-v="aset">Aset</button><button type="button" data-v="cuaca">Cuaca</button></div>
         <div class="b-thumb">
           <div class="ss-mapbox" id="b-mini" data-source="peta bencana"></div>
           <span class="b-thumb-badge" id="b-area">—</span>
@@ -1610,6 +1610,10 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="b-mapwrap">
           <div class="ss-mapbox" id="b-map" data-source="wilayah_kec trafo_wilayah gi_identitas peny_profil bencana bencana_status"></div>
           <div class="b-legend" id="b-map-legend"></div>
+          <div class="b-wx" id="b-wx" hidden>
+            <div class="b-wx-ov" id="b-wx-ov" role="group" aria-label="Lapisan cuaca Windy"></div>
+            <iframe id="b-wx-frame" title="Prakiraan cuaca Windy.com di titik bencana" loading="lazy" allowfullscreen></iframe>
+          </div>
           <p class="b-center"><span id="b-center"></span> <button type="button" class="b-link" id="b-reset" hidden>Kembali ke titik kejadian</button></p>
           <div class="b-glass-row" data-source="bencana_status hx_feeder trafo_wilayah wilayah_kec">
             <div class="b-glass"><span class="b-delta" id="b-g1-d">—</span><b id="b-g1">—</b><span class="b-glab">trafo padam</span><div class="b-waffle" id="b-g1-w" aria-hidden="true"></div></div>
@@ -1673,7 +1677,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="ss-sechead"><div><h3>Gempa terkini BMKG</h3><p class="ss-note" id="b-q-note"></p></div><button type="button" class="h-act" id="b-q-reload">Muat ulang</button></div>
         <div id="b-q-list" data-source="BMKG data.bmkg.go.id"></div>
     </div>
-    <p class="ss-note b-credit">Batas wilayah: <a href="https://github.com/cahyadsn/wilayah_boundaries" target="_blank" rel="noopener">cahyadsn/wilayah_boundaries</a> (MIT), disederhanakan. Kode dan nama wilayah: Kepmendagri 2025 melalui <a href="https://github.com/prodhokter/dataset-wilayah-indonesia" target="_blank" rel="noopener">prodhokter/dataset-wilayah-indonesia</a>. Lokasi trafo dari Database Aset Jaringan (koordinat trafo/gardu, alamat gardu, atau lokasi penyulang/GI).</p>
+    <p class="ss-note b-credit">Batas wilayah: <a href="https://github.com/cahyadsn/wilayah_boundaries" target="_blank" rel="noopener">cahyadsn/wilayah_boundaries</a> (MIT), disederhanakan. Kode dan nama wilayah: Kepmendagri 2025 melalui <a href="https://github.com/prodhokter/dataset-wilayah-indonesia" target="_blank" rel="noopener">prodhokter/dataset-wilayah-indonesia</a>. Lokasi trafo dari Database Aset Jaringan (koordinat trafo/gardu, alamat gardu, atau lokasi penyulang/GI). Prakiraan cuaca (mode Cuaca): <a href="https://www.windy.com" target="_blank" rel="noopener">Windy.com</a>, model ECMWF, dimuat langsung dari embed Windy.</p>
   </section>
 
   <section class="ss-sec" id="lgp" data-tab="lgp" hidden>
@@ -2921,7 +2925,7 @@ SSD.calc('up3_yoy', {
 
 <script src="db-tab.js?v=20261118"></script>
 <script src="bencana-posko.js?v=20261124"></script>
-<script src="bencana-tab.js?v=20261127"></script>
+<script src="bencana-tab.js?v=20261128"></script>
 <script src="hi-tab.js?v=20261116w"></script>
 
 <script>

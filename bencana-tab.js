@@ -64,6 +64,10 @@
     e.target.value = ''; e.target.blur();
   });
   let LOC = [];
+  // lapisan Windy dan lapisan bawaan per tipe bencana
+  const WXOV = [['rain', 'Hujan'], ['rainAccu', 'Akumulasi hujan'], ['thunder', 'Petir'], ['wind', 'Angin'], ['gust', 'Hembusan'], ['waves', 'Gelombang'], ['temp', 'Suhu'], ['clouds', 'Awan']];
+  const WXDEF = { Banjir: 'rainAccu', Longsor: 'rainAccu', 'Angin kencang': 'gust', Tsunami: 'waves', Kebakaran: 'wind', 'Erupsi gunung api': 'wind', 'Gempa bumi': 'rain', Lainnya: 'rain' };
+  $('b-wx-ov').addEventListener('click', (e) => { const b = e.target.closest('button[data-v]'); if (b) set({ b_wx: b.dataset.v }); });
   let q = '';
   $('b-search').addEventListener('input', (e) => { q = e.target.value.trim().toUpperCase(); drawTable(); });
 
@@ -216,8 +220,9 @@
     const prm = dash.params();
     filt = ['padam', 'pulih', 'ter'].includes(prm.b_f) ? prm.b_f : 'semua';
     wl = LV[prm.b_lv] ? prm.b_lv : 'kec';
+    const wx = prm.b_ly === 'cuaca';
     const layer = ['status', 'aset'].includes(prm.b_ly) ? prm.b_ly : 'panas';
-    $('b-layer').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.v || 'panas') === layer)));
+    $('b-layer').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.v || 'panas') === (wx ? 'cuaca' : layer))));
     const KJ = K.data || [];
     const kej = KJ.find((k) => k.nama === prm.b_kej) || KJ.find((k) => k.status !== 'Selesai') || KJ[0] || null;
     const custom = prm.b_lat != null && prm.b_lon != null && isFinite(Number(prm.b_lat)) && isFinite(Number(prm.b_lon));
@@ -391,6 +396,23 @@
       window.SSMAP($('b-mini'), { label: 'Posisi titik bencana di Sumatera dan Kalimantan', height: 190, fill: () => 'rgba(150, 200, 120, .42)', circle: center ? { lon: center.lon, lat: center.lat, km: Math.max(rad, 60), color: '#ff7a3d' } : null,
         points: center ? [{ lon: center.lon, lat: center.lat, r: 4, color: '#ff4d3d', pulse: true }] : [], onRegion: () => set({ b_view: 'sumkal' }) });
       $('b-map-note').textContent = `Klik peta untuk memilih titik bencana; klik titik gempa untuk memakainya. Lokasi trafo per kecamatan: ${A.srcAll ? pct(A.srcXY, A.srcAll) : '0%'} dari koordinat trafo/gardu, sisanya dari alamat gardu atau lokasi penyulang/GI (akan memakai koordinat setelah Database Aset Jaringan diunggah ulang).`;
+    }
+
+    // cuaca Windy.com (embed resmi, tanpa kunci API) di titik bencana
+    {
+      const box = $('b-wx'); box.hidden = !wx;
+      $('b-map').style.visibility = wx ? 'hidden' : ''; $('b-map-legend').hidden = wx; box.parentElement.classList.toggle('b-wxon', wx);
+      if (wx) {
+        const jenis = kej ? kej.jenis : kj.jenis.value;
+        const def = WXDEF[jenis] || 'rain';
+        const ov = WXOV.some(([k]) => k === prm.b_wx) ? prm.b_wx : def;
+        $('b-wx-ov').replaceChildren(...WXOV.map(([k, l]) => { const b = mk('button', l); b.type = 'button'; b.dataset.v = k; b.setAttribute('aria-pressed', String(k === ov)); return b; }));
+        const c = center || { lat: -2.5, lon: 108 };
+        const zoom = !center ? 5 : rad <= 8 ? 10 : rad <= 20 ? 9 : rad <= 45 ? 8 : rad <= 90 ? 7 : 6;
+        const q2 = new URLSearchParams({ lat: c.lat.toFixed(3), lon: c.lon.toFixed(3), detailLat: c.lat.toFixed(3), detailLon: c.lon.toFixed(3), zoom, level: 'surface', overlay: ov, product: 'ecmwf', menu: '', message: 'true', marker: center ? 'true' : '', calendar: 'now', pressure: '', type: 'map', location: 'coordinates', detail: center ? 'true' : '', metricWind: 'km/h', metricTemp: '°C', radarRange: '-1' });
+        const src = 'https://embed.windy.com/embed2.html?' + q2.toString();
+        const fr = $('b-wx-frame'); if (fr.dataset.src !== src) { fr.dataset.src = src; fr.src = src; }
+      }
     }
 
     // pemulihan per UP3
