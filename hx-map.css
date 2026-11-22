@@ -199,3 +199,4 @@
   .hxm-pick select, .hxm-search { height: 34px; }
 }
 .hxm .hxm-note { font-size: 11.5px; margin-top: -2px; }
+.hxm .hxm-note { max-width: none; width: 100%; }
