@@ -1,9 +1,11 @@
 // Disaster Dashboard: pembaca file Excel laporan posko bencana (template_posko_bencana.xlsx).
 // Sheet "Kejadian"         : Nama kejadian, Jenis bencana, Latitude, Longitude, Radius (km), Waktu mulai, Status, Keterangan
-// Sheet "Status Penyulang" : Nama kejadian, UID, UP3, ULP, Gardu Induk, Penyulang, Jam trip, Jam nyala,
-//                            Status saat ini (Padam/Nyala), Keterangan  (judul lama "Waktu padam/Waktu nyala" juga diterima)
+// Sheet per UID (ACEH, SUMUT, SUMBAR, RKR, S2JB, BABEL, LAMPUNG, KALBAR, KALSELTENG, KALTIMRA):
+//   Nama kejadian, UP3, ULP, Gardu Induk, Penyulang, Jam trip, Jam nyala, Status saat ini (Padam/Nyala), Keterangan.
+//   UID diambil dari nama sheet. Sheet UID yang kosong = UID itu tidak diubah, jadi tiap UID boleh mengunggah sheet-nya sendiri.
+// Sheet lama "Status Penyulang" (dengan kolom UID) tetap diterima dan mengganti status semua UID kejadian itu.
 // Waktu disimpan sebagai waktu lokal (WIB) "YYYY-MM-DDTHH:MM". Unggahan mengganti kejadian dengan nama yang sama
-// beserta seluruh status penyulangnya (laporan posko terbaru = kondisi terbaru).
+// dan status penyulang UID yang ada di file (laporan posko terbaru = kondisi terbaru).
 (function (root) {
   const S = (v) => (v == null ? '' : String(v).replace(/\s+/g, ' ').trim());
   const norm = (x) => S(x).toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -42,7 +44,9 @@
 
   function build(sheets) {
     const warn = [];
-    const KS = sheetOf(sheets, 'Kejadian'), SS = sheetOf(sheets, 'Status Penyulang');
+    const KS = sheetOf(sheets, 'Kejadian');
+    // sheet status: per UID (nama sheet = UID) dan/atau sheet lama "Status Penyulang"
+    const SSs = sheets.map((x) => ({ sh: x, uid: norm(x.name) === 'STATUSPENYULANG' ? '*' : uidOf(x.name) })).filter((x) => x.uid);
     if (!KS) throw new Error('sheet "Kejadian" tidak ada. Gunakan template laporan posko bencana.');
     const kej = [];
     table(KS, ['Nama kejadian', 'Latitude', 'Longitude'], 'Kejadian').forEach(({ n, g }) => {
@@ -59,41 +63,49 @@
     const dupe = kej.map((k) => norm(k.nama)).filter((k, i, a) => a.indexOf(k) !== i); if (dupe.length) throw new Error('nama kejadian ganda di sheet Kejadian: ' + [...new Set(dupe)].join(', '));
     const byNama = new Map(kej.map((k) => [norm(k.nama), k]));
     const status = [];
-    if (SS) {
+    const scope = new Set(); // 'kejadian|uid' yang diganti; uid '*' = semua UID
+    SSs.forEach(({ sh, uid: suid }) => {
+      const label = suid === '*' ? 'Status Penyulang' : sh.name.trim();
       const TRIP = ['Jam trip', 'Waktu trip', 'Waktu padam', 'Jam padam'], NYALA = ['Jam nyala', 'Waktu nyala'], STAT = ['Status saat ini', 'Status penyulang', 'Status'];
-      table(SS, ['Penyulang', TRIP], 'Status Penyulang').forEach(({ n, g }) => {
+      let T; try { T = table(sh, ['Penyulang', TRIP], label); } catch (e) { if (suid !== '*' && !sh.rows.some((r) => r && r.some((c) => S(c)))) return; throw e; }
+      T.forEach(({ n, g }) => {
         const peny = S(g('Penyulang')); if (!peny) return;
         let k = byNama.get(norm(g('Nama kejadian')));
         if (!k && !S(g('Nama kejadian')) && kej.length === 1) k = kej[0];
-        if (!k) throw new Error(`sheet Status Penyulang baris ${n}: nama kejadian "${S(g('Nama kejadian'))}" tidak ada di sheet Kejadian`);
+        if (!k) throw new Error(`sheet ${label} baris ${n}: nama kejadian "${S(g('Nama kejadian'))}" tidak ada di sheet Kejadian`);
         const padam = waktu(g(TRIP)), nyala = waktu(g(NYALA));
-        if (!padam) throw new Error(`sheet Status Penyulang baris ${n} (${peny}): Jam trip ${padam === null ? 'tidak terbaca' : 'kosong'}`);
-        if (nyala === null) throw new Error(`sheet Status Penyulang baris ${n} (${peny}): Jam nyala tidak terbaca`);
-        if (nyala && nyala < padam) throw new Error(`sheet Status Penyulang baris ${n} (${peny}): Jam nyala lebih awal dari jam trip`);
+        if (!padam) throw new Error(`sheet ${label} baris ${n} (${peny}): Jam trip ${padam === null ? 'tidak terbaca' : 'kosong'}`);
+        if (nyala === null) throw new Error(`sheet ${label} baris ${n} (${peny}): Jam nyala tidak terbaca`);
+        if (nyala && nyala < padam) throw new Error(`sheet ${label} baris ${n} (${peny}): Jam nyala lebih awal dari jam trip`);
         const sv = norm(g(STAT)); let stt = /^(NYALA|ON|NORMAL|PULIH|MASUK)/.test(sv) ? 'Nyala' : /^(PADAM|OFF|TRIP|LEPAS|KELUAR)/.test(sv) ? 'Padam' : '';
-        if (!stt) { stt = nyala ? 'Nyala' : 'Padam'; if (sv) warn.push(`baris ${n} (${peny}): status "${S(g(STAT))}" tidak dikenali, dipakai ${stt}`); }
-        if (stt === 'Nyala' && !nyala) warn.push(`baris ${n} (${peny}): status Nyala tanpa jam nyala`);
-        if (stt === 'Padam' && nyala) warn.push(`baris ${n} (${peny}): status Padam walau ada jam nyala (dianggap trip ulang)`);
-        const uid = uidOf(g('UID')); if (S(g('UID')) && !uid) warn.push(`baris ${n}: UID "${S(g('UID'))}" tidak dikenali`);
+        if (!stt) { stt = nyala ? 'Nyala' : 'Padam'; if (sv) warn.push(`${label} baris ${n} (${peny}): status "${S(g(STAT))}" tidak dikenali, dipakai ${stt}`); }
+        if (stt === 'Nyala' && !nyala) warn.push(`${label} baris ${n} (${peny}): status Nyala tanpa jam nyala`);
+        if (stt === 'Padam' && nyala) warn.push(`${label} baris ${n} (${peny}): status Padam walau ada jam nyala (dianggap trip ulang)`);
+        let uid = uidOf(g('UID')); if (S(g('UID')) && !uid) warn.push(`${label} baris ${n}: UID "${S(g('UID'))}" tidak dikenali`);
+        if (suid !== '*') { if (uid && uid !== suid) warn.push(`${label} baris ${n} (${peny}): kolom UID ${uid} berbeda dengan nama sheet, dipakai ${suid}`); uid = suid; }
+        scope.add(norm(k.nama) + '|' + (suid === '*' ? '*' : suid));
         status.push({ kejadian: k.nama, uid, up3: S(g('UP3')).replace(/^UP3\s+/i, ''), ulp: S(g('ULP')).replace(/^ULP\s+/i, ''), gi: S(g('Gardu Induk')), penyulang: peny.toUpperCase(),
           padam, nyala: nyala || '', status: stt, keterangan: S(g('Keterangan')) });
       });
-    } else warn.push('sheet Status Penyulang tidak ada: hanya data kejadian yang diperbarui');
+    });
+    if (!SSs.length) warn.push('tidak ada sheet status penyulang (sheet per UID): hanya data kejadian yang diperbarui');
+    else if (!scope.size) warn.push('sheet UID belum berisi penyulang: hanya data kejadian yang diperbarui');
     // penyulang ganda dalam satu kejadian: baris terakhir dipakai
     const seen = new Map(); status.forEach((r, i) => seen.set(norm(r.kejadian) + '|' + r.uid + '|' + norm(r.penyulang) + '|' + r.padam, i));
     const st2 = status.filter((r, i) => seen.get(norm(r.kejadian) + '|' + r.uid + '|' + norm(r.penyulang) + '|' + r.padam) === i);
     if (st2.length < status.length) warn.push(`${status.length - st2.length} baris penyulang ganda (kejadian, penyulang dan waktu padam sama); baris terakhir dipakai`);
-    return { kejadian: kej, status: st2, warn, hasStatus: !!SS };
+    return { kejadian: kej, status: st2, warn, hasStatus: scope.size > 0, scope: [...scope], uids: [...new Set(st2.map((r) => r.uid))] };
   }
-  // gabungkan dengan data saat ini: kejadian bernama sama diganti beserta status penyulangnya
+  // gabungkan dengan data saat ini: kejadian bernama sama diganti; status penyulang diganti hanya untuk UID yang ada di file
   function merge(curK, curS, out) {
     const names = new Set(out.kejadian.map((k) => norm(k.nama)));
     const K = [...(curK || []).filter((k) => !names.has(norm(k.nama))), ...out.kejadian].sort((a, b) => (a.mulai < b.mulai ? 1 : -1));
-    const keep = (curS || []).filter((r) => !names.has(norm(r.kejadian)) || !out.hasStatus);
+    const sc = new Set(out.scope || (out.hasStatus ? out.kejadian.map((k) => norm(k.nama) + '|*') : []));
+    const keep = (curS || []).filter((r) => !(sc.has(norm(r.kejadian) + '|*') || sc.has(norm(r.kejadian) + '|' + r.uid)));
     return { kejadian: K, status: [...keep, ...(out.hasStatus ? out.status : [])] };
   }
   const toJs = (id, rows) => `window.__D=window.__D||{};window.__D[${JSON.stringify(id)}]=${JSON.stringify(rows)};\n`;
-  const api = { build, merge, toJs, waktu, uidOf, RADIUS, JENIS, jenisOf };
+  const api = { build, merge, toJs, waktu, uidOf, RADIUS, JENIS, jenisOf, UIDS };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.SSPosko = api;
 })(typeof window !== 'undefined' ? window : globalThis);

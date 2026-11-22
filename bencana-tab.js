@@ -383,10 +383,11 @@
     const o = pending.out; const cur = SSD.data('bencana').data || [], curS = SSD.data('bencana_status').data || [];
     const isP = (r) => (r.status || (r.nyala ? 'Nyala' : 'Padam')) === 'Padam';
     $('b-up-body').replaceChildren(...o.kejadian.map((k) => {
-      const st = o.status.filter((r) => r.kejadian === k.nama); const old = cur.find((c) => N(c.nama) === N(k.nama)); const oldS = curS.filter((r) => N(r.kejadian) === N(k.nama));
+      const st = o.status.filter((r) => r.kejadian === k.nama); const old = cur.find((c) => N(c.nama) === N(k.nama)); const sc = new Set(o.scope); const oldS = curS.filter((r) => N(r.kejadian) === N(k.nama) && ([...sc].some((x) => x.split('|')[0] === String(k.nama).toUpperCase().replace(/[^A-Z0-9]/g, '') && (x.endsWith('|*') || x.endsWith('|' + r.uid)))));
       const tr = mk('tr'); [k.nama + (old ? '' : ' (baru)'), k.jenis, `${k.lat}, ${k.lon} · ${k.radius_km} km`, tfmt(k.mulai), k.status, o.hasStatus ? `${fmt(st.length)} (${fmt(st.filter(isP).length)} padam)` : 'tidak diubah', old ? `${fmt(oldS.length)} (${fmt(oldS.filter(isP).length)} padam)` : '—'].forEach((v, i) => tr.append(mk('td', v, i >= 5 ? 'num' : ''))); return tr;
     }));
-    $('b-up-sum').textContent = `${pending.name}: ${fmt(o.kejadian.length)} kejadian, ${fmt(o.status.length)} penyulang.` + (o.warn.length ? ' Catatan: ' + o.warn.slice(0, 6).join('; ') + (o.warn.length > 6 ? ` (+${o.warn.length - 6} lagi)` : '') + '.' : '') + ' Kejadian dengan nama sama diganti seluruhnya oleh isi file ini.';
+    const perU = o.uids.map((u) => `${u} ${fmt(o.status.filter((r) => r.uid === u).length)}`).join(', ');
+    $('b-up-sum').textContent = `${pending.name}: ${fmt(o.kejadian.length)} kejadian, ${fmt(o.status.length)} penyulang${perU ? ` (${perU})` : ''}.` + (o.warn.length ? ' Catatan: ' + o.warn.slice(0, 6).join('; ') + (o.warn.length > 6 ? ` (+${o.warn.length - 6} lagi)` : '') + '.' : '') + (o.hasStatus ? ` Status penyulang ${o.scope.some((x) => x.endsWith('|*')) ? 'semua UID' : 'UID ' + o.uids.join(', ')} di kejadian ini diganti oleh isi file; UID lain tidak berubah.` : '');
   }
   async function handle(file) {
     if (!file) return;
@@ -395,8 +396,11 @@
     pending = null; review(); msg('Membaca file…');
     try {
       const sh = await window.APKT.readSheets(file, () => {});
-      // file tanpa sheet Kejadian: pakai kejadian terpilih di dashboard
-      if (!sh.some((x) => /^kejadian$/i.test(String(x.name).trim()))) {
+      // file tanpa sheet Kejadian (atau sheet Kejadian kosong): pakai kejadian terpilih di dashboard
+      const isK = (x) => /^kejadian$/i.test(String(x.name).trim());
+      const kOk = sh.some((x) => isK(x) && x.rows.slice(1).some((r) => r && r.some((c) => String(c == null ? '' : c).trim())));
+      if (!kOk) {
+        for (let i = sh.length - 1; i >= 0; i--) if (isK(sh[i])) sh.splice(i, 1);
         const k = (SSD.data('bencana').data || []).find((x) => x.nama === dash.params().b_kej) || (SSD.data('bencana').data || [])[0];
         if (!k) throw new Error('file tidak punya sheet Kejadian dan belum ada kejadian di dashboard. Buat kejadian dulu.');
         sh.push({ name: 'Kejadian', rows: [['Nama kejadian', 'Jenis bencana', 'Latitude', 'Longitude', 'Radius (km)', 'Waktu mulai', 'Status', 'Keterangan'], [k.nama, k.jenis, k.lat, k.lon, k.radius_km, k.mulai.replace('T', ' '), k.status, k.keterangan || '']] });

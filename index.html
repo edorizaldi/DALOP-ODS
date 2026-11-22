@@ -1622,7 +1622,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
     </div>
     <div class="ss-card" id="b-up-card">
         <h3>2 · Unggah laporan posko</h3>
-        <p class="ss-note">Isi <a href="template_posko_bencana.xlsx" download>template laporan posko bencana (.xlsx)</a>, sheet <b>Status Penyulang</b>: penyulang, <b>jam trip</b>, <b>jam nyala</b> dan <b>status saat ini</b> (Padam/Nyala). Sheet <b>Kejadian</b> boleh dihapus bila kejadian sudah dibuat di atas; laporan lalu masuk ke kejadian terpilih. Unggah daftar lengkap terbaru setiap kali ada perubahan; kejadian dengan nama sama diganti seluruhnya. Tersimpan untuk semua pembaca bila sudah login admin.</p>
+        <p class="ss-note">Isi <a href="template_posko_bencana.xlsx" download>template laporan posko bencana (.xlsx)</a>: satu sheet per UID (ACEH sampai KALTIMRA) berisi penyulang, <b>jam trip</b>, <b>jam nyala</b> dan <b>status saat ini</b> (Padam/Nyala). Tiap UID boleh mengunggah sheet-nya sendiri: status penyulang hanya diganti untuk UID yang sheet-nya berisi, UID lain tetap. Sheet <b>Kejadian</b> boleh dihapus bila kejadian sudah dibuat di atas; laporan lalu masuk ke kejadian terpilih. Lihat <a href="contoh_posko_bencana.xlsx" download>contoh yang sudah terisi</a>. Tersimpan untuk semua pembaca bila sudah login admin.</p>
         <label class="h-drop" id="b-up-drop" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><b>Tarik file laporan posko ke sini, atau klik untuk memilih</b><span class="ss-note">Format .xlsx sesuai template</span><input type="file" id="b-up-file" accept=".xlsx" hidden></label>
         <div id="b-up-review" class="ss-up-review" hidden>
           <p class="ss-note" id="b-up-sum"></p>
@@ -2882,8 +2882,8 @@ SSD.calc('up3_yoy', {
 </script>
 
 <script src="db-tab.js?v=20261118"></script>
-<script src="bencana-posko.js?v=20261123"></script>
-<script src="bencana-tab.js?v=20261123"></script>
+<script src="bencana-posko.js?v=20261124"></script>
+<script src="bencana-tab.js?v=20261124"></script>
 <script src="hi-tab.js?v=20261116w"></script>
 
 <script>
