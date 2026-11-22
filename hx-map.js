@@ -116,7 +116,7 @@
   function initMap() {
     if (map) return;
     R = L.canvas({ padding: 0.3, tolerance: 6 });
-    map = L.map($('hxm-map'), { preferCanvas: true, renderer: R, zoomControl: false, attributionControl: true, minZoom: 4, maxZoom: 19, worldCopyJump: false }).setView([-1.2, 107.5], 5);
+    map = L.map($('hxm-map'), { zoomSnap: 0.25, zoomDelta: 0.5, preferCanvas: true, renderer: R, zoomControl: false, attributionControl: true, minZoom: 4, maxZoom: 19, worldCopyJump: false }).setView([-1.2, 107.5], 5);
     L.control.zoom({ position: 'topright', zoomInTitle: 'Perbesar', zoomOutTitle: 'Perkecil' }).addTo(map);
     L.control.scale({ position: 'bottomleft', imperial: false }).addTo(map);
     map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
@@ -349,6 +349,12 @@
     if (b) map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: [30, 30], maxZoom: sel ? 15 : 13 });
   }
 
+  // tinggi peta dan panel kanan = sisa layar di bawah kepala kartu, agar peta utuh dalam tampilan awal
+  function fitHeight() {
+    const b = $('hxm-body'); if (!b || window.innerWidth <= 760) { $('hxm').style.removeProperty('--hxm-h'); return; }
+    const top = b.getBoundingClientRect().top + window.scrollY;
+    $('hxm').style.setProperty('--hxm-h', Math.max(420, Math.round(window.innerHeight - top - 16)) + 'px');
+  }
   // ---------- render ----------
   let decodedFor = null;
   function render() {
@@ -357,7 +363,7 @@
     const lf = needLeaflet();
     if (leafletState === 3) { $('hxm-msg').textContent = 'Pustaka peta (Leaflet) tidak dapat dimuat. Periksa koneksi internet lalu muat ulang halaman.'; return; }
     if (!ok || !lf) { $('hxm-msg').textContent = 'Memuat peta jaringan…'; return; }
-    initMap();
+    fitHeight(); initMap();
     const p = P(); const uid = UID[p.hx_wilayah] || null;
     const hxgi = window.__D.hx_gi || [], hxf = window.__D.hx_feeder || [];
     const giUP = new Map(hxgi.map((g) => [g.kode, g]));
@@ -371,9 +377,7 @@
     su.value = uid || '';
     const giOfU = uid ? giAll.filter((g) => g.uid === uid && g.nF).sort((a, b) => giShort(a.nama).localeCompare(giShort(b.nama), 'id', { numeric: true })) : [];
     const sg = $('hxm-f-gi');
-    sg.replaceChildren(new Option(uid ? `— Pilih gardu induk (${fmt(giOfU.length)}) —` : '— Pilih unit dulu —', ''), ...giOfU.map((g) => new Option(`${giShort(g.nama)} · ${fmt(g.nF)} penyulang`, g.aset)));
     const gi = uid && giOfU.some((g) => g.aset === p.hx_gi) ? p.hx_gi : null;
-    sg.value = gi || ''; sg.disabled = !uid;
     if (uid) {
       const id = 'hx_geo_' + uid;
       if (!need(id)) { $('hxm-msg').textContent = `Memuat jaringan ${ULAB[uid]}…`; uidCur = uid; giCur = null; allF = []; fByKode = new Map(); draw(); return; }
@@ -386,6 +390,9 @@
         $('hxm-qlist').replaceChildren(...allF.map((f) => new Option(`${f.nama} · ${f.giNama}`)), ...giOfU.map((g) => new Option(g.nama)));
       }
     } else { allF = []; fByKode = new Map(); decodedFor = null; $('hxm-qlist').replaceChildren(...giAll.filter((g) => g.nF).map((g) => new Option(g.nama))); }
+    const nMap = new Map(); if (uid && decodedFor === 'hx_geo_' + uid) allF.forEach((f) => nMap.set(f.gi, (nMap.get(f.gi) || 0) + 1));
+    sg.replaceChildren(new Option(uid ? `— Pilih gardu induk (${fmt(giOfU.length)}) —` : '— Pilih unit dulu —', ''), ...giOfU.map((g) => new Option(`${giShort(g.nama)} · ${fmt(nMap.has(g.aset) ? nMap.get(g.aset) : g.nF)} penyulang`, g.aset)));
+    sg.value = gi || ''; sg.disabled = !uid;
     uidCur = uid; giCur = gi; feeders = shown();
     const giRow = gi ? giAll.find((g) => g.aset === gi) : null;
     const tot = feeders.reduce((a, f) => ({ g: a.g + f.nG, t: a.t + f.nT, km: a.km + f.km, j: a.j + f.jauh + f.tanpa }), { g: 0, t: 0, km: 0, j: 0 });
@@ -399,5 +406,5 @@
     fitView(false);
   }
   SSD.onData(render);
-  window.addEventListener('resize', () => { if (map) map.invalidateSize(); });
+  window.addEventListener('resize', () => { fitHeight(); if (map) map.invalidateSize(); });
 })();

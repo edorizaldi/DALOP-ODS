@@ -188,3 +188,13 @@
 .hxm-pop-b.hxm-ghost { background: transparent; color: #0079c1; border: 1px solid #0079c1; }
 .hxm-pop-b.hxm-ghost:hover { background: color-mix(in srgb, #0079c1 8%, transparent); }
 @media (min-width: 1100px) { #hxm-tbl th:last-child, #hxm-tbl td:last-child { display: table-cell; } #hxm-tbl th:nth-child(n), #hxm-tbl td:nth-child(n) { width: auto; } #hxm-tbl th:first-child, #hxm-tbl td:first-child { width: 46%; } }
+/* peta utuh dalam tampilan awal: tinggi dihitung dari sisa layar (hx-map.js) */
+@media (min-width: 761px) {
+  .hxm .hxm-body { height: var(--hxm-h, clamp(480px, 76vh, 860px)); }
+  .hxm .hxm-attr { height: var(--hxm-h, clamp(480px, 76vh, 860px)); }
+  .hxm { gap: 8px; }
+  .hxm .hxm-tt .ss-note { font-size: 12.5px; }
+  .hxm-pick > label:not(.hxm-search) { flex-direction: row; align-items: center; gap: 8px; }
+  .hxm-pick > label:not(.hxm-search) > span { white-space: nowrap; }
+  .hxm-pick select, .hxm-search { height: 34px; }
+}
