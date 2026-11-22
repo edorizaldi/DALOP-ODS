@@ -218,18 +218,19 @@
     const list = map && uidCur ? shown().filter(inView).sort((a, b) => a.nama.localeCompare(b.nama)) : [];
     const sel = P().hx_feeder;
     const head = mk('thead'); const hr = mk('tr');
-    [['Penyulang', 'ss-l'], ['Gardu Induk', 'ss-l'], ['ULP', 'ss-l ss-hide-n'], ['Gardu'], ['Trafo'], ['kVA gardu', 'ss-hide-n'], ['Panjang garis (km)'], ['Koordinat keliru', 'ss-hide-n']].forEach(([h, c]) => hr.append(mk('th', h, c || '')));
+    [['Penyulang', 'ss-l'], ['Gardu Induk', 'ss-l'], ['ULP', 'ss-l ss-hide-n hxm-wide'], ['Gardu'], ['Trafo'], ['kVA gardu', 'ss-hide-n hxm-wide'], ['Panjang (km)'], ['Keliru', 'ss-hide-n']].forEach(([h, c]) => hr.append(mk('th', h, c || '')));
     head.append(hr); const body = mk('tbody');
     list.slice(0, 300).forEach((f) => {
       const tr = mk('tr'); tr.tabIndex = 0; if (f.kode === sel) tr.className = 'on';
       const n = mk('td', null, 'ss-l'); const sw = mk('i', null, 'hxm-sw'); sw.style.background = st.color === 'gi' ? f.gColor : f.color; n.append(sw, f.nama);
-      tr.append(n, mk('td', f.giNama.replace(/^GI\s+/, ''), 'ss-l'), mk('td', f.ulp.replace(/^ULP\s+/, ''), 'ss-l ss-hide-n'), mk('td', fmt(f.nG)), mk('td', fmt(f.nT)), mk('td', fmt(f.kv), 'ss-hide-n'), mk('td', f1.format(f.km)), mk('td', f.jauh + f.tanpa ? fmt(f.jauh + f.tanpa) : '—', 'ss-hide-n'));
+      tr.append(n, mk('td', f.giNama.replace(/^GI\s+/, ''), 'ss-l'), mk('td', f.ulp.replace(/^ULP\s+/, ''), 'ss-l ss-hide-n hxm-wide'), mk('td', fmt(f.nG)), mk('td', fmt(f.nT)), mk('td', fmt(f.kv), 'ss-hide-n hxm-wide'), mk('td', f1.format(f.km)), mk('td', f.jauh + f.tanpa ? fmt(f.jauh + f.tanpa) : '—', 'ss-hide-n'));
       const go = () => { fitKey = ''; setP({ hx_gi: f.gi, hx_feeder: f.kode }); };
       tr.addEventListener('click', go); tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
       body.append(tr);
     });
     if (!list.length) { const tr = mk('tr'); const td = mk('td', uidCur ? 'Tidak ada penyulang di area peta ini. Geser atau perkecil peta.' : 'Pilih unit di atas peta untuk menampilkan penyulang.', 'ss-note'); td.colSpan = 8; tr.append(td); body.append(tr); }
     tb.replaceChildren(head, body);
+    const on = body.querySelector('tr.on'); if (on) { const w = tb.closest('.hxm-tw'); const r = on.getBoundingClientRect(), rw = w.getBoundingClientRect(); if (r.top < rw.top + 30 || r.bottom > rw.bottom) w.scrollTop += r.top - rw.top - 60; }
     $('hxm-tcount').textContent = uidCur ? `${fmt(list.length)} penyulang di area peta${list.length > 300 ? ' (300 pertama)' : ''}` : '';
   }
   function fitView(force) {
