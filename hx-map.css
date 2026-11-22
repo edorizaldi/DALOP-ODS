@@ -129,3 +129,4 @@
   #hxm-tbl th:nth-child(4), #hxm-tbl td:nth-child(4), #hxm-tbl th:nth-child(5), #hxm-tbl td:nth-child(5) { width: 15%; text-overflow: clip; }
   #hxm-tbl th:nth-child(7), #hxm-tbl td:nth-child(7) { width: 16%; }
 }
+.leaflet-tooltip.hxm-gilab.hxm-faint { opacity: .35 !important; }

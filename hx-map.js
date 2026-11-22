@@ -161,7 +161,7 @@
         if (!f.segs.length) return;
         const c = st.color === 'gi' ? f.gColor : st.color === 'satu' ? '#1c7ed6' : f.color;
         const dim = sel && sel !== f;
-        L.polyline(f.segs, { renderer: R, color: c, weight: dim ? 1.2 : 2, opacity: dim ? 0.3 : 0.9, smoothFactor: 1.2 })
+        L.polyline(f.segs, { renderer: R, color: c, weight: dim ? 1 : 2, opacity: dim ? 0.12 : 0.9, smoothFactor: 1.2 })
           .on('click', (e) => { L.DomEvent.stopPropagation(e); setP({ hx_gi: f.gi, hx_feeder: f.kode }); L.popup({ maxWidth: 300 }).setLatLng(e.latlng).setContent(feederPop(f)).openOn(map); })
           .bindTooltip(f.nama, { sticky: true, direction: 'top', className: 'hxm-tip' }).addTo(G.line);
       });
@@ -181,9 +181,10 @@
       G.gi = L.layerGroup();
       const gl = uidCur ? giAll.filter((g) => g.uid === uidCur && (!p.hx_up3 || g.up3UP === p.hx_up3)) : giAll;
       gl.forEach((g) => { if (!g.ll) return; const on = g.aset === p.hx_gi;
-        const m = L.circleMarker(g.ll, { renderer: R, radius: on ? 8 : 6, color: '#fff', weight: 2, fillColor: on ? '#e8590c' : '#13254a', fillOpacity: 1 })
+        const faint = sel && !on;
+        const m = L.circleMarker(g.ll, { renderer: R, radius: on ? 8 : 6, color: '#fff', weight: 2, opacity: faint ? 0.3 : 1, fillColor: on ? '#e8590c' : '#13254a', fillOpacity: faint ? 0.3 : 1 })
           .on('click', (e) => { L.DomEvent.stopPropagation(e); L.popup({ maxWidth: 300 }).setLatLng(g.ll).setContent(giPop(g)).openOn(map); });
-        if (uidCur) m.bindTooltip(g.nama.replace(/^GI\s+/, ''), { permanent: map.getZoom() >= 9, direction: 'right', offset: [6, 0], className: 'hxm-gilab' });
+        if (uidCur) m.bindTooltip(g.nama.replace(/^GI\s+/, ''), { permanent: map.getZoom() >= 9, direction: 'right', offset: [6, 0], className: 'hxm-gilab' + (faint ? ' hxm-faint' : '') });
         m.addTo(G.gi); });
       G.gi.addTo(map);
     }
@@ -197,9 +198,12 @@
     if (!st.lay.gardu || map.getZoom() < 12 || !feeders.length) return;
     const v = map.getBounds().pad(0.2); const sel = fByKode.get(P().hx_feeder) || null;
     G.gardu = L.layerGroup(); let n = 0;
-    shown().forEach((f) => { if (!inView(f)) return; f.pt.forEach((pt, i) => { if (!pt || f.par[i] === -2 || !v.contains(pt) || n > 6000) return; n++;
+    // penyulang terpilih digambar paling akhir agar berada di atas titik penyulang lain yang disamarkan
+    const order = sel ? shown().filter((f) => f !== sel).concat(shown().includes(sel) ? [sel] : []) : shown();
+    order.forEach((f) => { if (!inView(f)) return; f.pt.forEach((pt, i) => { if (!pt || f.par[i] === -2 || !v.contains(pt) || (n > 6000 && f !== sel)) return; n++;
       const c = st.color === 'gi' ? f.gColor : st.color === 'satu' ? '#1c7ed6' : f.color;
-      L.circleMarker(pt, { renderer: R, radius: map.getZoom() >= 15 ? 5 : 3.5, color: '#fff', weight: 1, fillColor: sel === f ? '#e8590c' : c, fillOpacity: 1 })
+      const dim = sel && sel !== f; const big = map.getZoom() >= 15;
+      L.circleMarker(pt, { renderer: R, radius: dim ? (big ? 3 : 2.2) : sel === f ? (big ? 6 : 4.5) : (big ? 5 : 3.5), color: '#fff', weight: dim ? 0 : 1, opacity: dim ? 0 : 1, fillColor: sel === f ? '#e8590c' : c, fillOpacity: dim ? 0.15 : 1 })
         .on('click', (e) => { L.DomEvent.stopPropagation(e); L.popup({ maxWidth: 300 }).setLatLng(pt).setContent(garduPop(f, i)).openOn(map); }).addTo(G.gardu); }); });
     G.gardu.addTo(map);
   }
