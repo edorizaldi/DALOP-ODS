@@ -19,7 +19,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 <link rel="stylesheet" href="gangguan-ps-tab.css?v=20261116ig">
 <link rel="stylesheet" href="hi-tab.css?v=20261116u">
 <link rel="stylesheet" href="db-tab.css?v=20261117">
-<link rel="stylesheet" href="bencana-tab.css?v=20261125">
+<link rel="stylesheet" href="bencana-tab.css?v=20261126">
 <link rel="stylesheet" href="acct.css">
 <link rel="stylesheet" href="lgp-tab.css?v=20261115d">
 <script src="d3.min.js"></script>
@@ -1597,6 +1597,16 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
             <label class="b-pill b-pill-yellow"><span class="b-sr">Kejadian</span><select id="b-f-kej" aria-label="Kejadian bencana"></select><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></label>
           </div>
         </div>
+        <div class="b-src" id="b-up-card">
+          <label class="b-upbtn" id="b-up-drop" tabindex="0" title="Klik atau tarik file .xlsx ke sini"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span>Unggah laporan posko</span><input type="file" id="b-up-file" accept=".xlsx" hidden></label>
+          <p class="b-src-info"><span id="b-src-info">Sumber data: laporan posko (Excel, satu sheet per UID).</span> <a href="template_posko_bencana.xlsx" download>Template</a> · <a href="contoh_posko_bencana.xlsx" download>Contoh terisi</a></p>
+        <div id="b-up-review" class="ss-up-review b-review" hidden>
+          <p class="ss-note" id="b-up-sum"></p>
+          <div class="ss-tablewrap"><table class="ss-table ss-up-table"><thead><tr><th>Kejadian</th><th>Jenis</th><th>Titik · radius</th><th>Mulai</th><th>Status</th><th class="num">Penyulang (file)</th><th class="num">Penyulang (saat ini)</th></tr></thead><tbody id="b-up-body"></tbody></table></div>
+          <div class="ss-up-row"><button type="button" class="h-act h-act-primary" id="b-up-go" disabled>Simpan laporan posko</button><button type="button" class="h-act" id="b-up-cancel">Batal</button></div>
+        </div>
+          <p class="ss-up-msg b-upmsg" id="b-up-msg" role="status"></p>
+        </div>
         <p class="b-take dash-skeleton" id="b-take" data-source="bencana bencana_status gi_identitas peny_profil hx_feeder trafo_wilayah wilayah_kec">—</p>
         <div class="b-mapwrap">
           <div class="ss-mapbox" id="b-map" data-source="wilayah_kec trafo_wilayah gi_identitas peny_profil bencana bencana_status"></div>
@@ -1655,17 +1665,6 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
       </div>
       <div class="ss-chips" id="b-tfilter" role="group" aria-label="Saring status"><button type="button" class="ss-chip" data-v="">Semua</button><button type="button" class="ss-chip" data-v="padam">Padam</button><button type="button" class="ss-chip" data-v="pulih">Nyala kembali</button><button type="button" class="ss-chip" data-v="ter">Terpapar, belum dilaporkan</button></div>
       <div class="ss-tablewrap" data-source="bencana_status peny_profil hx_feeder trafo_wilayah peny_bulanan"><table class="ss-table ss-p-table" id="b-tabel"></table></div>
-    </div>
-    <div class="ss-card" id="b-up-card">
-        <h3>2 · Unggah laporan posko</h3>
-        <p class="ss-note">Isi <a href="template_posko_bencana.xlsx" download>template laporan posko bencana (.xlsx)</a>: satu sheet per UID (ACEH sampai KALTIMRA) berisi penyulang, <b>jam trip</b>, <b>jam nyala</b> dan <b>status saat ini</b> (Padam/Nyala). Tiap UID boleh mengunggah sheet-nya sendiri: status penyulang hanya diganti untuk UID yang sheet-nya berisi, UID lain tetap. Sheet <b>Kejadian</b> boleh dihapus bila kejadian sudah dibuat di atas; laporan lalu masuk ke kejadian terpilih. Lihat <a href="contoh_posko_bencana.xlsx" download>contoh yang sudah terisi</a>. Tersimpan untuk semua pembaca bila sudah login admin.</p>
-        <label class="h-drop" id="b-up-drop" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><b>Tarik file laporan posko ke sini, atau klik untuk memilih</b><span class="ss-note">Format .xlsx sesuai template</span><input type="file" id="b-up-file" accept=".xlsx" hidden></label>
-        <div id="b-up-review" class="ss-up-review" hidden>
-          <p class="ss-note" id="b-up-sum"></p>
-          <div class="ss-tablewrap"><table class="ss-table ss-up-table"><thead><tr><th>Kejadian</th><th>Jenis</th><th>Titik · radius</th><th>Mulai</th><th>Status</th><th class="num">Penyulang (file)</th><th class="num">Penyulang (saat ini)</th></tr></thead><tbody id="b-up-body"></tbody></table></div>
-          <div class="ss-up-row"><button type="button" class="h-act h-act-primary" id="b-up-go" disabled>Simpan laporan posko</button><button type="button" class="h-act" id="b-up-cancel">Batal</button></div>
-        </div>
-        <p class="ss-up-msg" id="b-up-msg" role="status"></p>
     </div>
     <div class="ss-card" id="b-q-card">
         <div class="ss-sechead"><div><h3>Gempa terkini BMKG</h3><p class="ss-note" id="b-q-note"></p></div><button type="button" class="h-act" id="b-q-reload">Muat ulang</button></div>
@@ -2919,7 +2918,7 @@ SSD.calc('up3_yoy', {
 
 <script src="db-tab.js?v=20261118"></script>
 <script src="bencana-posko.js?v=20261124"></script>
-<script src="bencana-tab.js?v=20261125"></script>
+<script src="bencana-tab.js?v=20261126"></script>
 <script src="hi-tab.js?v=20261116w"></script>
 
 <script>

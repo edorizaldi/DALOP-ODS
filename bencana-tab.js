@@ -293,10 +293,14 @@
           if (nPad.length) tk.append(` Terlama ${nPad[0].nama} (${jam(nPad[0].dur)}).`);
           tk.append(' ');
         } else tk.append('Belum ada status penyulang di laporan posko. ');
-      } else tk.append('Belum ada kejadian. Klik peta, pilih tipe bencana dan simpan kejadian di bawah, atau unggah laporan posko. ');
+      } else tk.append('Belum ada kejadian. Unggah laporan posko di atas, atau klik peta lalu isi titik dan tipe bencana di bawah peta. ');
       if (center) tk.append(`Dalam radius ${rad} km: ${fmt(giIn.length)} GI, ${fmt(expoRows.length)} penyulang dan ${fmt(kecIn.length)} kecamatan terpapar.`);
     }
 
+    {
+      const uids = [...new Set(rep.map((r) => r.uid).filter(Boolean))];
+      $('b-src-info').textContent = kej ? (rep.length ? `Sumber data: laporan posko ${fmt(rep.length)} penyulang (${uids.join(', ') || 'UID tidak diisi'}). Unggah ulang daftar terbaru setiap ada perubahan.` : 'Sumber data: laporan posko, belum ada untuk kejadian ini. Unggah file Excel (satu sheet per UID).') : 'Sumber data: laporan posko (Excel, satu sheet per UID).';
+    }
     // panel kiri dan kartu kaca
     const done = (id, t) => { const e = $(id); e.textContent = t; e.classList.remove('dash-skeleton'); };
     $('b-title').textContent = kej ? kej.nama : 'Sumatera & Kalimantan';
@@ -500,9 +504,11 @@
   const drop = $('b-up-drop'), input = $('b-up-file');
   input.addEventListener('change', () => { const f = input.files[0]; input.value = ''; handle(f); });
   drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
-  ['dragenter', 'dragover'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
-  ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
-  drop.addEventListener('drop', (e) => { const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) handle(f); });
+  // seluruh panel atas menerima file yang ditarik ke sana
+  const zone = $('b-ringkasan');
+  ['dragenter', 'dragover'].forEach((t) => zone.addEventListener(t, (e) => { if (!e.dataTransfer || ![...e.dataTransfer.types].includes('Files')) return; e.preventDefault(); zone.classList.add('b-over'); }));
+  zone.addEventListener('dragleave', (e) => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('b-over'); });
+  zone.addEventListener('drop', (e) => { e.preventDefault(); zone.classList.remove('b-over'); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) handle(f); });
   $('b-up-go').addEventListener('click', apply);
   $('b-up-cancel').addEventListener('click', () => { pending = null; review(); msg(''); });
 })();

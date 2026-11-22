@@ -126,3 +126,17 @@
   #bencana .b-pill-yellow select { max-width: none; flex: 1; }
   #bencana .b-res b, #bencana .b-stile b { font-size: 38px; }
 }
+/* unggah laporan posko di panel atas */
+#bencana .b-src { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 14px; }
+#bencana .b-upbtn { display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 18px 0 14px; border-radius: 999px; background: var(--b-ink); color: #fff; font: 500 15.5px var(--b-font); cursor: pointer; transition: transform .12s, background .12s; }
+#bencana .b-upbtn:hover { background: #2a3036; } #bencana .b-upbtn:active { transform: scale(.98); }
+#bencana .b-upbtn:focus-visible { outline: 2px solid var(--b-yel); outline-offset: 2px; }
+#bencana .b-upbtn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#bencana .b-src-info { margin: 0; font-size: 13.5px; color: rgba(21,25,29,.75); font-family: var(--font-anthropic-sans); flex: 1 1 320px; min-width: 0; }
+#bencana .b-src-info a { color: var(--b-ink); font-weight: 600; }
+#bencana .b-review { flex: 1 1 100%; background: rgba(255,255,255,.72); backdrop-filter: blur(10px); border-radius: 18px; padding: 12px 14px; margin: 0; }
+#bencana .b-review .ss-tablewrap { background: transparent; }
+#bencana .b-upmsg { flex: 1 1 100%; margin: 0; }
+#bencana .b-upmsg:empty { display: none; }
+#bencana .b-cc.b-over { outline: 3px dashed var(--b-ink); outline-offset: -10px; }
+#bencana .b-cc.b-over .b-upbtn { background: var(--b-hot); }
