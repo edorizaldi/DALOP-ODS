@@ -1,1 +1,1 @@
-window.__D=window.__D||{};window.__D["bencana"]=[{"nama":"Banjir","jenis":"Banjir","lat":-3.4236,"lon":104.4253,"radius_km":10,"mulai":"2026-11-22T14:05","status":"Berlangsung","keterangan":"dibuat di dashboard"}];
+window.__D=window.__D||{};window.__D["bencana"]=[{"nama":"Banjir","jenis":"Banjir","lat":-4.9585,"lon":104.7475,"radius_km":10,"mulai":"2026-11-22T14:12","status":"Berlangsung","keterangan":"dibuat di dashboard"}];
