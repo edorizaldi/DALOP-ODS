@@ -295,7 +295,7 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
 @media (max-width: 52rem) {
   .ss-main > .ss { padding: 16px; }
 }
-/* Navigasi atas: logo kiri, jam kanan, menu Harian/Bulanan/Database dengan daftar turun */
+/* Navigasi atas: logo kiri, jam kanan, menu Harian/Siaga/Bulanan/Database dengan daftar turun */
 .ss-head { position: sticky; top: 0; z-index: 20; }
 .ss-topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px; padding: 8px 24px; min-height: 64px; box-sizing: border-box; background: var(--x-card); border-bottom: 1px solid var(--x-line); }
 .ss-brand { justify-self: start; display: flex; align-items: center; gap: 12px; }
@@ -345,6 +345,8 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
   .ss-main > .ss { padding: 16px; }
 }
 @media (max-width: 30rem) { .ss-mg-btn > svg:first-child { display: none; } .ss-mg-btn { padding: 0 9px; gap: 5px; } .ss-mg-list { gap: 0; } }
+/* empat menu (Harian, Siaga, Bulanan, Database) tetap muat di ponsel */
+@media (max-width: 26rem) { .ss-mg-btn { padding: 0 6px; gap: 3px; font-size: 13.5px; } .ss-mg-btn .ss-mg-chev { width: 12px; height: 12px; } .ss-menu { gap: 6px; padding: 0 4px; } }
 /* Kartu, chip, tabel bergaya aplikasi */
 .ss-shell .ss-hero { background: var(--x-card); border: 1px solid var(--x-line); border-radius: var(--x-r); box-shadow: var(--x-shadow); }
 .ss-shell .ss-hero::after { display: none; }
@@ -647,8 +649,11 @@ body{background:#fff;color:var(--color-fg);font-family:var(--font-anthropic-sans
         <div class="ss-mg-pop" id="mg-harian" role="menu" aria-labelledby="mg-harian-b" hidden>
           <button type="button" class="ss-tab" id="tab-harian" data-tab-to="harian" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h3M8 17h6"/></svg><span class="ss-tab-t"><b>Infografis Laporan Harian</b><small>Infografis laporan harian H-1</small></span></button>
           <button type="button" class="ss-tab" id="tab-kondisi" data-tab-to="kondisi" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><path d="M12.8 6.5 10 10.8h2.4l-.9 3.7 2.9-4.4H12z"/></svg><span class="ss-tab-t"><b>Kondisi Sistem</b><small>Status sistem grid dan isolated, monitoring defisit</small></span></button>
-          <button type="button" class="ss-tab" id="tab-bencana" data-tab-to="bencana" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg><span class="ss-tab-t"><b>Disaster Dashboard</b><small>Tanggap darurat: aset terpapar, status pemulihan, gempa BMKG</small></span></button>
           <button type="button" class="ss-tab" id="tab-lgp" data-tab-to="lgp" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z"/><path d="M14 3.5V8h4"/><path d="m12.6 10-2.4 3.6h2.2l-.8 3.4 2.6-4h-2.1z"/></svg><span class="ss-tab-t"><b>Laporan Gangguan Penyulang</b><small>Rekap kumulatif laporan harian per UID</small></span></button>
+        </div></li>
+      <li class="ss-mg" data-group="siaga"><button type="button" class="ss-mg-btn" id="mg-siaga-b" aria-haspopup="true" aria-expanded="false" aria-controls="mg-siaga"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 2.8 19.5h18.4z"/><path d="M12 10v4.2M12 16.9v.3"/></svg><span>Siaga</span><svg class="ss-mg-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="ss-mg-pop" id="mg-siaga" role="menu" aria-labelledby="mg-siaga-b" hidden>
+          <button type="button" class="ss-tab" id="tab-bencana" data-tab-to="bencana" role="menuitem"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg><span class="ss-tab-t"><b>Disaster Dashboard</b><small>Tanggap darurat: penyulang, gardu dan trafo padam per wilayah, cuaca, gempa BMKG</small></span></button>
         </div></li>
       <li class="ss-mg" data-group="bulanan"><button type="button" class="ss-mg-btn" id="mg-bulanan-b" aria-haspopup="true" aria-expanded="false" aria-controls="mg-bulanan"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Bulanan</span><svg class="ss-mg-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         <div class="ss-mg-pop" id="mg-bulanan" role="menu" aria-labelledby="mg-bulanan-b" hidden>
@@ -1918,7 +1923,7 @@ window.SSD = (() => {
     });
   };
   const go = (tab) => { show(tab); dash.setLink(tab); dash.setParams({ tab }); };
-  // menu atas: arahkan kursor ke Harian/Bulanan/Database untuk membuka daftar halaman; klik/sentuh dan keyboard juga bisa
+  // menu atas: arahkan kursor ke Harian/Siaga/Bulanan/Database untuk membuka daftar halaman; klik/sentuh dan keyboard juga bisa
   const menu = document.getElementById('ss-menu');
   const groups = [...menu.querySelectorAll('.ss-mg')];
   const canHover = window.matchMedia ? window.matchMedia('(hover: hover) and (pointer: fine)') : { matches: false };
