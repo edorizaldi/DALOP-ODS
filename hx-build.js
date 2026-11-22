@@ -221,7 +221,10 @@
     const lokasi = [];
     GD.forEach((g) => { if (!g.ok || !g.feeder) return; g.trafoXY.forEach((t) => { const tl = num(t.lat), tn = num(t.lon); lokasi.push({ feeder: g.feeder, n: 1, kva: t.kva, alamat: g.alamat, lat: tl != null && tn != null ? tl : g.lat, lon: tl != null && tn != null ? tn : g.lon }); }); });
     stats.lokasiXY = lokasi.filter((x) => num(x.lat) != null && num(x.lon) != null).length; stats.lokasi = lokasi.length;
-    return { files, stats, lokasi };
+    // titik gardu untuk peta jaringan (hx-geo.js menyusun garis penyulang dari titik-titik ini)
+    const geo = [];
+    GD.forEach((g) => { if (!g.ok || !g.feeder) return; geo.push({ f: g.feeder, k: g.kode, n: g.nama, v: g.kva, t: g.trafo.length, a: g.alamat, lat: g.lat, lon: g.lon }); });
+    return { files, stats, lokasi, geo };
   }
 
   // identitas GI dari sheet GI: semua kolom selain KODE_ASSET dan NAMA opsional
