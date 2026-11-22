@@ -130,3 +130,17 @@
   #hxm-tbl th:nth-child(7), #hxm-tbl td:nth-child(7) { width: 16%; }
 }
 .leaflet-tooltip.hxm-gilab.hxm-faint { opacity: .35 !important; }
+/* GI sebagai pangkal jaringan: titik berkedip dengan gelombang */
+.leaflet-marker-icon.hxm-gi { background: none; border: 0; }
+.hxm-gi i { position: absolute; inset: 2px; border-radius: 50%; background: #13254a; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(19,37,74,.5), 0 1px 4px rgba(0,0,0,.35); animation: hxm-blink 1.4s ease-in-out infinite; }
+.hxm-gi::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #13254a; animation: hxm-ring 1.4s ease-out infinite; pointer-events: none; }
+.hxm-gi.on i { inset: 0; background: #e8590c; }
+.hxm-gi.on::after { border-color: #e8590c; }
+.hxm-gi.faint { opacity: .3; }
+.hxm-gi.faint i, .hxm-gi.faint::after { animation: none; }
+.hxm-gi.faint::after { display: none; }
+.hxm-dark .hxm-gi::after { border-color: #fff; }
+@keyframes hxm-blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes hxm-ring { 0% { transform: scale(.8); opacity: .9; } 100% { transform: scale(2.6); opacity: 0; } }
+.hxm-lg i.hxm-lg-gi { animation: hxm-blink 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .hxm-gi i, .hxm-gi::after, .hxm-lg i.hxm-lg-gi { animation: none; } }

@@ -182,9 +182,11 @@
       const gl = uidCur ? giAll.filter((g) => g.uid === uidCur && (!p.hx_up3 || g.up3UP === p.hx_up3)) : giAll;
       gl.forEach((g) => { if (!g.ll) return; const on = g.aset === p.hx_gi;
         const faint = sel && !on;
-        const m = L.circleMarker(g.ll, { renderer: R, radius: on ? 8 : 6, color: '#fff', weight: 2, opacity: faint ? 0.3 : 1, fillColor: on ? '#e8590c' : '#13254a', fillOpacity: faint ? 0.3 : 1 })
+        // GI = pangkal jaringan: titik berkedip (elemen DOM agar bisa dianimasikan)
+        const icon = L.divIcon({ className: 'hxm-gi' + (on ? ' on' : '') + (faint ? ' faint' : ''), html: '<i></i>', iconSize: [16, 16], iconAnchor: [8, 8] });
+        const m = L.marker(g.ll, { icon, keyboard: false, riseOnHover: true, zIndexOffset: on ? 1000 : 0, title: '' })
           .on('click', (e) => { L.DomEvent.stopPropagation(e); L.popup({ maxWidth: 300 }).setLatLng(g.ll).setContent(giPop(g)).openOn(map); });
-        if (uidCur) m.bindTooltip(g.nama.replace(/^GI\s+/, ''), { permanent: map.getZoom() >= 9, direction: 'right', offset: [6, 0], className: 'hxm-gilab' + (faint ? ' hxm-faint' : '') });
+        if (uidCur) m.bindTooltip(g.nama.replace(/^GI\s+/, ''), { permanent: map.getZoom() >= 9, direction: 'right', offset: [8, 0], className: 'hxm-gilab' + (faint ? ' hxm-faint' : '') });
         m.addTo(G.gi); });
       G.gi.addTo(map);
     }
@@ -210,7 +212,7 @@
   function legend() {
     const box = $('hxm-legend'); box.replaceChildren();
     const sw = (c, t, cls) => { const s = mk('span', null, 'hxm-lg'); const i = mk('i', null, cls || ''); i.style.background = c; s.append(i, t); return s; };
-    box.append(sw('#13254a', 'Gardu Induk', 'dot'));
+    box.append(sw('#13254a', 'Gardu Induk (pangkal jaringan, berkedip)', 'dot hxm-lg-gi'));
     if (uidCur) {
       box.append(sw(st.color === 'satu' ? '#1c7ed6' : 'linear-gradient(90deg,' + PAL.slice(0, 5).join(',') + ')', st.color === 'gi' ? 'Garis penyulang (warna per GI)' : st.color === 'satu' ? 'Garis penyulang' : 'Garis penyulang (warna per penyulang)', 'ln'));
       box.append(sw('#e8590c', 'Penyulang / GI terpilih', 'ln'));
