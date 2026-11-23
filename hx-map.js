@@ -35,7 +35,9 @@
   const need = (id, src) => {
     if (window.__D && id in window.__D) return true;
     if (loading.has(id)) return false; loading.add(id);
-    const s = document.createElement('script'); s.src = src || id + '.js';
+    // versi = waktu unggah database aset terakhir, agar browser tidak memakai salinan lama setelah data diperbarui
+    const inf = ((window.__D && window.__D.info_update) || []).find((r) => r.tab === 'hirarki');
+    const s = document.createElement('script'); s.src = src || id + '.js' + (inf ? '?v=' + encodeURIComponent(inf.diperbarui) : '');
     s.onload = () => { loading.delete(id); if (window.__D && !(id in window.__D)) window.__D[id] = null; render(); };
     s.onerror = () => { loading.delete(id); window.__D[id] = null; render(); };
     document.head.appendChild(s); return false;
@@ -356,7 +358,7 @@
     $('hxm').style.setProperty('--hxm-h', Math.max(420, Math.round(window.innerHeight - top - 16)) + 'px');
   }
   // ---------- render ----------
-  let decodedFor = null;
+  let decodedFor = null, decodedRaw = null, srcSeen = [];
   function render() {
     if (P().tab !== 'hirarki') return;
     const ok = ['gi_identitas', 'hx_gi', 'hx_feeder'].map((id) => need(id)).every(Boolean);
@@ -367,6 +369,9 @@
     const p = P(); const uid = UID[p.hx_wilayah] || null;
     const hxgi = window.__D.hx_gi || [], hxf = window.__D.hx_feeder || [];
     const giUP = new Map(hxgi.map((g) => [g.kode, g]));
+    // data bisa diganti di sesi yang sama (unggah Database Aset Jaringan di Update Data Bulanan): bangun ulang bila objeknya berubah
+    const srcNow = [window.__D.gi_identitas, window.__D.hx_gi, window.__D.hx_feeder];
+    if (srcNow.some((v, i) => v !== srcSeen[i])) { srcSeen = srcNow; giAll = []; decodedFor = null; decodedRaw = null; selKey = ''; fitKey = ''; }
     if (!giAll.length) {
       const nF = new Map(); hxf.forEach((f) => nF.set(f.gi, (nF.get(f.gi) || 0) + 1));
       giAll = (window.__D.gi_identitas || []).map((g) => { const h = giUP.get(g.aset); return { ...g, uid: (h && UID[h.wilayah]) || g.uid, up3UP: h ? h.up3 : '', nF: nF.get(g.aset) || 0, nG: h ? Number(h.gardu) || 0 : 0, ll: g.lat !== '' && g.lat != null ? [Number(g.lat), Number(g.lon)] : null }; });
@@ -381,8 +386,8 @@
     if (uid) {
       const id = 'hx_geo_' + uid;
       if (!need(id)) { $('hxm-msg').textContent = `Memuat jaringan ${ULAB[uid]}…`; uidCur = uid; giCur = null; allF = []; fByKode = new Map(); draw(); return; }
-      if (decodedFor !== id) {
-        decodedFor = id;
+      if (decodedFor !== id || decodedRaw !== window.__D[id]) {
+        decodedFor = id; decodedRaw = window.__D[id]; selKey = '';
         const raw = window.__D[id] || { f: [] };
         const giMap = new Map((window.__D.gi_identitas || []).map((g) => [g.aset, { nama: g.nama, up3: g.up3 }]));
         allF = decode(raw, new Map(hxf.map((f) => [f.kode, f])), giMap);
