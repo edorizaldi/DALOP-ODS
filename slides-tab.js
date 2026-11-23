@@ -7,7 +7,7 @@
   const PPTX_URL = 'https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js';
   const JSZIP_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
   const CFG = 'paparan.json', DIR = 'paparan/', MAX_MB = 15;
-  const CORE_JS = 'slides-core.js?v=20261112b', THUMBS_JS = 'slides-thumbs.js?v=20261112b';
+  const CORE_JS = 'slides-core.js?v=20261123', THUMBS_JS = 'slides-thumbs.js?v=20261123';
   const SETS = ['kumulatif', 'bulanan', 'target', 'gangguan_ps', 'kc_bulanan', 'gangguan_dupont', 'workplan', 'info_update'];
   const CORE = [
     ['Kinerja SAIDI per UID', 'Peta UID, target dan realisasi s.d. cutoff, rekap Sumkal, tren kumulatif.'],
@@ -19,6 +19,7 @@
     ['Realisasi Action Plan (Workplan Keandalan)', '5 program action plan Sumkal dan tabel target, realisasi, capaian per unit induk.'],
     ['Kondisi kelistrikan sistem grid', 'Tab Kondisi Sistem: DMP, beban puncak, cadangan dan status 4 sistem grid pada tanggal terakhir yang terisi, peta status, monitoring sistem siaga dan defisit.'],
     ['Kondisi kelistrikan sistem isolated', 'Tab Kondisi Sistem: jumlah sistem isolated, jam nyala, status, DMP/BP/cadangan per unit induk pada tanggal terakhir yang terisi, peta status, monitoring sistem isolated siaga dan defisit.'],
+    ['Health Index Penyulang', 'Tab Health Index: rekap kronis, sakit, sehat Sumkal bulan berjalan, rekap per UID diurutkan dari kronis, dan peta top 3 penyulang kronis per UID.'],
   ];
   const DEFAULT = () => CORE.map((_, i) => ({ k: 'core', n: i + 1 }));
   let cutoff = null, busy = false, cat = null, D0 = null;
@@ -324,7 +325,7 @@
       }
       msg('sl-msg', `Menyusun ${items.length} slide…`);
       const D = {}; SETS.forEach((k) => { D[k] = SSD.data(k).data; });
-      const KD = kondisiData(); const pres = await window.SSSlides.build(window.PptxGenJS, D, cutoff, { ...window.SS_SLIDE_ASSETS, wp: window.SS_WP_ASSETS, kondisi: KD ? { ...KD, map: (window.__D || {}).kondisi_map } : null }, plan);
+      const KD = kondisiData(); const pres = await window.SSSlides.build(window.PptxGenJS, D, cutoff, { ...window.SS_SLIDE_ASSETS, wp: window.SS_WP_ASSETS, kondisi: KD ? { ...KD, map: (window.__D || {}).kondisi_map } : null, hi: window.SSHealthIndex ? window.SSHealthIndex.snap() : null }, plan);
       let blob;
       if (fills.length) blob = await window.SSPptxMerge.merge(window.JSZip, await pres.write({ outputType: 'arraybuffer' }), fills);
       else blob = await pres.write({ outputType: 'blob' });

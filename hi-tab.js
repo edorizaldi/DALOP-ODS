@@ -556,4 +556,36 @@
   document.addEventListener('ss-harian-saved', () => { try { renderList(); renderTop(); renderPS(); } catch (e) { console.error(e); } });
 
   SSD.onData(() => { try { render(); } catch (e) { console.error(e); } });
+
+  // ---------- ringkasan untuk slide paparan (tab Design Paparan) ----------
+  // Bulan laporan = bulan berjalan dari laporan harian (sheet Detil Kode) bila ada; selain itu bulan terakhir database Event Padam Penyulang.
+  // Hitungan sama dengan tab ini pada filter bawaan (gangguan kode J bidang Distribusi, semua jenis padam).
+  window.SSHealthIndex = {
+    snap() {
+      const B = SSD.data('peny_bulanan'), GU = SSD.data('gangguan_up3'), GPS = SSD.data('gangguan_ps');
+      if (B.status !== 'ok' || GU.status !== 'ok' || GPS.status !== 'ok') return null;
+      const X = build(B.data, GU.data, GPS.data); const lastM = X.months[X.months.length - 1]; if (!lastM) return null;
+      const dist = (o) => { const v = [0, 0]; Object.entries(o || {}).forEach(([kk, ps]) => { if (kk.startsWith('DISTRIBUSI|')) { v[0] += ps[0]; v[1] += ps[1]; } }); return v; };
+      // per penyulang (UID + nama) dari database: bulan tertentu dan ULP terbanyak
+      const dbM = (m) => { const G = new Map(); X.feeders.forEach((f) => { if (!X.ada.has(m + '|' + f.u)) return; const v = dist(f.raw[m]); if (!(v[0] + v[1])) return; const k = f.u + '|' + nn(f.peny); const g = G.get(k) || { u: f.u, peny: f.peny, p: 0, s: 0, ulpH: new Map() }; g.p += v[0]; g.s += v[1]; G.set(k, g); }); return G; };
+      const ulpDb = new Map(); X.feeders.forEach((f) => { if (!f.ulp.size) return; const k = f.u + '|' + nn(f.peny); const o = ulpDb.get(k) || new Map(); f.ulp.forEach((n, x) => o.set(x, (o.get(x) || 0) + n)); ulpDb.set(k, o); });
+      const mode = (m) => (m && m.size ? [...m].sort((a, b) => b[1] - a[1])[0][0] : '');
+      const HP0 = harianPeny(); const HP = HP0 && HP0.tahun === 2026 && HP0.bulan > lastM ? HP0 : null;
+      let cur, bulan, sampai = null, prevM;
+      if (HP) {
+        cur = new Map(); HP.rows.forEach(([u, ulp, peny, p, sv]) => { if (!UORD.includes(u)) return; const k = u + '|' + nn(peny); const g = cur.get(k) || { u, peny, p: 0, s: 0, ulpH: new Map() }; g.p += p; g.s += sv; if (ulp) g.ulpH.set(ulp, (g.ulpH.get(ulp) || 0) + p + sv); cur.set(k, g); });
+        bulan = HP.bulan; sampai = HP.sampai; prevM = lastM;
+      } else { cur = dbM(lastM); bulan = lastM; prevM = X.months[X.months.length - 2] || null; }
+      const prev = prevM ? dbM(prevM) : new Map();
+      const tally = (G, u) => { const o = zero(); G.forEach((g) => { if (u && g.u !== u) return; const k = katOf(g.p + g.s); if (k) { o[k]++; o.t++; } }); return o; };
+      const units = {};
+      UORD.forEach((u) => {
+        const top = [...cur].filter(([, g]) => g.u === u && g.p + g.s >= 6)
+          .sort((a, b) => (b[1].p + b[1].s) - (a[1].p + a[1].s) || b[1].p - a[1].p || a[1].peny.localeCompare(b[1].peny)).slice(0, 3)
+          .map(([k, g]) => ({ peny: g.peny, ulp: mode(ulpDb.get(k)) || mode(g.ulpH) || '', p: g.p, s: g.s, n: g.p + g.s }));
+        units[u] = { ...tally(cur, u), prev: tally(prev, u), top };
+      });
+      return { tahun: 2026, bulan, sampai, berjalan: !!HP, prevM, sum: tally(cur), prevSum: tally(prev), units, bidang: 'DISTRIBUSI' };
+    },
+  };
 })();
