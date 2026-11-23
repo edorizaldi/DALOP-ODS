@@ -51,6 +51,27 @@
     document.head.appendChild(s); return false;
   };
 
+  // ---------- data terbaru ----------
+  // info_update.js dan gi_identitas.js dimuat lewat tag script biasa, jadi browser bisa memakai salinan lama hingga 10 menit setelah
+  // admin mengunggah Database Aset Jaringan. Saat tab dibuka, baca info_update terbaru tanpa cache; bila waktu unggah aset berbeda,
+  // muat ulang data aset (berversi) sebelum peta digambar.
+  let freshState = 0; // 0 belum, 1 memeriksa, 2 selesai
+  const stampOf = () => { const r = ((window.__D && window.__D.info_update) || []).find((x) => x.tab === 'hirarki'); return r ? r.diperbarui : ''; };
+  function checkFresh() {
+    if (freshState) return freshState === 2; freshState = 1;
+    const before = stampOf();
+    const done = () => { freshState = 2; render(); };
+    const s = document.createElement('script'); s.src = 'info_update.js?t=' + Date.now();
+    s.onload = () => {
+      if (stampOf() && stampOf() !== before) {
+        ['gi_identitas', 'hx_gi', 'hx_feeder', ...UORD.map((u) => 'hx_geo_' + u)].forEach((id) => { if (window.__D && id in window.__D) delete window.__D[id]; });
+        if (window.SSDbInfo && SSDbInfo.set) { const r = window.__D.info_update.find((x) => x.tab === 'hirarki'); SSDbInfo.set('hirarki', r.diperbarui, r.periode, r.sumber); }
+      }
+      done();
+    };
+    s.onerror = done; document.head.appendChild(s); return false;
+  }
+
   // ---------- keadaan ----------
   const st = { base: store.get('hxm-base', 'abu'), color: store.get('hxm-color', 'feeder'), lay: { gi: true, line: true, gardu: true, jauh: false } };
   let map = null, baseLayer = null, R = null, G = { gi: null, line: null, gardu: null, jauh: null, sel: null };
@@ -361,6 +382,7 @@
   let decodedFor = null, decodedRaw = null, srcSeen = [];
   function render() {
     if (P().tab !== 'hirarki') return;
+    if (!checkFresh()) { $('hxm-msg').textContent = 'Memeriksa data aset terbaru…'; return; }
     const ok = ['gi_identitas', 'hx_gi', 'hx_feeder'].map((id) => need(id)).every(Boolean);
     const lf = needLeaflet();
     if (leafletState === 3) { $('hxm-msg').textContent = 'Pustaka peta (Leaflet) tidak dapat dimuat. Periksa koneksi internet lalu muat ulang halaman.'; return; }
