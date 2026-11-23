@@ -188,6 +188,7 @@
       7: () => slideWorkplan(pres, { C, HEX, D, A }),
       8: () => slideKondisi(pres, { C, A }),
       9: () => slideIsolated(pres, { C, A }),
+      10: () => slideHealth(pres, { C, A }),
     };
     // plan: urutan slide paparan. {k:'core', n:1..9} slide data; {k:'img', data, w, h} slide gambar;
     // {k:'pptx'} slide kosong sebagai tempat slide dari file PowerPoint (diisi oleh SSPptxMerge).
@@ -888,6 +889,92 @@
     const sia = rows.filter((x) => x.v && x.v.st === 'SIAGA').sort((a, b) => (+a.v.cad) - (+b.v.cad) || a.r.n.localeCompare(b.r.n)).map((x) => ({ ...x, lama: B.streak(x.r, 'SIAGA', day), mon: B.monOf(x.r, iso) }));
     return { day, iso, tgl, U, tot, def, sia };
   }
+  // ---------- slide Health Index Penyulang ----------
+  // A.hi = window.SSHealthIndex.snap() (tab Health Index): rekap kronis/sakit/sehat Sumkal, rekap per UID, top 3 penyulang kronis per UID.
+  // Bulan = bulan berjalan dari laporan harian (sheet Detil Kode) bila ada, selain itu bulan terakhir database Event Padam Penyulang.
+  async function slideHealth(pres, ctx) {
+    const { C, A } = ctx; const H = A.hi; const W = 'Arial';
+    const KC = { k: 'B3261E', s: 'E9A23B', h: '3E9A5B' }, KF = { k: 'FFFFFF', s: '2A1A00', h: 'FFFFFF' };
+    const s = pres.addSlide({ masterName: 'KINERJA_UID' });
+    const T = (text, o, name) => s.addText(text, { fontFace: W, margin: 0, isTextBox: true, ...o, objectName: name });
+    const R = (x, y, w, h, fill, line, name, o) => s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y, w, h, rectRadius: Math.min(0.12, h / 2), fill: { color: fill }, line: { color: line || fill, width: 1 }, objectName: name, ...(o || {}) });
+    const PRE = /^(MV\s*-?\s*CABLE|MVCABLE|CELL|FEEDER|PENYULANG|PNY|PYL)[\s_.\-]+/i;
+    const clean = (x) => String(x || '').trim().replace(PRE, '').trim();
+    const cap = (x) => String(x || '').toLowerCase().replace(/(^|[\s(-])(\w)/g, (a, p1, c) => p1 + c.toUpperCase());
+    T('HEALTH INDEX PENYULANG', { x: 2.6, y: 0.12, w: 8.1, h: 0.55, fontSize: 30, bold: true, color: C.text1, align: 'center', valign: 'middle' }, 'Judul');
+    T('SUMATERA – KALIMANTAN', { x: 2.6, y: 0.64, w: 8.1, h: 0.32, fontSize: 16, bold: true, color: C.text1, align: 'center', valign: 'middle' }, 'Subjudul');
+    if (!H) { R(4.85, 1.0, 3.6, 0.36, C.accent1, null, 'Periode latar', { rectRadius: 0.18 }); T('Belum ada data', { x: 4.85, y: 1.0, w: 3.6, h: 0.36, fontSize: 14, bold: true, color: C.background1, align: 'center', valign: 'middle' }, 'Periode');
+      T('Database Event Padam Penyulang belum termuat.', { x: 1, y: 3.4, w: 11.3, h: 0.6, fontSize: 18, color: C.text1, align: 'center' }, 'Keterangan'); return; }
+    const per = H.berjalan ? `${BLN[H.bulan - 1]} 2026 · s.d. ${+H.sampai.slice(8)} ${BLN[H.bulan - 1]}` : `${BLN[H.bulan - 1]} 2026`;
+    R(4.55, 1.0, 4.2, 0.36, C.accent1, null, 'Periode latar', { rectRadius: 0.18 });
+    T(per, { x: 4.55, y: 1.0, w: 4.2, h: 0.36, fontSize: 14, bold: true, color: C.background1, align: 'center', valign: 'middle' }, 'Periode');
+    // kriteria kelas
+    T([{ text: 'Kronis ', options: { bold: true, color: KC.k } }, { text: '≥6 kali · ', options: { color: C.text1 } }, { text: 'Sakit ', options: { bold: true, color: 'B7791F' } }, { text: '2–5 · ', options: { color: C.text1 } }, { text: 'Sehat ', options: { bold: true, color: KC.h } }, { text: '1 kali', options: { color: C.text1 } }],
+      { x: 8.9, y: 1.0, w: 3.4, h: 0.36, fontSize: 10.5, valign: 'middle' }, 'Kriteria');
+
+    // peta + top 3 penyulang kronis per UID
+    s.addImage({ data: A.map, x: MAP.x, y: MAP.y, w: MAP.w, h: MAP.h, altText: 'Peta unit induk distribusi Sumatera dan Kalimantan', objectName: 'Peta' });
+    const pill = (t, x, y, w) => { R(x, y, w, 0.32, C.accent4, null, t + ' latar', { rectRadius: 0.16 }); T(t, { x, y, w, h: 0.32, fontSize: 11, bold: true, color: C.text1, align: 'center', valign: 'middle' }, t); };
+    pill('TOP 3 KRONIS PER UID', 0.3, 1.38, 1.95);
+    for (const u of Object.keys(BOX)) {
+      const p = pinAt(u); const [bx, by] = BOX[u];
+      const cx = Math.min(Math.max(p.x, bx), bx + BW), cy = Math.min(Math.max(p.y, by), by + BH);
+      const ex = cx === p.x && cy === p.y ? bx : cx, ey = cy;
+      s.addShape(pres.shapes.LINE, { x: Math.min(ex, p.x), y: Math.min(ey, p.y), w: Math.max(0.01, Math.abs(p.x - ex)), h: Math.max(0.01, Math.abs(p.y - ey)), flipH: (p.x - ex) * (p.y - ey) < 0, line: { color: C.accent5, width: 1.5 }, objectName: 'Penunjuk ' + NAME[u] });
+    }
+    for (const u of Object.keys(BOX)) { const p = pinAt(u); s.addImage({ data: A.pin, x: p.x - 0.13, y: p.y - 0.35, w: 0.26, h: 0.35, altText: 'Penanda ' + NAME[u], objectName: 'Pin ' + NAME[u] }); }
+    for (const u of Object.keys(BOX)) {
+      const o = H.units[u] || { k: 0, top: [] }; const [bx, by] = BOX[u];
+      const head = [{ text: NAME[u], options: { bold: true, fontSize: 9.5, color: C.text2, fill: { color: 'DCEBFB' }, margin: [0, 0.03, 0, 0.07], valign: 'middle' } },
+        { text: `K ${nf(o.k, 0)}`, options: { bold: true, fontSize: 8.5, color: 'FFFFFF', fill: { color: KC.k }, align: 'center', margin: 0, valign: 'middle' } }];
+      const rows = [head];
+      o.top.forEach((t, i) => rows.push([
+        { text: [{ text: `${i + 1}. ${clean(t.peny)}`, options: { bold: true } }, { text: t.ulp && clean(t.peny).length + t.ulp.length <= 16 ? ` · ${cap(t.ulp)}` : '', options: { color: HEX.muted, fontSize: 7 } }], options: { fontSize: 8, color: C.text1, margin: [0, 0.03, 0, 0.07], valign: 'middle' } },
+        { text: `${nf(t.n, 0)} kali`, options: { fontSize: 8, bold: true, color: KC.k, align: 'right', margin: [0, 0.07, 0, 0.03], valign: 'middle' } }]));
+      if (!o.top.length) rows.push([{ text: 'Nihil · belum ada penyulang kronis', options: { colspan: 2, fontSize: 8, italic: true, color: HEX.muted, margin: [0, 0.07, 0, 0.07], valign: 'middle' } }]);
+      s.addTable(rows, { x: bx, y: by, w: BW, colW: [1.3, 0.52], rowH: [0.23, 0.21, 0.21, 0.21].slice(0, rows.length), fill: { color: 'FFFFFF' }, border: { type: 'solid', color: 'B9CFEA', pt: 0.75 }, fontFace: W, objectName: 'Top 3 ' + NAME[u] });
+    }
+
+    // rekap Sumkal (kanan)
+    const S = H.sum, P = H.prevSum;
+    const RX = 9.85, RW = 3.2;
+    R(RX, 1.45, RW, 4.15, 'FFFFFF', 'C9DCF2', 'Rekap latar', { shadow: { type: 'outer', color: '7A9CC6', opacity: 0.25, blur: 8, offset: 2, angle: 90 } });
+    R(RX, 1.45, RW, 0.55, C.text1, null, 'Rekap judul latar');
+    T('REKAP HEALTH INDEX SUMKAL', { x: RX, y: 1.45, w: RW, h: 0.55, fontSize: 13, bold: true, color: C.background1, align: 'center', valign: 'middle' }, 'Rekap judul');
+    const icon = (n) => A.icons && (A.icons[n + '|FFFFFF'] || A.icons['FaCircle|FFFFFF']);
+    const tint = { k: 'FBE9E7', s: 'FDF1DE', h: 'E6F4EC' };
+    [['k', 'PENYULANG KRONIS', 'FaExclamationTriangle'], ['s', 'PENYULANG SAKIT', 'FaBolt'], ['h', 'PENYULANG SEHAT', 'FaClipboardCheck']].forEach(([k, lab, ic], i) => {
+      const y = 2.1 + i * 1.07;
+      R(RX + 0.15, y, RW - 0.3, 0.97, tint[k], null, lab + ' latar', { rectRadius: 0.1 });
+      s.addShape(pres.shapes.OVAL, { x: RX + 0.3, y: y + 0.19, w: 0.6, h: 0.6, fill: { color: KC[k] }, line: { color: KC[k] }, objectName: lab + ' ikon latar' });
+      s.addImage({ data: icon(ic), x: RX + 0.44, y: y + 0.33, w: 0.32, h: 0.32, altText: lab, objectName: lab + ' ikon' });
+      T(lab, { x: RX + 1.05, y: y + 0.07, w: RW - 1.3, h: 0.24, fontSize: 10, bold: true, color: k === 's' ? 'B7791F' : KC[k], valign: 'middle' }, lab);
+      T([{ text: nf(S[k], 0), options: { fontSize: 24, bold: true, color: C.text1 } }, { text: `  ${nf(S.t ? S[k] / S.t * 100 : 0, 1)}%`, options: { fontSize: 11, bold: true, color: HEX.muted } }], { x: RX + 1.05, y: y + 0.28, w: RW - 1.3, h: 0.42, valign: 'middle' }, lab + ' nilai');
+      T(H.prevM ? `${BLN[H.prevM - 1]}: ${nf(P[k], 0)} penyulang` : `dari ${nf(S.t, 0)} penyulang`, { x: RX + 1.05, y: y + 0.69, w: RW - 1.3, h: 0.22, fontSize: 9.5, color: HEX.muted, valign: 'middle' }, lab + ' pembanding');
+    });
+    T(`${nf(S.t, 0)} penyulang mengalami gangguan${H.berjalan ? ` s.d. ${+H.sampai.slice(8)} ${BLN[H.bulan - 1]}` : ''}`, { x: RX + 0.15, y: 5.28, w: RW - 0.3, h: 0.22, fontSize: 8.5, color: HEX.muted, align: 'center', valign: 'middle' }, 'Rekap total');
+
+    // rekapitulasi per UID (diurutkan dari kronis)
+    const TY = 5.84;
+    R(0.25, TY, 12.83, 1.52, 'FFFFFF', 'C9DCF2', 'Rekap UID latar', { rectRadius: 0.1 });
+    T([{ text: 'REKAPITULASI PER UID ', options: { bold: true, color: C.text1 } }, { text: '(jumlah penyulang, diurutkan dari kronis)', options: { color: HEX.muted } }], { x: 0.45, y: TY + 0.06, w: 8, h: 0.28, fontSize: 12, valign: 'middle' }, 'Rekap UID judul');
+    const ord = UIDS.slice().sort((a, b) => (H.units[b].k - H.units[a].k) || (H.units[b].s - H.units[a].s));
+    const labels = ord.map((u) => NAME[u].replace('UID ', ''));
+    s.addChart(pres.charts.BAR, [
+      { name: 'Kronis', labels, values: ord.map((u) => H.units[u].k) },
+      { name: 'Sakit', labels, values: ord.map((u) => H.units[u].s) },
+      { name: 'Sehat', labels, values: ord.map((u) => H.units[u].h) },
+    ], {
+      x: 0.35, y: TY + 0.3, w: 12.6, h: 1.2, barDir: 'col', barGrouping: 'stacked', barGapWidthPct: 45, chartColors: [KC.k, KC.s, KC.h],
+      showValue: true, dataLabelFontSize: 8, dataLabelFontFace: W, dataLabelColor: 'FFFFFF', dataLabelPosition: 'ctr', dataLabelFormatCode: '#,##0;;;',
+      catAxisLabelColor: C.text1, catAxisLabelFontSize: 9, catAxisLabelFontFace: W, catAxisLineShow: false,
+      valAxisHidden: true, valGridLine: { style: 'none' }, catGridLine: { style: 'none' },
+      showLegend: true, legendPos: 'r', legendFontSize: 9, legendFontFace: W, legendColor: HEX.navy,
+      objectName: 'Rekap UID grafik',
+    });
+    s.addNotes(`Sumber: tab Health Index Penyulang. ${H.berjalan ? `Bulan berjalan ${BLN[H.bulan - 1]} dari laporan harian (sheet Detil Kode) s.d. ${H.sampai}` : `Database Event Padam Penyulang bulan ${BLN[H.bulan - 1]}`}; gangguan kode J bidang Distribusi (permanen + sesaat) per penyulang. Kronis >= 6 kali, sakit 2-5 kali, sehat 1 kali. Pembanding: ${H.prevM ? BLN[H.prevM - 1] + ' 2026 (bulan penuh, database Event Padam Penyulang)' : '-'}.`);
+  }
+
   async function slideIsolated(pres, ctx) {
     const { C, A } = ctx; const W = 'Arial';
     const S = isolatedSnap(A.kondisi);
