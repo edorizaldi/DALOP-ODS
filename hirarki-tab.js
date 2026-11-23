@@ -32,7 +32,8 @@
   const need = (id) => {
     if (!LAZY || id in window.__D || loading.has(id)) return;
     loading.add(id);
-    const s = document.createElement('script'); s.src = id + '.js';
+    const inf = ((window.__D && window.__D.info_update) || []).find((r) => r.tab === 'hirarki'); // versi = unggah aset terakhir, agar tidak memakai salinan lama
+      const s = document.createElement('script'); s.src = id + '.js' + (/^(hx_|trafo_wilayah)/.test(id) && inf ? '?v=' + encodeURIComponent(inf.diperbarui) : '');
     s.onload = () => { loading.delete(id); render(); };
     s.onerror = () => { loading.delete(id); window.__D[id] = []; render(); };
     document.head.appendChild(s);

@@ -33,7 +33,8 @@
     let ready = true;
     LAZY.forEach((id) => {
       if (window.__D && id in window.__D) return; ready = false; if (loading.has(id)) return; loading.add(id);
-      const s = document.createElement('script'); s.src = id + '.js';
+      const inf = ((window.__D && window.__D.info_update) || []).find((r) => r.tab === 'hirarki'); // versi = unggah aset terakhir, agar tidak memakai salinan lama
+      const s = document.createElement('script'); s.src = id + '.js' + (/^(hx_|trafo_wilayah)/.test(id) && inf ? '?v=' + encodeURIComponent(inf.diperbarui) : '');
       s.onload = () => { loading.delete(id); if (window.__SSInvalidate) window.__SSInvalidate(); render(); };
       s.onerror = () => { loading.delete(id); window.__D[id] = []; render(); };
       document.head.appendChild(s);
