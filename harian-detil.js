@@ -1,5 +1,5 @@
 // Laporan harian: sheet "Detil Kode" -> gangguan kode J per penyulang bulan berjalan (dipakai tab Health Index Penyulang).
-// No. Laporan unik (baris pertama yang muncul), KODE = J, P/S = P (permanen) atau S (sesaat).
+// No. Laporan unik (baris pertama yang muncul), KODE = J, P/S = P (permanen) atau S (sesaat). Kolom unit boleh berjudul UID atau UNIT.
 // parse(rows) -> { baris, unik, ev, bulan }; forMonth(det, tgl) -> { tahun, bulan, dari, sampai, j, rows: [[UID, ULP, PENYULANG, permanen, sesaat], ...] }
 // untuk bulan dari tanggal realisasi (bulan berjalan), kejadian s.d. tanggal itu.
 (function () {
@@ -21,8 +21,8 @@
     if (hi < 0) throw new Error('sheet Detil Kode: judul kolom NO. LAPORAN / KODE tidak ditemukan');
     const H = rows[hi].map((c) => str(c).toUpperCase());
     const col = (re) => H.findIndex((h) => re.test(h));
-    const cU = col(/^UID$/), cN = col(/^NO\.?\s*LAPORAN$/), cL = col(/^ULP$/), cP = col(/^PENYULANG$/), cS = col(/^P\s*\/\s*S$/), cK = col(/^KODE$/), cT = col(/^TANGGAL$/);
-    const miss = [['UID', cU], ['NO. LAPORAN', cN], ['PENYULANG', cP], ['P/S', cS], ['KODE', cK]].filter(([, i]) => i < 0).map(([n]) => n);
+    const cU = col(/^(UID|UNIT|UNIT INDUK)$/), cN = col(/^NO\.?\s*LAPORAN$/), cL = col(/^ULP$/), cP = col(/^PENYULANG$/), cS = col(/^P\s*\/\s*S$/), cK = col(/^KODE$/), cT = col(/^TANGGAL$/);
+    const miss = [['UID/UNIT', cU], ['NO. LAPORAN', cN], ['PENYULANG', cP], ['P/S', cS], ['KODE', cK]].filter(([, i]) => i < 0).map(([n]) => n);
     if (miss.length) throw new Error('sheet Detil Kode: kolom ' + miss.join(', ') + ' tidak ditemukan');
     const seen = new Set(); const ev = []; const bulan = new Map();
     let baris = 0;
