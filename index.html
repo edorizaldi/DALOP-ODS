@@ -3236,7 +3236,7 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
 </script>
 
 <script src="apkt-parser.js?v=20261112"></script>
-<script src="harian-detil.js?v=20261110b"></script>
+<script src="harian-detil.js?v=20261124"></script>
 <script>
 (() => {
   const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
@@ -3358,6 +3358,9 @@ window.SSHarian={ rows:()=>lastRows, apply:(rows)=>{ override=rows; ready=false;
     msg.textContent = saved
       ? `Infografis diperbarui ke realisasi s.d. ${da} ${BLN[mo - 1]} ${y} dan disimpan ke database dashboard. Semua yang membuka dashboard melihat data ini setelah GitHub Pages diperbarui (1–2 menit); tombol Download juga memakai data baru.`
       : `Infografis di layar ini sudah memakai data baru (realisasi s.d. ${da} ${BLN[mo - 1]} ${y}), tetapi BELUM TERSIMPAN (${why}). Bila halaman ditutup, data kembali ke unggahan sebelumnya. Klik "Login admin" (kanan bawah), lalu klik Terapkan ke infografis lagi.`;
+    // peringatan bila data per penyulang (Health Index) tidak ikut diperbarui dari file ini
+    { const dmN = pending.detil ? window.SSHarianDetil.forMonth(pending.detil, tgl) : null; const keep = window.SSHarianSaved && window.SSHarianSaved.penyulang;
+      if (!dmN) msg.textContent += ` Perhatian: data gangguan per penyulang (Health Index) TIDAK diperbarui karena sheet Detil Kode ${pending.adaDetil ? (pending.detil ? 'tidak berisi kejadian bulan ini' : 'tidak terbaca (' + pending.detilErr + ')') : 'tidak ada di file'}${keep && keep.sampai ? `; Health Index tetap memakai data s.d. ${+keep.sampai.slice(8)} ${BLN[+keep.sampai.slice(5, 7) - 1]}` : ''}.`; }
     msg.classList.toggle('bad', !saved);
     $('h-src-note').textContent = `Data dari unggahan ${new Date().toISOString().slice(0, 10)} (${pending.file}).`;
     if (window.SSDbInfo) window.SSDbInfo.harian(new Date().toISOString(), `Realisasi s.d. ${da} ${BLN[mo - 1]} ${y}`, pending.file + (saved ? ' (diunggah di dashboard)' : ' (hanya di layar ini, belum tersimpan)'));
